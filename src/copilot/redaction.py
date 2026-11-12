@@ -129,6 +129,9 @@ _CARD_RULES: tuple[tuple[re.Pattern[str], frozenset[int]], ...] = (
 )
 
 
+_PHONE_SHAPED = re.compile(r"\d{3}[ -]\d{3}[ -]\d{4}")
+
+
 def _digits_only(text: str) -> str:
     return "".join(char for char in text if char.isdigit())
 
@@ -154,6 +157,10 @@ class _GroupedAccountRecognizer(PatternRecognizer):
 
     def validate_result(self, pattern_text: str) -> bool | None:
         # False drops the match; None keeps the pattern's base score.
+        if _PHONE_SHAPED.fullmatch(pattern_text):
+            # 3-3-4 is a phone number even when "account" is mentioned nearby
+            # ("our account team will call you at 480-555-0125").
+            return False
         return None if len(_digits_only(pattern_text)) in {9, 10} else False
 
 

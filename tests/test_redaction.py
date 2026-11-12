@@ -170,6 +170,19 @@ def test_three_three_four_grouping_is_still_a_phone_number(redactor: Redactor) -
     assert _types(redactor.redact("Best number is 503 555 0147.")) == ["PHONE_NUMBER"]
 
 
+@pytest.mark.parametrize("phone", ["480-555-0125", "+1 919 555 0106", "(480) 555-0125"])
+def test_phone_number_near_the_word_account_stays_a_phone_number(
+    redactor: Redactor, phone: str
+) -> None:
+    # Found on the dev set: "account" nearby must not turn a phone into an account number.
+    text = f"I'm passing this to our account team. They will call you back at {phone} today."
+
+    result = redactor.redact(text)
+
+    assert _types(result) == ["PHONE_NUMBER"]
+    assert phone not in result.text
+
+
 def test_full_social_security_number_is_masked(redactor: Redactor) -> None:
     # There is no dedicated entity type for a full SSN; what matters is that it is gone.
     assert "123-45-6789" not in redactor.redact("It is 123-45-6789.").text
