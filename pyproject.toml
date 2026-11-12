@@ -10,8 +10,10 @@ readme = "README.md"
 requires-python = ">=3.11"
 # Runtime dependencies are added in the milestone that first uses them (PLAN.md §13).
 dependencies = [
+    "presidio-analyzer==2.2.366",
     "pydantic==2.14.3",
     "pydantic-settings[yaml]==2.16.2",
+    "spacy==3.8.18",
 ]
 
 [project.optional-dependencies]
@@ -19,13 +21,23 @@ dependencies = [
 data = [
     "faker==40.54.0",
 ]
+# The spaCy pipeline the redactor uses by default. Models are not on PyPI.
+models = [
+    "en_core_web_md @ https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.8.0/en_core_web_md-3.8.0-py3-none-any.whl",
+]
 dev = [
     "frontline-copilot[data]",
+    # Small pipeline for unit tests, so CI does not download the default one.
+    "en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
     "mypy==2.4.1",
     "pytest==9.2.0",
     "pytest-cov==7.1.0",
     "ruff==0.17.4",
 ]
+
+[tool.hatch.metadata]
+# Needed for the spaCy model wheels above, which are installed by URL.
+allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/copilot"]
