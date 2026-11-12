@@ -1,0 +1,3 @@
+# Store text with LF line endings on every platform. Notebooks-as-source,
+# shell scripts and the Dockerfile run on Linux and break with CRLF.
+* text=auto eol=lf

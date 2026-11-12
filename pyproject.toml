@@ -1,0 +1,78 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "frontline-copilot"
+version = "0.1.0"
+description = "AI copilot for wireless-carrier frontline support agents, built on Databricks Free Edition."
+readme = "README.md"
+requires-python = ">=3.11"
+# Runtime dependencies are added in the milestone that first uses them (PLAN.md §13).
+dependencies = [
+    "pydantic==2.14.3",
+    "pydantic-settings[yaml]==2.16.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "mypy==2.4.1",
+    "pytest==9.2.0",
+    "pytest-cov==7.1.0",
+    "ruff==0.17.4",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/copilot"]
+
+# --- ruff -------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",  # pycodestyle
+    "F",       # pyflakes
+    "I",       # import order
+    "N",       # naming
+    "UP",      # modern syntax
+    "B",       # bugbear
+    "C4",      # comprehensions
+    "SIM",     # simplifications
+    "RET",     # return statements
+    "PTH",     # pathlib over os.path
+    "PT",      # pytest style
+    "S",       # bandit; S608 flags string-built SQL
+    "D",       # docstrings on public API
+    "RUF",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "D"]
+
+# --- mypy -------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unreachable = true
+plugins = ["pydantic.mypy"]
+# Third-party libraries without type stubs get an `ignore_missing_imports`
+# override here, each added when the library is first imported.
+
+# --- pytest and coverage ----------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["-ra", "--strict-markers", "--strict-config"]
+
+[tool.coverage.run]
+source = ["src/copilot"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
