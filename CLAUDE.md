@@ -15,6 +15,7 @@ Portfolio demo: an AI copilot for wireless-carrier frontline support agents, on 
 - Never commit secrets. Config comes from `.env` and `config/settings.yaml` only.
 - Never write unredacted transcript text to silver/gold tables, logs, or MLflow traces.
 - Redact user input before it enters any traced function. MLflow records a traced function's inputs before its body runs, so redacting inside the trace is too late.
+- Tune the redactor on the dev set only. Never tune on the test set. If the challenge set prompts a fix, keep the earlier result file and say the later one is no longer held out.
 - Never commit scraped KB text or anything under `data/raw/`. Only `seed_urls.txt` and the scraper are committed.
 - Never read `DATABRICKS_TOKEN` in code. Build `WorkspaceClient()` and let the SDK resolve auth, so the same code runs locally and as a Databricks App.
 - SQL from tools must be parameterized. No string-built SQL from model input.
@@ -23,14 +24,15 @@ Portfolio demo: an AI copilot for wireless-carrier frontline support agents, on 
 - Data generation is seeded and deterministic. Every pipeline step is idempotent.
 
 ## Commands
-- Install: `python -m venv .venv`, activate it, then `pip install -e ".[dev]"` (or `uv sync --extra dev`)
+- Install: `python -m venv .venv`, activate it, then `pip install -e ".[dev,models]"` (or `uv sync --extra dev --extra models`)
 - Lint: `ruff check .`
 - Format check: `ruff format --check .`
 - Types: `mypy src/`
 - Tests: `pytest --cov=src/copilot`
 - Data gen: `python -m data_gen.synth_transcripts --seed 42`, `python -m data_gen.scrape_kb`, `python -m data_gen.plans`
 - Upload: `python -m data_gen.upload`
-- Redaction eval: `python -m eval.redaction_eval`
+- Dev set for tuning the redactor: `python -m data_gen.synth_transcripts --seed 7 --out-dir data/raw/dev --labeled 200`
+- Redaction eval: `python -m eval.redaction_eval` (test set), `--data-dir data/raw/dev --show-errors` (dev set), `--challenge` (hand-written set). Add `--save --tag <name>` to record a result; it needs a clean working tree.
 - Eval: `python -m eval.run_eval --config A --query-type ann --tag baseline` (always try `--limit 5` first)
 - App (local): `streamlit run app/app.py`
 - MCP (stdio): `python -m mcp_server.server`

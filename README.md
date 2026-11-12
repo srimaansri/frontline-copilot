@@ -8,12 +8,12 @@ An AI copilot for frontline support agents at a wireless carrier, built end to e
 
 ## Status
 
-This repo is being built milestone by milestone. **No results are reported yet**: every number that appears here later will come from a real run, with its date and git SHA.
+This repo is being built milestone by milestone. Every number here comes from a real run, with its date and git SHA, and the full reports are in [eval/results](eval/results).
 
 | Milestone | What | State |
 |---|---|---|
 | M0 | Scaffold: tooling, config loader, CI | Done |
-| M1 | Data generation and PII redaction, measured locally | Next |
+| M1 | Data generation and PII redaction, measured locally | Done except the knowledge base, which waits on source URLs or a model endpoint |
 | M2 | Databricks pipelines: bronze, silver, gold, quality checks | |
 | M3 | Retrieval-augmented answers and the first evaluation | |
 | M4 | Agent with tools, guardrails, escalation | |
@@ -21,6 +21,34 @@ This repo is being built milestone by milestone. **No results are reported yet**
 | M6 | Results, model and data cards, responsible-AI notes | |
 
 The full specification is in [PLAN.md](PLAN.md).
+
+## Redaction results so far
+
+The redactor replaces personal data in support transcripts with typed placeholders such as `<PHONE_NUMBER_1>`. It is measured on synthetic transcripts whose personal values are inserted by code, so the labels are exact. All runs below are from 2026-11-12 with spaCy `en_core_web_md` 3.8.0 and Presidio 2.2.366.
+
+| Set | What it tells you | PII recall | PII precision | CPNI recall | Commit |
+|---|---|---|---|---|---|
+| Test: 30 transcripts, 209 PII values | New names and numbers in phrasings the redactor was tuned on. An upper bound. | 1.000 (209/209) | 1.000 | 1.000 (12/12) | `b0a26de` |
+| Challenge, first run: 50 hand-written lines, 39 PII values | Phrasings the redactor had never seen. **The number to trust.** | 0.769 (30/39) | 0.857 | 0.333 (2/6) | `ed7ad27` |
+| Challenge, after fixes | The same lines after fixing the gaps they exposed. No longer held out. | 0.923 (36/39) | 0.973 | 0.667 (4/6) | `b0a26de` |
+
+A detection counts when it overlaps the label by at least half (intersection over union) and has the right type.
+
+What the redactor still misses: phone numbers and dates spoken as words ("four eight zero..."), email addresses spelled out loud, dollar amounts written in words, and usage figures with no cue word nearby. The first two are recorded as expected-failure tests. The sets are small and synthetic, so these figures describe this redactor on this data and are not a forecast for real calls.
+
+Reproduce:
+
+```bash
+python -m data_gen.synth_transcripts --seed 42
+```
+
+```bash
+python -m eval.redaction_eval
+```
+
+```bash
+python -m eval.redaction_eval --challenge
+```
 
 ## What it is built with
 
@@ -37,8 +65,10 @@ python -m venv .venv
 Activate the environment (`.venv\Scripts\Activate.ps1` on Windows, `source .venv/bin/activate` elsewhere), then:
 
 ```bash
-pip install -e ".[dev]"
+pip install -e ".[dev,models]"
 ```
+
+`models` adds the spaCy pipeline the redactor uses by default. Without it the unit tests still run, on a smaller pipeline.
 
 Checks, the same ones CI runs:
 

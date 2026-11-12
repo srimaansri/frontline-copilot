@@ -82,3 +82,71 @@ These depend on what Free Edition allows and are checked during workspace setup 
 - The 2026-11-11 plan-review entry above was drafted by Claude Code in my voice. Edit anything that does not match how I would put it.
 - The repo has no licence file yet. That choice is mine.
 - The Copilot entry for the chunking unit tests (M2/M3) is mine to write.
+
+---
+
+## 2026-11-12 — M1: data generation and redaction (knowledge base still open)
+
+**Tool:** Claude Code.
+
+**Asked:** start Milestone 1.
+
+**What it built**
+
+- `data_gen/plans.py`: 8 fictional plans and 10 add-ons and fees.
+- `data_gen/synth_transcripts.py` and `transcript_templates.py`: 200 seeded transcripts across 10 issue categories, call and chat. Every personal value enters through a template slot and its character span is recorded at that moment. No language model is involved.
+- `src/copilot/redaction.py`: a Presidio-based redactor for 10 PII types and 2 CPNI types, with placeholders numbered per conversation.
+- `src/copilot/span_metrics.py` and `eval/redaction_eval.py`: span matching, precision, recall and F1, and a report that can only be saved from a clean working tree.
+- `eval/data/redaction_challenge.txt`: 50 hand-written lines in phrasings the templates do not contain.
+- `data_gen/scrape_kb.py`: a scraper that obeys robots.txt, waits between requests, caps pages and caches HTML.
+- 169 tests pass and 2 are expected failures that document known limits. Line and branch coverage of `src/copilot` is 100%.
+
+**Results** (all from 2026-11-12, spaCy `en_core_web_md` 3.8.0, Presidio 2.2.366; full reports in `eval/results/`)
+
+| Set | PII recall | PII precision | CPNI recall | CPNI precision | Commit |
+|---|---|---|---|---|---|
+| Test, 30 transcripts | 1.000 (209/209) | 1.000 | 1.000 (12/12) | 0.923 | `b0a26de` |
+| Challenge, first run | 0.769 (30/39) | 0.857 | 0.333 (2/6) | 1.000 | `ed7ad27` |
+| Challenge, after fixes | 0.923 (36/39) | 0.973 | 0.667 (4/6) | 1.000 | `b0a26de` |
+
+The plan's target was PII recall of at least 0.95. The test set meets it and the challenge set does not, before or after the fixes.
+
+**How far to trust these numbers**
+
+- The test set shares its templates with the dev set the redactor was tuned on. Only the names, numbers and the mix of blocks differ. A perfect score there shows the tuning worked; it says little about unseen phrasing.
+- The challenge set is the better guide, and it is 45 labeled values. One miss moves PII recall by more than two points.
+- Claude Code proposed the challenge set after the dev score reached 1.000. Without it this log would report a perfect score and nothing else.
+- The second challenge result is not a held-out number, because the fixes were written after reading the first one. Both files are kept.
+
+**Bugs found by tests and evaluation**
+
+- *Presidio matches case-insensitively by default.* Patterns that rely on capitalisation were matching ordinary words: "I'm sorry we couldn't" was tagged as a person and "1 key, then follow the" as an address. The first dev run had 236 false positives on PERSON. The flags are a per-recognizer setting; the `regex_flags` argument of `analyze()` only affects allow-list matching, which the installed source confirmed.
+- *Presidio's cue-word boost ignores stop words.* "used", "made" and "call" are stop words in spaCy, so "you made 412 minutes of calls" and "call you back at 3035550129" got no boost. Those cues are now part of the patterns.
+- *A lookahead bug in the first draft.* The dollar pattern rejected any amount followed by a full stop, so "$119.45." at the end of a sentence was missed. CPNI_AMOUNT recall on dev went from 0.426 to 1.000 after the fix.
+- *A regression caught by the dev set.* The grouped-digits account pattern added for the challenge set also matched phone-shaped numbers, and "account team" nearby made 6 phone numbers come out labeled as account numbers. The 30-transcript test set had no such line and showed nothing. Fixed in `b0a26de` with a regression test.
+- *A wrong test.* One evaluation test assumed "Rex" would not be detected; the small spaCy model tags it as a person. The test was wrong, not the code.
+
+**Decisions**
+
+- Long identifiers (9 or more digits) are redacted with no cue word. Four digits, a dollar amount or a usage figure need a cue, because redacting all of them would wreck the text.
+- A turn of eight words or fewer borrows the previous turn's words as cues. Borrowing on every turn caused false positives on dev.
+- "A Late Payment Fee of $5 on your statement" is flagged as CPNI and the generator does not label it. That accounts for every CPNI false positive on dev and test. It was left as is, because a fee on a named customer's statement is arguably billing detail.
+- An `Entity` stores a type, a span and a placeholder, never the raw value.
+- `plans.csv` gained `kind` and `billing_period` columns. PLAN.md §5.3 is updated.
+- The scraper's default User-Agent describes the tool without naming a person or the repo. `--user-agent` can add a contact.
+
+**Known limits**
+
+- Digits spoken as words, emails spelled out loud, dates and amounts written in words. Real call transcripts may contain these, depending on the speech-to-text system.
+- Usage figures with no cue word nearby ("1,140 minutes of talk time in October").
+- A full Social Security number is masked, but as `ACCOUNT_NUMBER`; there is no dedicated type.
+
+**Still open in M1**
+
+- The knowledge base. `data_gen/seed_urls.txt` is empty, so the scraper has not been run against a real site, and `synth_kb.py` is not written because it needs a model endpoint from the Databricks setup. The acceptance criterion "at least 40 articles" is not met yet.
+
+**For me to review**
+
+- Whether the "Late Payment Fee of $5" case should count as CPNI.
+- The templates in `data_gen/transcript_templates.py`: they set the tone of every transcript.
+- This entry, like the earlier ones, was drafted by Claude Code in my voice.
