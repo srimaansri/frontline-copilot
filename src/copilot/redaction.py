@@ -115,7 +115,10 @@ _STREET_SUFFIX = (
 _UNIT = r"(?:,?\s(?:Apt|Apartment|Suite|Ste|Unit|#)\.?\s?[A-Za-z0-9-]+)?"
 _CITY = r"[A-Z][A-Za-z.'-]+(?:\s[A-Z][A-Za-z.'-]+){0,2}"
 _STATE_ZIP = r"[A-Z]{2}\s\d{5}(?:-\d{4})?"
-_STREET_WORDS = r"(?:[A-Z][A-Za-z'.-]*\s){1,4}"
+# A street-name word: capitalised ("Maple", "N") or a numbered street ("44th").
+_STREET_WORDS = r"(?:(?:[A-Z][A-Za-z'.-]*|\d{1,3}(?:st|nd|rd|th))\s){1,4}"
+_CITY_STATE_ZIP = rf"(?:,\s{_CITY},\s{_STATE_ZIP})"
+_HONORIFIC = r"(?:Mr|Mrs|Ms|Miss|Dr)\b\.?"
 
 # Card issuers by leading digits -> allowed lengths.
 _CARD_RULES: tuple[tuple[re.Pattern[str], frozenset[int]], ...] = (
@@ -144,6 +147,14 @@ class _CreditCardRecognizer(PatternRecognizer):
         # Not provably a card (a misheard digit breaks the checksum). The base
         # score still redacts it: a 13 to 19 digit run is sensitive either way.
         return None
+
+
+class _GroupedAccountRecognizer(PatternRecognizer):
+    """Digit groups read out with pauses ("6617 20984") that add up to 9 or 10 digits."""
+
+    def validate_result(self, pattern_text: str) -> bool | None:
+        # False drops the match; None keeps the pattern's base score.
+        return None if len(_digits_only(pattern_text)) in {9, 10} else False
 
 
 class _ImeiRecognizer(PatternRecognizer):
@@ -185,7 +196,18 @@ def _build_recognizers() -> list[EntityRecognizer]:
         global_regex_flags=_REGEX_FLAGS,
         name="account_number",
         patterns=[Pattern("nine_or_ten_digits", r"(?<!\d)\d{9,10}(?!\d)", 0.5)],
-        context=["account", "acct"],
+        context=["account", "acct", "statement"],
+    )
+    account_grouped = _GroupedAccountRecognizer(
+        supported_entity="ACCOUNT_NUMBER",
+        global_regex_flags=_REGEX_FLAGS,
+        name="account_number_grouped",
+        # Two or three groups. The phone pattern scores higher, so a 3-3-4
+        # grouping is still labeled as a phone number.
+        patterns=[
+            Pattern("digit_groups", r"(?<![\d$.-])\d{2,6}(?:[ -]\d{2,6}){1,2}(?![\d-])", 0.5)
+        ],
+        context=["account", "acct", "statement"],
     )
     imei = _ImeiRecognizer(
         supported_entity="IMEI",
@@ -201,7 +223,8 @@ def _build_recognizers() -> list[EntityRecognizer]:
         supported_entity="ICCID",
         global_regex_flags=_REGEX_FLAGS,
         name="iccid",
-        patterns=[Pattern("starts_with_89", r"(?<!\d)89\d{17,18}(?!\d)", 0.9)],
+        # Printed on the card in groups of four, so separators are allowed.
+        patterns=[Pattern("starts_with_89", r"(?<!\d)89(?:[ -]?\d){17,18}(?!\d)", 0.9)],
         context=["sim", "iccid"],
     )
     credit_card = _CreditCardRecognizer(
@@ -250,6 +273,16 @@ def _build_recognizers() -> list[EntityRecognizer]:
         global_regex_flags=_REGEX_FLAGS,
         name="us_street_address",
         patterns=[
+            Pattern(
+                "po_box",
+                rf"(?i:P\.?\s?O\.?\sBox)\s\d{{1,6}}{_CITY_STATE_ZIP}?",
+                0.85,
+            ),
+            Pattern(
+                "rural_route_box",
+                rf"(?:Rural\sRoute|RR|HC)\s\d{{1,4}},?\sBox\s\d{{1,6}}{_CITY_STATE_ZIP}?",
+                0.85,
+            ),
             Pattern(
                 "street_city_state_zip",
                 rf"(?<![\d$])\d{{1,6}}\s{_STREET_WORDS}?[A-Z][A-Za-z'.-]*{_UNIT},\s{_CITY},\s"
@@ -301,6 +334,13 @@ def _build_recognizers() -> list[EntityRecognizer]:
             # end of a sentence is usually the person being addressed.
             Pattern("closing_vocative", r"(?<=,\s)[A-Z][a-z]+(?=[.!?](?:\s|$))", 0.55),
             Pattern("before_speaking", r"\b[A-Z][a-z]+(?=\sspeaking\b)", 0.7),
+            # "Mr. Okafor", "Mrs Whitfield". Scores above the named-entity model
+            # so the title and the name stay one span.
+            Pattern(
+                "honorific_and_name",
+                rf"\b{_HONORIFIC}\s[A-Z][a-z'-]+(?:\s[A-Z][a-z'-]+)?",
+                0.9,
+            ),
             # Chat users often type their name in lower case.
             Pattern(
                 "any_case_after_strong_cue",
@@ -334,7 +374,7 @@ def _build_recognizers() -> list[EntityRecognizer]:
     )
     quantity = (
         r"\d{1,4}(?:[.,]\d{1,3})?\s?"
-        r"(?i:minutes|mins|gigabytes|gigs|gb|megabytes|mb|texts|messages)\b"
+        r"(?i:minutes|mins|gigabytes|gigs|gb|megabytes|mb|texts|messages|calls)\b"
     )
     cpni_usage = PatternRecognizer(
         supported_entity="CPNI_USAGE",
@@ -345,8 +385,8 @@ def _build_recognizers() -> list[EntityRecognizer]:
             # ignores, so the verb is matched directly.
             Pattern(
                 "quantity_after_usage_verb",
-                r"(?<=(?i:\b(?:used|use|using|made|sent)\s(?:about\s|around\s|up\s|over\s)?))"
-                + quantity,
+                r"(?<=(?i:\b(?:used|use|using|made|sent|went\sover)\s"
+                r"(?:about\s|around\s|up\s|over\s|by\s|like\s)?))" + quantity,
                 0.6,
             ),
             Pattern(
@@ -366,6 +406,7 @@ def _build_recognizers() -> list[EntityRecognizer]:
         EmailRecognizer(),
         phone,
         account,
+        account_grouped,
         imei,
         iccid,
         credit_card,

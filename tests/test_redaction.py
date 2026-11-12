@@ -138,6 +138,57 @@ def test_iccid_wins_over_card_for_a_number_starting_89(redactor: Redactor) -> No
     assert _types(redactor.redact("89012602221123456789")) == ["ICCID"]
 
 
+# --- regression cases from the challenge set (eval/data/redaction_challenge.txt) ------
+
+
+@pytest.mark.parametrize(
+    ("text", "entity_type", "secret"),
+    [
+        ("SIM card number 8901 4103 2111 1851 0720", "ICCID", "8901 4103 2111 1851 0720"),
+        ("The bill says 6617 20984 on it.", "ACCOUNT_NUMBER", "6617 20984"),
+        ("The number on my statement is 3340981127.", "ACCOUNT_NUMBER", "3340981127"),
+        ("We moved to PO Box 4417, Flagstaff, AZ 86002 last spring.", "ADDRESS",
+         "PO Box 4417, Flagstaff, AZ 86002"),
+        ("Mailing address is Rural Route 3 Box 88, Ottumwa, IA 52501.", "ADDRESS",
+         "Rural Route 3 Box 88, Ottumwa, IA 52501"),
+        ("Ship it to 1450 N 44th St Unit 12, Phoenix, AZ 85008.", "ADDRESS",
+         "1450 N 44th St Unit 12, Phoenix, AZ 85008"),
+        ("Am I speaking with Mr. Okafor today?", "PERSON", "Mr. Okafor"),
+        ("You went over by 2 gigs last cycle.", "CPNI_USAGE", "2 gigs"),
+    ],
+)  # fmt: skip
+def test_challenge_regressions(
+    redactor: Redactor, text: str, entity_type: str, secret: str
+) -> None:
+    result = redactor.redact(text)
+
+    assert _types(result) == [entity_type]
+    assert secret not in result.text
+
+
+def test_three_three_four_grouping_is_still_a_phone_number(redactor: Redactor) -> None:
+    assert _types(redactor.redact("Best number is 503 555 0147.")) == ["PHONE_NUMBER"]
+
+
+def test_full_social_security_number_is_masked(redactor: Redactor) -> None:
+    # There is no dedicated entity type for a full SSN; what matters is that it is gone.
+    assert "123-45-6789" not in redactor.redact("It is 123-45-6789.").text
+
+
+@pytest.mark.xfail(strict=True, reason="known limit: digits spoken as words are not detected")
+def test_phone_number_spoken_as_words(redactor: Redactor) -> None:
+    text = "You can reach me on four eight zero, five five five, zero one three two."
+
+    assert "PHONE_NUMBER" in _types(redactor.redact(text))
+
+
+@pytest.mark.xfail(strict=True, reason="known limit: an email spelled out loud is not detected")
+def test_email_spelled_out_loud(redactor: Redactor) -> None:
+    text = "It's earl dot whitfield at example dot com."
+
+    assert "EMAIL_ADDRESS" in _types(redactor.redact(text))
+
+
 # --- conversations ------------------------------------------------------------------
 
 
