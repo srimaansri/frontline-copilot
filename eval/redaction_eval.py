@@ -273,7 +273,8 @@ def provenance(data_files: Sequence[Path], spacy_model: str) -> dict[str, Any]:
     return {
         "run_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "git_sha": _git("rev-parse", "HEAD"),
-        "git_dirty": bool(_git("status", "--porcelain")),
+        # Saved reports themselves do not make the code "dirty".
+        "git_dirty": bool(_git("status", "--porcelain", "--", ".", ":(exclude)eval/results")),
         "data_files": {path.as_posix(): _sha256(path) for path in data_files},
         "spacy_model": spacy_model,
         "versions": {
