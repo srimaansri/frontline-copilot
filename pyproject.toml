@@ -15,7 +15,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Local data generation (data_gen/).
+data = [
+    "faker==40.54.0",
+]
 dev = [
+    "frontline-copilot[data]",
     "mypy==2.4.1",
     "pytest==9.2.0",
     "pytest-cov==7.1.0",
@@ -49,11 +54,16 @@ select = [
     "RUF",
 ]
 
+[tool.ruff.lint.isort]
+known-first-party = ["copilot", "data_gen", "eval"]
+
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101", "D"]
+# Seeded `random` is the point of the generators; it is not used for security.
+"data_gen/**" = ["S311"]
 
 # --- mypy -------------------------------------------------------------------
 [tool.mypy]
@@ -67,6 +77,8 @@ plugins = ["pydantic.mypy"]
 # --- pytest and coverage ----------------------------------------------------
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Lets tests import the top-level `data_gen` and `eval` packages.
+pythonpath = ["."]
 addopts = ["-ra", "--strict-markers", "--strict-config"]
 
 [tool.coverage.run]
