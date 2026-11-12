@@ -46,3 +46,37 @@ Dated notes on how this repo was built: what was asked of the AI tools, what the
 ### Not yet verified
 
 These depend on what Free Edition allows and are checked during workspace setup (PLAN.md §3): creating a personal access token, creating a catalog, which chat models are listed and whether the chosen one makes tool calls, and whether spaCy and `tiktoken` downloads work from a serverless notebook.
+
+---
+
+## 2026-11-11 — M0: scaffold
+
+**Tool:** Claude Code.
+
+**Asked:** apply the approved plan changes, then build Milestone 0, committing in small steps.
+
+**What it built**
+
+- `pyproject.toml`: hatchling build, pinned dependencies, ruff, `mypy --strict` with the pydantic plugin, pytest, and a coverage floor of 80%.
+- `src/copilot/config.py`: a frozen `pydantic-settings` class. Sources in order: environment, `.env`, `config/settings.yaml`, defaults.
+- `tests/test_config.py`: 17 tests covering source precedence, validation, and loading with no credentials present.
+- `.github/workflows/ci.yml`: lint, format check, type check and tests on Python 3.11 and 3.12.
+- `setup/00_setup.sql`, `.env.example`, `.gitignore`, `.gitattributes`, a README stub and an empty `data_gen/seed_urls.txt`.
+
+**Local result:** `ruff check`, `ruff format --check`, `mypy src/` and `pytest --cov=src/copilot` all pass on Python 3.12.10 (Windows). 17 tests, 100% line and branch coverage of `src/copilot`. Python 3.11 is covered by CI only; it is not installed on the laptop.
+
+**Decisions**
+
+- **No token in settings.** `Settings` has no credential field and ignores `DATABRICKS_TOKEN` if it finds one in `.env`. A test asserts the token never appears on the object.
+- **Defaults are the experiment baseline.** `chunk_config: A` and `query_type: ann` until real eval runs pick a winner. `min_retrieval_score` is 0 (off) because no real scores exist yet to set it from.
+- **`ruff` rule set includes bandit (`S`).** `S608` flags string-built SQL, which backs the "parameterized SQL only" rule with a lint check.
+- **Setup SQL uses a literal catalog name.** The `IDENTIFIER(:param)` clause is documented for tables, views and functions but not for `CREATE CATALOG`, `CREATE SCHEMA` or `CREATE VOLUME` ([docs](https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-names-identifier-clause)), so the file says to find-and-replace the name instead.
+- **Exact version pins**, as the plan asks. This may need loosening at M2 if an exact `pydantic` pin conflicts with what serverless preinstalls.
+- **`venv` + `pip`**, because `uv` is not installed on the laptop. `uv sync` still works from the same `pyproject.toml`.
+- **GitHub Actions at `@v6`** for `checkout` and `setup-python`. A `v7` shows up on mirrors but I could not confirm it on github.com.
+
+**For me to review**
+
+- The 2026-11-11 plan-review entry above was drafted by Claude Code in my voice. Edit anything that does not match how I would put it.
+- The repo has no licence file yet. That choice is mine.
+- The Copilot entry for the chunking unit tests (M2/M3) is mine to write.
