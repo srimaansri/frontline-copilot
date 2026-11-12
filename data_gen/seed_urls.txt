@@ -1,0 +1,3 @@
+# One public help or FAQ article URL per line. Lines starting with # are ignored.
+# The scraper checks robots.txt, waits 2 seconds between requests and stops at 150 pages.
+# If this file has no URLs when Milestone 1 starts, the synthetic knowledge base is used instead.
