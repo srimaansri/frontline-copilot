@@ -20,6 +20,8 @@ dependencies = [
 # Local data generation (data_gen/).
 data = [
     "faker==40.54.0",
+    "httpx==0.28.1",
+    "trafilatura==2.3.1",
 ]
 # The spaCy pipeline the redactor uses by default. Models are not on PyPI.
 models = [
