@@ -1,5 +1,7 @@
 # Frontline Copilot
 
+[![CI](https://github.com/srimaansri/frontline-copilot/actions/workflows/ci.yml/badge.svg)](https://github.com/srimaansri/frontline-copilot/actions/workflows/ci.yml)
+
 > Unofficial demo. Not affiliated with or endorsed by any carrier. No real customer data.
 
 An AI copilot for frontline support agents at a wireless carrier, built end to end on **Databricks Free Edition**. An agent asks a question in plain words and gets a short, plain-language answer with cited help articles, a plan lookup grounded in SQL, a summary of a redacted call transcript, or a hand-off to a human when the request needs real account access.

@@ -65,6 +65,8 @@ These depend on what Free Edition allows and are checked during workspace setup 
 
 **Local result:** `ruff check`, `ruff format --check`, `mypy src/` and `pytest --cov=src/copilot` all pass on Python 3.12.10 (Windows). 17 tests, 100% line and branch coverage of `src/copilot`. Python 3.11 is covered by CI only; it is not installed on the laptop.
 
+**CI result:** the scaffold (commit `821f910`) passes every step on Python 3.11 and 3.12 in [GitHub Actions](https://github.com/srimaansri/frontline-copilot/actions/workflows/ci.yml). This closes M0.
+
 **Decisions**
 
 - **No token in settings.** `Settings` has no credential field and ignores `DATABRICKS_TOKEN` if it finds one in `.env`. A test asserts the token never appears on the object.
