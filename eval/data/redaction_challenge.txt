@@ -1,0 +1,85 @@
+# Redaction challenge set.
+#
+# Hand-written lines in phrasings that do NOT come from data_gen/transcript_templates.py.
+# Written before the redactor was run on them, scored as-is, and never used for tuning.
+# All names, numbers and addresses are invented. Card numbers are public test numbers.
+#
+# Format: one conversation per line. " || " separates turns. A labeled value is
+# written [[ENTITY_TYPE|text]]. Lines with no markup are negatives: nothing in
+# them should be redacted.
+
+# --- PERSON
+Yeah hi, [[PERSON|Dolores Whitfield]] here, calling about my bill.
+The account is under my late husband, [[PERSON|Earl Whitfield]].
+can you look up [[PERSON|marge simmons]] for me
+Am I speaking with [[PERSON|Mr. Okafor]] today?
+My daughter [[PERSON|Priya]] set it up for me.
+Is this still [[PERSON|Thanh Nguyen]]'s phone?
+
+# --- PHONE_NUMBER
+Best number is [[PHONE_NUMBER|503 555 0147]].
+You can reach me on [[PHONE_NUMBER|four eight zero, five five five, zero one three two]].
+My cell is [[PHONE_NUMBER|1-615-555-0188]] and the house phone is [[PHONE_NUMBER|615-555-0102]].
+Text me at [[PHONE_NUMBER|(702)555-0119]] after five.
+it's [[PHONE_NUMBER|9195550163]]
+
+# --- EMAIL_ADDRESS
+Email is [[EMAIL_ADDRESS|dwhitfield52@example.com]].
+It's [[EMAIL_ADDRESS|earl dot whitfield at example dot com]].
+Send the receipt to [[EMAIL_ADDRESS|Marge.Simmons+phone@example.org]] thanks
+
+# --- ADDRESS
+I'm at [[ADDRESS|218 West Juniper Lane, Bend, OR 97701]].
+We moved to [[ADDRESS|PO Box 4417, Flagstaff, AZ 86002]] last spring.
+The house is [[ADDRESS|9 Quail Run]], out past the feed store.
+Ship it to [[ADDRESS|1450 N 44th St Unit 12, Phoenix, AZ 85008]].
+Mailing address is [[ADDRESS|Rural Route 3 Box 88, Ottumwa, IA 52501]].
+
+# --- DATE_OF_BIRTH
+Birthday's [[DATE_OF_BIRTH|7/4/48]].
+I was born [[DATE_OF_BIRTH|the fourteenth of March, nineteen fifty-two]].
+Date of birth [[DATE_OF_BIRTH|1949-11-02]].
+DOB: [[DATE_OF_BIRTH|Nov 2 1949]]
+What's your date of birth? || [[DATE_OF_BIRTH|12-25-1941]]
+
+# --- ACCOUNT_NUMBER
+My account, let me find it... [[ACCOUNT_NUMBER|6617 20984]], that's what the bill says.
+Acct # [[ACCOUNT_NUMBER|771203945]]
+The number on my statement is [[ACCOUNT_NUMBER|3340981127]].
+
+# --- IMEI
+IMEI [[IMEI|356938035643809]]
+The box says [[IMEI|35-693803-564380-9]].
+the serial thing is [[IMEI|356938035643808]] i think
+
+# --- ICCID
+SIM card number [[ICCID|8901 4103 2111 1851 0720]]
+It reads [[ICCID|89014103211118510720]].
+
+# --- SSN_LAST4
+Last four of the social? || [[SSN_LAST4|0412]]
+My social ends in [[SSN_LAST4|7731]].
+And the last four of your Social? || The last 4 are [[SSN_LAST4|9020]], dear.
+
+# --- CREDIT_CARD
+Card number is [[CREDIT_CARD|5555 5555 5555 4444]], expires next year.
+Use my Amex, [[CREDIT_CARD|3782 822463 10005]].
+it's [[CREDIT_CARD|4012888888881881]]
+
+# --- CPNI_AMOUNT
+Your balance is [[CPNI_AMOUNT|$212.40]], due on the 9th.
+I got charged [[CPNI_AMOUNT|eighty-four dollars]] last month!
+Why did my bill go up to [[CPNI_AMOUNT|$97]]?
+
+# --- CPNI_USAGE
+You went over by [[CPNI_USAGE|2 gigs]] last cycle.
+Looks like [[CPNI_USAGE|1,140 minutes]] of talk time in October.
+I only made like [[CPNI_USAGE|20 calls]] all month.
+
+# --- negatives
+The Unlimited Premium plan is $65 a month with 30 GB of hotspot.
+Our store on Main Street opens at 9 on Saturdays.
+Call us back at 611 from your Northline phone.
+Your order should arrive in 3 to 5 business days.
+The Galaxy A15 has a 6.5 inch screen and 128 GB of storage.
+Press 2 for billing or 3 for technical support.
