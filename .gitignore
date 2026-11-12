@@ -1,0 +1,42 @@
+# Secrets and local-only notes
+.env
+.env.*
+!.env.example
+*.local.md
+.databrickscfg
+
+# Data that must not be committed: scraped KB text (third-party copyright)
+# and generated files that are rebuilt from a seed.
+data/raw/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# Tool caches
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# MLflow and Databricks local state
+mlruns/
+mlartifacts/
+.databricks/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Claude Code per-user settings
+.claude/settings.local.json
