@@ -1,0 +1,164 @@
+{
+  "run_at": "2026-11-12T06:59:02Z",
+  "git_sha": "b0a26de51aa761f886c6841185b4286c3b5a223f",
+  "git_dirty": false,
+  "data_files": {
+    "data/raw/transcripts.jsonl": "dd044ca9847155f8eec593ec75f74aab42ecc65a8cd326f50ec7c3fcc7306aa9",
+    "data/raw/pii_labels.jsonl": "3244167250109ef23944dcdb49ce8103f76dc428e72b0d8886a06abb058bee20"
+  },
+  "spacy_model": "en_core_web_md",
+  "versions": {
+    "presidio-analyzer": "2.2.366",
+    "spacy": "3.8.18",
+    "en_core_web_md": "3.8.0",
+    "faker": "40.54.0"
+  },
+  "transcripts": 30,
+  "turns": 550,
+  "labels": 221,
+  "min_overlap_iou": 0.5,
+  "per_entity": {
+    "PERSON": {
+      "support": 93,
+      "tp": 93,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "PHONE_NUMBER": {
+      "support": 32,
+      "tp": 32,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "EMAIL_ADDRESS": {
+      "support": 26,
+      "tp": 26,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "ADDRESS": {
+      "support": 13,
+      "tp": 13,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "DATE_OF_BIRTH": {
+      "support": 12,
+      "tp": 12,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "ACCOUNT_NUMBER": {
+      "support": 10,
+      "tp": 10,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "IMEI": {
+      "support": 3,
+      "tp": 3,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "ICCID": {
+      "support": 3,
+      "tp": 3,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "SSN_LAST4": {
+      "support": 15,
+      "tp": 15,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "CREDIT_CARD": {
+      "support": 2,
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "CPNI_AMOUNT": {
+      "support": 7,
+      "tp": 7,
+      "fp": 1,
+      "fn": 0,
+      "precision": 0.875,
+      "recall": 1.0,
+      "f1": 0.9333333333333333
+    },
+    "CPNI_USAGE": {
+      "support": 5,
+      "tp": 5,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    }
+  },
+  "overall_pii": {
+    "support": 209,
+    "tp": 209,
+    "fp": 0,
+    "fn": 0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0
+  },
+  "overall_cpni": {
+    "support": 12,
+    "tp": 12,
+    "fp": 1,
+    "fn": 0,
+    "precision": 0.9230769230769231,
+    "recall": 1.0,
+    "f1": 0.9600000000000001
+  },
+  "masked_recall_any_type": {
+    "pii": 1.0,
+    "cpni": 1.0
+  },
+  "char_coverage": {
+    "pii": {
+      "covered": 2618,
+      "total": 2622,
+      "rate": 0.9984744469870328
+    },
+    "cpni": {
+      "covered": 94,
+      "total": 94,
+      "rate": 1.0
+    }
+  }
+}
