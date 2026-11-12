@@ -1,0 +1,36 @@
+# Non-secret defaults for Frontline Copilot.
+# Precedence, highest first: environment variables, .env, this file, code defaults.
+# Field meanings and validation live in src/copilot/config.py.
+
+catalog: frontline
+
+# Model serving endpoints (Databricks Foundation Model APIs).
+llm_endpoint: databricks-gpt-oss-120b
+# The judge must be a different model family from the copilot (PLAN.md §9.2).
+judge_endpoint: databricks-meta-llama-3-3-70b-instruct
+# gte-large-en has an 8,192-token window. bge-large-en (512) would truncate config A.
+embedding_endpoint: databricks-gte-large-en
+llm_temperature: 0.1
+llm_max_tokens: 700
+
+# Retrieval. `chunk_config` and `query_type` start at the experiment baseline
+# (PLAN.md §9.4) and are updated once real eval runs pick a winner.
+vs_endpoint: frontline-vs
+top_k: 5
+query_type: ann
+chunk_config: A
+# 0 disables the weak-retrieval check. Set from observed scores after the first
+# real run; ANN and hybrid scores are on different scales.
+min_retrieval_score: 0.0
+
+chunking:
+  A:
+    chunk_size_tokens: 800
+    overlap_tokens: 100
+  B:
+    chunk_size_tokens: 350
+    overlap_tokens: 60
+
+# Behaviour.
+reading_grade_target: 8.0
+max_tool_iterations: 4
