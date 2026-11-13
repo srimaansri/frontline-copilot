@@ -147,7 +147,8 @@ frontline-copilot/
 ├── data_gen/
 │   ├── seed_urls.txt
 │   ├── scrape_kb.py
-│   ├── synth_kb.py              # fallback KB generator
+│   ├── kb_topics.py             # 87 topics with fact briefs for the synthetic KB
+│   ├── synth_kb.py              # synthetic KB generator (the KB in use)
 │   ├── synth_transcripts.py
 │   ├── plans.py
 │   └── upload.py                # pushes local files to the UC volume via Databricks SDK
@@ -215,6 +216,12 @@ frontline-copilot/
 - `section` is assigned by simple keyword rules (no LLM).
 - **Scraped text is not committed.** The articles are the carrier's copyright, so `data/raw/` is in `.gitignore`. The repo carries only `seed_urls.txt` and the scraper; DATA_CARD.md says how to rebuild the KB.
 - **Fallback** if `seed_urls.txt` is empty when M1 starts, scraping is blocked, or it yields < 40 articles: `data_gen/synth_kb.py` generates ~80 realistic help articles with the LLM across the same sections, marked `"synthetic": true`. An LLM is not deterministic, so the generated file is committed at `data/synthetic/kb_articles.jsonl` and treated as the source; the script is re-run only on purpose. README must say which KB was used.
+- **Decision (2026-11-13): the synthetic KB is used.** `seed_urls.txt` was empty when M1 started. How it works:
+  - `data_gen/kb_topics.py` lists 87 topics. Each has a brief with the facts its article must state, written by hand so that prices and policies agree with `plans.csv` and with each other.
+  - `data_gen/synth_kb.py` sends each brief, the carrier facts and the plan list to `LLM_ENDPOINT`. A reply is rejected and retried (up to 3 times) if it is too short or long, has fewer than two sections, lacks a support contact, contains bracketed placeholders or non-ASCII characters, or quotes a dollar amount that is in neither its brief nor the catalogue.
+  - Article URLs are fictional: `https://help.northline.example/articles/<slug>`.
+  - `data/synthetic/kb_meta.json` records the model, prompt version and date.
+  - Limit: the price check covers dollar amounts only. The model can still add a small detail that no brief contains (one article calls a transfer PIN "six-digit"). Eval `expected_facts` are therefore taken from the briefs, not from the generated prose.
 - README and app footer: "Unofficial demo. Not affiliated with or endorsed by any carrier. No real customer data."
 
 ### 5.2 Transcripts — `data_gen/synth_transcripts.py`

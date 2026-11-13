@@ -13,7 +13,7 @@ This repo is being built milestone by milestone. Every number here comes from a 
 | Milestone | What | State |
 |---|---|---|
 | M0 | Scaffold: tooling, config loader, CI | Done |
-| M1 | Data generation and PII redaction, measured locally | Done except the knowledge base, which waits on source URLs or a model endpoint |
+| M1 | Data generation and PII redaction, measured locally | Done |
 | M2 | Databricks pipelines: bronze, silver, gold, quality checks | |
 | M3 | Retrieval-augmented answers and the first evaluation | |
 | M4 | Agent with tools, guardrails, escalation | |
@@ -21,6 +21,14 @@ This repo is being built milestone by milestone. Every number here comes from a 
 | M6 | Results, model and data cards, responsible-AI notes | |
 
 The full specification is in [PLAN.md](PLAN.md).
+
+## The data is synthetic
+
+Nothing here comes from a real carrier or a real customer.
+
+- **Knowledge base:** 87 help articles for a fictional carrier, "Northline Wireless", in [data/synthetic](data/synthetic). An open-weight model (`databricks-gpt-oss-120b`) wrote the prose on 2026-11-13. Every price, fee and policy comes from hand-written briefs in [data_gen/kb_topics.py](data_gen/kb_topics.py) and the plan catalogue, and an article is rejected if it quotes a dollar amount found in neither. The scraper in `data_gen/scrape_kb.py` exists but was not used.
+- **Transcripts:** 200 support conversations assembled from templates by code, with no language model, so the position of every piece of personal data is known exactly.
+- **Plans:** 8 invented plans and 10 add-ons and fees.
 
 ## Redaction results so far
 

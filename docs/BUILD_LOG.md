@@ -182,3 +182,37 @@ The plan's target was PII recall of at least 0.95. The test set meets it and the
 
 - Whether a serverless notebook can download the spaCy model and the `tiktoken` encoding. This is tested in the first M2 notebook run.
 - Whether Free Edition allows personal access tokens. Only `eval.yml` in GitHub Actions would need one.
+
+---
+
+## 2026-11-13 — M1 closed: synthetic knowledge base
+
+**Tool:** Claude Code, with `databricks-gpt-oss-120b` in my workspace writing the article text.
+
+**Asked:** which knowledge base source it recommended. It recommended synthetic, which also matched the rule I had set (use synthetic if `seed_urls.txt` is empty when M1 starts), and went ahead.
+
+**What it built**
+
+- `data_gen/kb_topics.py`: 87 topics across six sections, each with a hand-written brief of the facts the article must state.
+- `data_gen/synth_kb.py`: sends each brief to the model, validates the reply, retries up to three times, and resumes from a partly written file.
+- `data/synthetic/kb_articles.jsonl`: the 87 generated articles, committed. 229 to 407 words each, median 293.
+
+**Result:** 87 of 87 articles were written and all pass the checks. No article failed after retries. The run took about seven minutes with four requests at a time.
+
+**Decisions**
+
+- The model writes prose only. Prices, fees, time limits and phone numbers come from the briefs and the plan catalogue. A test checks that every dollar amount in a brief exists in the catalogue.
+- An article that quotes a dollar amount found in neither its brief nor the catalogue is rejected. This check was added while the first full run was in progress, then applied to the finished articles; none failed it.
+- Typographic punctuation is mapped to ASCII. The trial run showed the model writing the support number with non-breaking hyphens, which a keyword search for the number would not match.
+- Article URLs use the reserved `.example` domain so they cannot point at a real site.
+
+**Known limit**
+
+- The price check covers dollar amounts only. Reading two articles by hand, I found one detail no brief contains: the transfer article calls the PIN "six-digit". Details like this are harmless for grounding, because the copilot cites the article either way, but eval `expected_facts` must come from the briefs and not from the generated prose.
+
+**Mistakes on the way**
+
+- Claude Code said "88 topics" in two messages and a commit message. The list has 87. The commit message was corrected before pushing.
+- Two of its scripted file edits corrupted escape sequences and broke two files. It repaired them by hand and the checks passed before anything was committed.
+
+**M1 acceptance** (PLAN.md §12): at least 40 articles (87), 200 transcripts with 30 labeled, `plans.csv`, `redaction.py` with tests passing, and a local redaction evaluation that prints precision, recall and F1. All met.

@@ -29,7 +29,9 @@ Portfolio demo: an AI copilot for wireless-carrier frontline support agents, on 
 - Format check: `ruff format --check .`
 - Types: `mypy src/`
 - Tests: `pytest --cov=src/copilot`
-- Data gen: `python -m data_gen.synth_transcripts --seed 42`, `python -m data_gen.scrape_kb`, `python -m data_gen.plans`
+- Data gen: `python -m data_gen.synth_transcripts --seed 42`, `python -m data_gen.plans`
+- Knowledge base: `data/synthetic/kb_articles.jsonl` is committed and is the source. `python -m data_gen.synth_kb` only writes articles that are missing; `--force` rewrites all of them and should be a deliberate act. `python -m data_gen.scrape_kb` exists but is not used.
+- Databricks CLI: signed in as profile `frontline`. Pass `--profile frontline` on every CLI command.
 - Upload: `python -m data_gen.upload`
 - Dev set for tuning the redactor: `python -m data_gen.synth_transcripts --seed 7 --out-dir data/raw/dev --labeled 200`
 - Redaction eval: `python -m eval.redaction_eval` (test set), `--data-dir data/raw/dev --show-errors` (dev set), `--challenge` (hand-written set). Add `--save --tag <name>` to record a result; it needs a clean working tree.
