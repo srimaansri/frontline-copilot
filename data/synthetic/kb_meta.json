@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-11-13T23:51:06Z",
+  "model_endpoint": "databricks-gpt-oss-120b",
+  "prompt_version": "kb-v1",
+  "articles": 87,
+  "topics_requested": 87,
+  "failed_slugs": [],
+  "words_min_median_max": [
+    229,
+    293,
+    407
+  ],
+  "databricks_sdk": "0.166.0"
+}
