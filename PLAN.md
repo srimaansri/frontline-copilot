@@ -98,11 +98,12 @@ A frontline support agent at a wireless carrier, talking to an older customer on
 7. Create MLflow experiment `/Users/<me>/frontline-copilot`.
 8. Note the serverless SQL warehouse ID (used by `get_plan_details` from the app/MCP server). Free Edition has one warehouse, 2X-Small.
 
-**Checks to run during setup** (the docs do not settle these for Free Edition):
-- Can a personal access token be created?
-- Does `CREATE CATALOG frontline` work, or must the default catalog be used?
-- Is the chosen chat model listed, and does it make tool calls reliably?
-- In a serverless notebook, do `%pip install presidio-analyzer spacy`, a spaCy model download, and `tiktoken.get_encoding("cl100k_base")` succeed? Serverless outbound access is limited to an unpublished list of trusted domains, and the last two fetch files from GitHub and an Azure blob host. See §14 for the fallbacks.
+**Checks run during setup** (the docs do not settle these for Free Edition). Results from 2026-11-13:
+- *Sign-in:* `databricks auth login --host <url> --profile frontline` (OAuth in the browser) works, so no personal access token is used locally. Whether a token can be created is untested and only matters for `eval.yml`.
+- *Catalog:* `CREATE CATALOG frontline` works on Free Edition. The default-catalog fallback is not needed.
+- *Models:* `databricks-gpt-oss-120b`, `databricks-meta-llama-3-3-70b-instruct` and `databricks-gte-large-en` are all listed and READY. Other open-weight chat models listed: `gpt-oss-20b`, `llama-4-maverick`, `meta-llama-3-1-8b-instruct`, `gemma-3-12b`, `qwen35-122b-a10b`, `qwen3-next-80b-a3b-instruct`.
+- *Tool calling:* one request to `databricks-gpt-oss-120b` with a single tool returned `finish_reason: tool_calls` and correct arguments. One request shows the feature works; it does not show reliability.
+- *Still to check, in the first M2 notebook run:* in a serverless notebook, do `%pip install presidio-analyzer spacy`, a spaCy model download, and `tiktoken.get_encoding("cl100k_base")` succeed? Serverless outbound access is limited to an unpublished list of trusted domains, and the last two fetch files from GitHub and an Azure blob host. See §14 for the fallbacks.
 
 **Free Edition limits that shape this plan:** exceeding the daily quota shuts compute off for the rest of the day; apps stop 24 hours after each start or deploy; no Direct Vector Access indexes; 5 concurrent job tasks.
 

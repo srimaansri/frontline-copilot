@@ -150,3 +150,35 @@ The plan's target was PII recall of at least 0.95. The test set meets it and the
 - Whether the "Late Payment Fee of $5" case should count as CPNI.
 - The templates in `data_gen/transcript_templates.py`: they set the tone of every transcript.
 - This entry, like the earlier ones, was drafted by Claude Code in my voice.
+
+---
+
+## 2026-11-13 — Databricks workspace setup
+
+**Tool:** Claude Code, with the Databricks CLI.
+
+**Asked:** help me get from a fresh Free Edition sign-up to a workspace the pipelines can use.
+
+**What was done**
+
+- I signed up for Free Edition and signed in with `databricks auth login` (OAuth in the browser) under a CLI profile named `frontline`. No access token is stored anywhere.
+- Claude Code then created, through the CLI: the `frontline` catalog; the schemas `raw`, `bronze`, `silver`, `gold` and `ops`; the volume `frontline.raw.landing`; the AI Search endpoint `frontline-vs` (Standard); and the MLflow experiment. The SQL is the same as `setup/00_setup.sql`.
+- It looked up the SQL warehouse ID and the available models instead of having me find them in the UI.
+
+**What the checks showed** (PLAN.md §3 is updated to match)
+
+- `CREATE CATALOG` is allowed on Free Edition, so the plan's fallback to the default catalog was not needed.
+- All three planned models are available: `databricks-gpt-oss-120b` for the copilot, `databricks-meta-llama-3-3-70b-instruct` as the judge, `databricks-gte-large-en` for embeddings.
+- One test request to `gpt-oss-120b` with a tool attached came back as a tool call with correct arguments. That is one request, so it shows the feature works and nothing about how often.
+- The AI Search endpoint reported ONLINE as soon as it was created.
+
+**Things that went wrong on the way**
+
+- `winget` was not on the PATH of the shells Claude Code uses, and its first install attempt hung on a yes/no prompt that a hidden shell cannot answer. It worked through winget's full path with the accept flags.
+- The CLI's sign-in opened Outlook instead of a browser, because Windows has Outlook set as the handler for web links on this machine. Setting `BROWSER=none` makes the CLI print the link, which was then opened in Chrome.
+- My workspace home folder did not exist yet, so creating the MLflow experiment failed with "Parent directory does not exist". Creating the folder first fixed it.
+
+**Not checked yet**
+
+- Whether a serverless notebook can download the spaCy model and the `tiktoken` encoding. This is tested in the first M2 notebook run.
+- Whether Free Edition allows personal access tokens. Only `eval.yml` in GitHub Actions would need one.
