@@ -19,8 +19,10 @@ dependencies = [
 [project.optional-dependencies]
 # Local data generation (data_gen/).
 data = [
+    "databricks-sdk==0.166.0",
     "faker==40.54.0",
     "httpx==0.28.1",
+    "python-dotenv==1.2.4",
     "trafilatura==2.3.1",
 ]
 # The spaCy pipeline the redactor uses by default. Models are not on PyPI.
