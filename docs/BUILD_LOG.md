@@ -197,7 +197,7 @@ The plan's target was PII recall of at least 0.95. The test set meets it and the
 - `data_gen/synth_kb.py`: sends each brief to the model, validates the reply, retries up to three times, and resumes from a partly written file.
 - `data/synthetic/kb_articles.jsonl`: the 87 generated articles, committed. 229 to 407 words each, median 293.
 
-**Result:** 87 of 87 articles were written and all pass the checks. No article failed after retries. The run took about seven minutes with four requests at a time.
+**Result:** 87 of 87 articles were written and all pass the checks. No article failed after retries. The run used four requests at a time and finished in under ten minutes; it was not timed more precisely than that.
 
 **Decisions**
 
