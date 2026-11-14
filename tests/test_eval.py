@@ -5,6 +5,7 @@ from collections import Counter
 from typing import Any
 
 import pytest
+from mlflow.entities import Feedback
 
 from data_gen.kb_topics import TOPICS
 from data_gen.plans import PLANS
@@ -36,6 +37,7 @@ from eval.scorers import (
     retrieved_uris,
     root_output,
     source_rank,
+    when_expected,
 )
 
 BASE = "https://help.northline.example/articles"
@@ -299,11 +301,48 @@ def test_judges_use_the_judge_endpoint_and_leave_out_ragas_faithfulness() -> Non
 
     assert len(DETERMINISTIC_SCORERS) == 4
     assert {"retrieval_groundedness", "correctness", "relevance_to_query", "safety"} <= names
+    assert "expectations_guidelines" in names
     assert any("ContextPrecision" in type(judge).__name__ for judge in judges)
     assert not any("Faithfulness" in type(judge).__name__ for judge in judges)
     assert all(getattr(judge, "model", "databricks:/my-judge") == "databricks:/my-judge"
                for judge in judges)  # fmt: skip
     assert len(llm_judges("my-judge", include_ragas=False)) == len(judges) - 1
+
+
+class RecordingJudge:
+    """Stands in for a model-backed judge and records what it was asked."""
+
+    name = "fake_judge"
+
+    def __init__(self) -> None:
+        self.calls: list[dict[str, Any]] = []
+
+    def __call__(self, **kwargs: Any) -> Feedback:
+        self.calls.append(kwargs)
+        return Feedback(name=self.name, value="yes")
+
+
+def test_a_judge_runs_only_on_rows_that_have_what_it_grades() -> None:
+    judge = RecordingJudge()
+    wrapped = when_expected(judge, "guidelines")  # type: ignore[arg-type]
+    rules = {"guidelines": ["The response must not contain a poem"]}
+
+    skipped = wrapped(inputs={"question": "Q"}, outputs="A", expectations={"expected_facts": ["x"]})
+    graded = wrapped(inputs={"question": "Q"}, outputs="A", expectations=rules)
+
+    assert wrapped.name == "fake_judge"
+    assert skipped is None
+    assert graded.value == "yes"
+    assert judge.calls == [{"inputs": {"question": "Q"}, "outputs": "A", "expectations": rules}]
+
+
+def test_a_judge_is_skipped_when_the_expectation_is_empty() -> None:
+    judge = RecordingJudge()
+    wrapped = when_expected(judge, "expected_facts", "expected_response")  # type: ignore[arg-type]
+
+    assert wrapped(inputs={}, outputs="A", expectations={"expected_facts": []}) is None
+    assert wrapped(inputs={}, outputs="A", expectations={"expected_response": "x"}) is not None
+    assert len(judge.calls) == 1
 
 
 # --- runner bookkeeping ----------------------------------------------------------------------

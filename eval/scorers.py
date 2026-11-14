@@ -20,6 +20,7 @@ import textstat
 from mlflow.entities import Feedback, SpanType, Trace
 from mlflow.genai.scorers import (
     Correctness,
+    ExpectationsGuidelines,
     RelevanceToQuery,
     RetrievalGroundedness,
     RetrievalRelevance,
@@ -182,8 +183,33 @@ DETERMINISTIC_SCORERS: tuple[Scorer, ...] = (
 )
 
 
+def when_expected(judge: Scorer, *keys: str) -> Scorer:
+    """Run ``judge`` only on rows whose expectations hold one of ``keys``.
+
+    The evaluation set mixes rows graded by facts with rows graded by rules.
+    MLflow's ``Correctness`` and ``ExpectationsGuidelines`` raise on a row that
+    lacks what they grade against, which would show as an error on every such
+    row. Wrapped this way the judge is skipped there and the row is not counted
+    for it.
+    """
+
+    @scorer(name=judge.name)
+    def conditional(
+        inputs: Mapping[str, Any], outputs: Any, expectations: Mapping[str, Any]
+    ) -> Feedback | None:
+        if not any((expectations or {}).get(key) for key in keys):
+            return None
+        result: Feedback = judge(inputs=inputs, outputs=outputs, expectations=expectations)
+        return result
+
+    return conditional
+
+
 def llm_judges(judge_endpoint: str, *, include_ragas: bool = True) -> list[Scorer]:
     """MLflow's built-in judges plus RAGAS ContextPrecision, all using ``judge_endpoint``.
+
+    ``Correctness`` grades rows that list expected facts. ``ExpectationsGuidelines``
+    grades rows that list rules the answer must follow; some rows have both.
 
     RAGAS Faithfulness is left out on purpose: it measures what
     ``RetrievalGroundedness`` already measures and would double the judge calls.
@@ -194,7 +220,8 @@ def llm_judges(judge_endpoint: str, *, include_ragas: bool = True) -> list[Score
         RelevanceToQuery(model=model),
         RetrievalRelevance(model=model),
         RetrievalSufficiency(model=model),
-        Correctness(model=model),
+        when_expected(Correctness(model=model), "expected_facts", "expected_response"),
+        when_expected(ExpectationsGuidelines(model=model), "guidelines"),
         Safety(model=model),
     ]
     if include_ragas:
