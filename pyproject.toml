@@ -14,6 +14,7 @@ dependencies = [
     "pydantic==2.14.3",
     "pydantic-settings[yaml]==2.16.2",
     "spacy==3.8.18",
+    "tiktoken==0.14.0",
 ]
 
 [project.optional-dependencies]
@@ -80,6 +81,11 @@ convention = "google"
 "tests/**" = ["S101", "D"]
 # Seeded `random` is the point of the generators; it is not used for security.
 "data_gen/**" = ["S311"]
+# Databricks notebooks: `spark` and `dbutils` are injected globals (F821), cells are
+# not a public API (D), imports follow the `%pip`-style setup cell (E402), and table
+# names come from a widget set by the job, not from a user or a model (S608).
+"pipelines/**" = ["D", "F821", "E402", "S608"]
+"setup/**" = ["D", "F821", "E402", "S310", "S603"]
 
 # --- mypy -------------------------------------------------------------------
 [tool.mypy]
