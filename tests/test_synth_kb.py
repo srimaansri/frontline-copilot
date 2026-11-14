@@ -301,7 +301,8 @@ def test_the_corrections_record_matches_the_metadata() -> None:
         }  # fmt: skip
         assert item["slug"] in slugs
         assert item["severity"] in {"high", "medium", "low"}
-        assert item["quote"] and item["reason"]
+        assert item["quote"]
+        assert item["reason"]
         assert item["replacement"].isascii()
 
 
