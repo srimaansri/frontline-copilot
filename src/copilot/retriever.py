@@ -110,16 +110,22 @@ class Retriever:
         self._settings = settings
         self._query = query
 
-    def search(self, question: str, *, top_k: int | None = None) -> list[KBHit]:
+    def search(
+        self, question: str, *, top_k: int | None = None, section: str | None = None
+    ) -> list[KBHit]:
         """Return the best-matching chunks for ``question``, best first.
 
-        The caller must pass text that is already free of personal data: the
-        question is recorded on the trace.
+        ``section`` limits the search to one knowledge-base section, such as
+        "Billing". The caller must pass text that is already free of personal
+        data: the question is recorded on the trace.
         """
         settings = self._settings
         if self._query is None:
             self._query = sdk_index_query()
         num_results = top_k or settings.top_k
+        filters: dict[str, Any] = {"chunk_config": settings.chunk_config}
+        if section:
+            filters["section"] = section
         with mlflow.start_span(name="search_kb", span_type=SpanType.RETRIEVER) as span:
             span.set_inputs(
                 {
@@ -127,6 +133,7 @@ class Retriever:
                     "top_k": num_results,
                     "query_type": settings.query_type,
                     "chunk_config": settings.chunk_config,
+                    "section": section,
                 }
             )
             names, rows = self._query(
@@ -134,7 +141,7 @@ class Retriever:
                 query_text=question,
                 columns=RETURN_COLUMNS,
                 num_results=num_results,
-                filters={"chunk_config": settings.chunk_config},
+                filters=filters,
                 query_type=settings.query_type,
             )
             hits = [_to_hit(names, row) for row in rows]

@@ -40,3 +40,6 @@ Thumbs.db
 
 # Claude Code per-user settings
 .claude/settings.local.json
+
+# Local MLflow store written by tests when no tracking server is configured
+mlflow.db
