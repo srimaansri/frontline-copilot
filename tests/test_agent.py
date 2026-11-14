@@ -192,6 +192,16 @@ def test_trace_has_a_retriever_span_and_version_tags(redactor: Redactor) -> None
     assert trace.info.tags["query_type"] == "hybrid"
 
 
+def test_caller_tags_are_added_to_the_trace(redactor: Redactor) -> None:
+    _copilot(redactor, FakeModel("It is $5 [1].")).run(
+        "How much is the late fee?", trace_tags={"eval_id": "E002"}
+    )
+
+    tags = _last_trace().info.tags
+    assert tags["eval_id"] == "E002"
+    assert tags["prompt_version"] == PROMPT_VERSION
+
+
 # --- module-level entry point ----------------------------------------------------------------
 
 

@@ -50,13 +50,19 @@ class Copilot:
         self._redactor = redactor
 
     def run(
-        self, question: str, history: Sequence[Mapping[str, str]] | None = None
+        self,
+        question: str,
+        history: Sequence[Mapping[str, str]] | None = None,
+        *,
+        trace_tags: Mapping[str, str] | None = None,
     ) -> CopilotAnswer:
         """Answer one question.
 
         Args:
             question: What the support agent typed. May contain personal data.
             history: Earlier turns as ``{"role": ..., "content": ...}``, oldest first.
+            trace_tags: Extra tags for the trace, such as an evaluation row id.
+                The caller must not put personal data in them.
 
         Returns:
             The answer, its citations and any guardrail flags.
@@ -68,16 +74,21 @@ class Copilot:
             (turn["role"], self._redactor.redact(turn["content"]).text) for turn in history or []
         ]
         # Nothing above this line is traced. Only redacted text goes below it.
-        return self._answer(redacted.text, safe_history, list(redacted.flags))
+        return self._answer(redacted.text, safe_history, list(redacted.flags), trace_tags or {})
 
     def _answer(
-        self, question: str, history: list[tuple[str, str]], flags: list[str]
+        self,
+        question: str,
+        history: list[tuple[str, str]],
+        flags: list[str],
+        trace_tags: Mapping[str, str],
     ) -> CopilotAnswer:
         settings = self.settings
         with mlflow.start_span(name="run_copilot", span_type=SpanType.CHAIN) as root:
             root.set_inputs({"question": question, "history_turns": len(history)})
             mlflow.update_current_trace(
                 tags={
+                    **trace_tags,
                     "prompt_version": PROMPT_VERSION,
                     "chunk_config": settings.chunk_config,
                     "query_type": settings.query_type,
