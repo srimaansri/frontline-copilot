@@ -186,6 +186,19 @@ def rows_by_eval_id(traces: Sequence[Any]) -> dict[str, dict[str, Any]]:
     return best
 
 
+def rows_without_answer(
+    rows: Sequence[Mapping[str, Any]], scored: Mapping[str, Mapping[str, Any]]
+) -> list[str]:
+    """Ids of rows that have no trace, or whose trace holds no answer.
+
+    Such a row has no real scores. The run reports these and stops, so a pass
+    that lost an answer is never saved as if it were complete.
+    """
+    return [
+        row["id"] for row in rows if scored.get(row["id"], {}).get("answer_recorded") is not True
+    ]
+
+
 def scores_from_trace(trace: Any) -> dict[str, Any]:
     """Collect every scorer value attached to a trace, by scorer name."""
     scores: dict[str, Any] = {}
@@ -273,6 +286,7 @@ def main(argv: list[str] | None = None) -> None:
         if row["id"] in scored
     ]
     metrics = aggregate([item["scores"] for item in per_row])
+    unanswered = rows_without_answer(rows, scored)
 
     report: dict[str, Any] = {
         "run_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -290,6 +304,7 @@ def main(argv: list[str] | None = None) -> None:
         "category": args.category or "all",
         "rows": len(rows),
         "rows_scored": len(per_row),
+        "rows_without_answer": unanswered,
         "rows_reviewed": sum(1 for row in rows if row.get("reviewed")),
         "eval_set_sha256": _sha256(EVAL_SET),
         "mlflow_run_id": run.info.run_id,
@@ -307,6 +322,14 @@ def main(argv: list[str] | None = None) -> None:
                 f"  {name:<34} mean {metric['mean']:.2f}  median {metric['median']:.2f}  "
                 f"p90 {metric['p90']:.2f}  (n={metric['scored']})"
             )
+
+    if unanswered:
+        print(
+            f"\nstopped: {len(unanswered)} of {len(rows)} rows have no recorded answer "
+            f"({', '.join(unanswered)}). Nothing was saved. Look at these rows' traces in "
+            f"MLflow run {run.info.run_id}, then run again."
+        )
+        raise SystemExit(1)
 
     if args.save:
         RESULTS_DIR.mkdir(parents=True, exist_ok=True)

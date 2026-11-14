@@ -18,6 +18,7 @@ from eval.run_eval import (
     mean_text,
     rate_text,
     rows_by_eval_id,
+    rows_without_answer,
     scores_from_trace,
     summary_row,
     to_records,
@@ -25,6 +26,7 @@ from eval.run_eval import (
 from eval.scorers import (
     DETERMINISTIC_SCORERS,
     acceptable_sources,
+    answer_recorded,
     best_source_rank,
     citation_valid,
     citations_ok,
@@ -203,9 +205,9 @@ def test_reading_level_scorer_reports_grade_and_verdict() -> None:
 
 
 def test_citation_scorer() -> None:
-    cited = {"citations": [{"url": f"{BASE}/a"}], "guardrail_flags": []}
-    removed = {"citations": [{"url": f"{BASE}/a"}], "guardrail_flags": ["invalid_citation_removed"]}
-    uncited = {"citations": [], "guardrail_flags": ["no_citation"]}
+    cited = {"answer": "A [1].", "citations": [{"url": f"{BASE}/a"}], "guardrail_flags": []}
+    removed = {**cited, "guardrail_flags": ["invalid_citation_removed"]}
+    uncited = {"answer": "A.", "citations": [], "guardrail_flags": ["no_citation"]}
 
     row = {"expected_source": "a"}
 
@@ -216,8 +218,8 @@ def test_citation_scorer() -> None:
 
 def test_citation_is_required_only_where_the_row_names_an_article() -> None:
     """A correct 'the articles do not cover this' has nothing to cite."""
-    uncited = {"citations": [], "guardrail_flags": ["no_citation"]}
-    removed = {"citations": [], "guardrail_flags": ["invalid_citation_removed"]}
+    uncited = {"answer": "A.", "citations": [], "guardrail_flags": ["no_citation"]}
+    removed = {"answer": "A.", "citations": [], "guardrail_flags": ["invalid_citation_removed"]}
     no_source_row = {"guidelines": ["The response must say the articles do not answer this"]}
 
     assert citation_valid(expectations=no_source_row, trace=fake_trace(answer=uncited)).value
@@ -225,6 +227,22 @@ def test_citation_is_required_only_where_the_row_names_an_article() -> None:
     assert not citation_valid(expectations=no_source_row, trace=fake_trace(answer=removed)).value
     assert citations_ok(uncited, citation_required=False) is True
     assert citations_ok(uncited, citation_required=True) is False
+
+
+def test_an_empty_or_missing_answer_cannot_pass() -> None:
+    """Empty text reads as grade zero and has no invalid citation; neither may count as a pass."""
+    no_source_row = {"guidelines": ["The response must decline"]}
+    blank = fake_trace(answer={"answer": "  ", "citations": [], "guardrail_flags": []})
+    missing = fake_trace()
+
+    assert answer_recorded(trace=fake_trace(answer={"answer": "A."})).value is True
+    assert answer_recorded(trace=blank).value is False
+    assert answer_recorded(trace=missing).value is False
+    assert citation_valid(expectations=no_source_row, trace=blank).value is False
+    assert citation_valid(expectations=no_source_row, trace=missing).value is False
+    assert reading_level(outputs="") == []
+    assert reading_level(outputs=None) == []
+    assert reading_level(outputs=" [1] ") == []
 
 
 def test_expected_source_scorer() -> None:
@@ -299,7 +317,7 @@ def test_judges_use_the_judge_endpoint_and_leave_out_ragas_faithfulness() -> Non
     judges = llm_judges("my-judge")
     names = {judge.name for judge in judges}
 
-    assert len(DETERMINISTIC_SCORERS) == 4
+    assert len(DETERMINISTIC_SCORERS) == 5
     assert {"retrieval_groundedness", "correctness", "relevance_to_query", "safety"} <= names
     assert "expectations_guidelines" in names
     assert any("ContextPrecision" in type(judge).__name__ for judge in judges)
@@ -409,6 +427,20 @@ def test_rows_are_matched_by_tag_and_the_fullest_trace_wins() -> None:
     ]  # fmt: skip
 
     assert rows_by_eval_id(traces) == {"E001": {"a": True, "b": "yes"}, "E002": {"a": False}}
+
+
+def test_rows_without_an_answer_are_named() -> None:
+    rows = [{"id": "E001"}, {"id": "E002"}, {"id": "E003"}, {"id": "E004"}]
+    scored = {
+        "E001": {"answer_recorded": True, "correctness": "yes"},
+        "E002": {"answer_recorded": False},
+        # A trace whose answer check itself errored is not known to hold an answer.
+        "E003": {"answer_recorded": None},
+        # E004 has no trace at all.
+    }
+
+    assert rows_without_answer(rows, scored) == ["E002", "E003", "E004"]
+    assert rows_without_answer(rows[:1], scored) == []
 
 
 def test_summary_row_matches_the_header_columns() -> None:

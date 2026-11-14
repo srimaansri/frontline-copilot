@@ -102,8 +102,28 @@ def retrieved_uris(trace: Trace) -> list[str]:
 
 
 @scorer
+def answer_recorded(trace: Trace) -> Feedback:
+    """The trace holds a non-empty answer. The runner stops if any row fails this.
+
+    Without it an answer that was never recorded could pass other checks: empty
+    text has a reading grade of zero, and nothing in it is an invalid citation.
+    """
+    recorded = bool(str(root_output(trace).get("answer") or "").strip())
+    return Feedback(
+        name="answer_recorded",
+        value=recorded,
+        rationale="answer found on the root span" if recorded else "no answer on the root span",
+    )
+
+
+@scorer
 def reading_level(outputs: Any) -> list[Feedback]:
-    """Raw reading grade, and whether it is at or below the target."""
+    """Raw reading grade, and whether it is at or below the target.
+
+    An empty answer gets no reading grade at all, so it cannot pass as easy to read.
+    """
+    if not plain_text_for_reading_level(str(outputs or "")):
+        return []
     grade = reading_grade(str(outputs or ""))
     return [
         Feedback(name="reading_grade", value=round(grade, 2)),
@@ -131,9 +151,10 @@ def citation_valid(expectations: Mapping[str, Any], trace: Trace) -> Feedback:
     """Citations are valid, and present where the row expects an article to be cited."""
     output = root_output(trace)
     required = bool(acceptable_sources(expectations))
+    answered = bool(str(output.get("answer") or "").strip())
     return Feedback(
         name="citation_valid",
-        value=citations_ok(output, citation_required=required),
+        value=answered and citations_ok(output, citation_required=required),
         rationale=(
             f"{len(output.get('citations') or [])} valid citations; "
             f"citation {'required' if required else 'not required'}; "
@@ -176,6 +197,7 @@ def latency_ms(trace: Trace) -> Feedback:
 
 
 DETERMINISTIC_SCORERS: tuple[Scorer, ...] = (
+    answer_recorded,
     reading_level,
     citation_valid,
     expected_source,
