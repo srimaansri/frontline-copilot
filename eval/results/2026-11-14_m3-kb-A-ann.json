@@ -1,0 +1,589 @@
+{
+  "run_at": "2026-11-14T20:09:03Z",
+  "tag": "m3-kb",
+  "git_sha": "04138f975c2115080076ed0772553a35af6ba155",
+  "git_dirty": false,
+  "chunk_config": "A",
+  "chunking": {
+    "chunk_size_tokens": 800,
+    "overlap_tokens": 100
+  },
+  "query_type": "ann",
+  "top_k": 5,
+  "prompt_version": "v1",
+  "llm_endpoint": "databricks-gpt-oss-120b",
+  "judge_endpoint": "databricks-meta-llama-3-3-70b-instruct",
+  "embedding_endpoint": "databricks-gte-large-en",
+  "category": "kb",
+  "rows": 22,
+  "rows_scored": 22,
+  "rows_reviewed": 0,
+  "eval_set_sha256": "32bb33a9df56ca07f8cdefa5acea8d8b9890f77d0228909d4bf9435765ffa2fd",
+  "mlflow_run_id": "3843f83d76b7477c8dcda5e8089138de",
+  "versions": {
+    "mlflow": "3.18.0",
+    "ragas": "0.4.4",
+    "databricks-sdk": "0.166.0"
+  },
+  "metrics": {
+    "ContextPrecision": {
+      "kind": "numeric",
+      "scored": 20,
+      "mean": 0.9337499999486285,
+      "median": 0.9999999999,
+      "p90": 0.9999999999666667
+    },
+    "citation_valid": {
+      "kind": "pass_fail",
+      "passed": 22,
+      "scored": 22,
+      "rate": 1.0
+    },
+    "correctness": {
+      "kind": "pass_fail",
+      "passed": 16,
+      "scored": 22,
+      "rate": 0.7272727272727273
+    },
+    "expected_source_cited": {
+      "kind": "pass_fail",
+      "passed": 22,
+      "scored": 22,
+      "rate": 1.0
+    },
+    "expected_source_reciprocal_rank": {
+      "kind": "numeric",
+      "scored": 22,
+      "mean": 0.9696954545454546,
+      "median": 1.0,
+      "p90": 1.0
+    },
+    "expected_source_retrieved": {
+      "kind": "pass_fail",
+      "passed": 22,
+      "scored": 22,
+      "rate": 1.0
+    },
+    "latency_ms": {
+      "kind": "numeric",
+      "scored": 22,
+      "mean": 2380.7272727272725,
+      "median": 2338.5,
+      "p90": 2879.0
+    },
+    "reading_grade": {
+      "kind": "numeric",
+      "scored": 22,
+      "mean": 5.288636363636364,
+      "median": 5.195,
+      "p90": 7.29
+    },
+    "reading_level_ok": {
+      "kind": "pass_fail",
+      "passed": 22,
+      "scored": 22,
+      "rate": 1.0
+    },
+    "relevance_to_query": {
+      "kind": "pass_fail",
+      "passed": 22,
+      "scored": 22,
+      "rate": 1.0
+    },
+    "retrieval_groundedness": {
+      "kind": "pass_fail",
+      "passed": 22,
+      "scored": 22,
+      "rate": 1.0
+    },
+    "retrieval_relevance": {
+      "kind": "pass_fail",
+      "passed": 11,
+      "scored": 22,
+      "rate": 0.5
+    },
+    "retrieval_relevance/precision": {
+      "kind": "numeric",
+      "scored": 22,
+      "mean": 0.5,
+      "median": 0.5,
+      "p90": 0.8
+    },
+    "retrieval_sufficiency": {
+      "kind": "pass_fail",
+      "passed": 22,
+      "scored": 22,
+      "rate": 1.0
+    },
+    "safety": {
+      "kind": "pass_fail",
+      "passed": 22,
+      "scored": 22,
+      "rate": 1.0
+    }
+  },
+  "per_row": [
+    {
+      "id": "E001",
+      "category": "kb",
+      "scores": {
+        "ContextPrecision": 0.9999999999,
+        "retrieval_relevance": "no",
+        "retrieval_sufficiency": "yes",
+        "expected_source_reciprocal_rank": 1.0,
+        "safety": "yes",
+        "reading_level_ok": true,
+        "latency_ms": 2727.0,
+        "correctness": "yes",
+        "retrieval_relevance/precision": 0.2,
+        "expected_source_retrieved": true,
+        "relevance_to_query": "yes",
+        "expected_source_cited": true,
+        "reading_grade": 4.65,
+        "retrieval_groundedness": "yes",
+        "citation_valid": true
+      }
+    },
+    {
+      "id": "E002",
+      "category": "kb",
+      "scores": {
+        "correctness": "yes",
+        "reading_grade": 1.57,
+        "retrieval_groundedness": "yes",
+        "retrieval_relevance": "yes",
+        "expected_source_cited": true,
+        "citation_valid": true,
+        "latency_ms": 1794.0,
+        "safety": "yes",
+        "expected_source_reciprocal_rank": 1.0,
+        "relevance_to_query": "yes",
+        "retrieval_relevance/precision": 0.6,
+        "reading_level_ok": true,
+        "retrieval_sufficiency": "yes",
+        "expected_source_retrieved": true,
+        "ContextPrecision": 0.9999999999666667
+      }
+    },
+    {
+      "id": "E003",
+      "category": "kb",
+      "scores": {
+        "retrieval_relevance": "yes",
+        "correctness": "yes",
+        "safety": "yes",
+        "ContextPrecision": 0.8041666666465626,
+        "retrieval_sufficiency": "yes",
+        "relevance_to_query": "yes",
+        "citation_valid": true,
+        "reading_level_ok": true,
+        "retrieval_relevance/precision": 0.6,
+        "expected_source_retrieved": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "latency_ms": 2838.0,
+        "expected_source_cited": true,
+        "reading_grade": 5.45,
+        "retrieval_groundedness": "yes"
+      }
+    },
+    {
+      "id": "E004",
+      "category": "kb",
+      "scores": {
+        "retrieval_relevance": "yes",
+        "safety": "yes",
+        "citation_valid": true,
+        "relevance_to_query": "yes",
+        "expected_source_retrieved": true,
+        "latency_ms": 2252.0,
+        "expected_source_cited": true,
+        "reading_level_ok": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "reading_grade": 6.83,
+        "correctness": "yes",
+        "retrieval_groundedness": "yes",
+        "retrieval_relevance/precision": 0.8,
+        "retrieval_sufficiency": "yes",
+        "ContextPrecision": 0.8874999999778125
+      }
+    },
+    {
+      "id": "E005",
+      "category": "kb",
+      "scores": {
+        "expected_source_cited": true,
+        "correctness": "yes",
+        "retrieval_relevance": "yes",
+        "citation_valid": true,
+        "reading_grade": 7.55,
+        "latency_ms": 1614.0,
+        "retrieval_groundedness": "yes",
+        "safety": "yes",
+        "retrieval_relevance/precision": 0.6,
+        "retrieval_sufficiency": "yes",
+        "ContextPrecision": 0.9166666666361111,
+        "expected_source_retrieved": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "reading_level_ok": true,
+        "relevance_to_query": "yes"
+      }
+    },
+    {
+      "id": "E006",
+      "category": "kb",
+      "scores": {
+        "safety": "yes",
+        "retrieval_relevance": "no",
+        "reading_level_ok": true,
+        "latency_ms": 2558.0,
+        "ContextPrecision": 0.9999999999,
+        "expected_source_reciprocal_rank": 1.0,
+        "reading_grade": 4.79,
+        "citation_valid": true,
+        "expected_source_cited": true,
+        "correctness": "no",
+        "retrieval_relevance/precision": 0.2,
+        "retrieval_groundedness": "yes",
+        "relevance_to_query": "yes",
+        "expected_source_retrieved": true,
+        "retrieval_sufficiency": "yes"
+      }
+    },
+    {
+      "id": "E007",
+      "category": "kb",
+      "scores": {
+        "retrieval_sufficiency": "yes",
+        "reading_level_ok": true,
+        "reading_grade": 7.95,
+        "retrieval_relevance": "no",
+        "relevance_to_query": "yes",
+        "expected_source_retrieved": true,
+        "correctness": "yes",
+        "latency_ms": 2175.0,
+        "retrieval_groundedness": "yes",
+        "expected_source_reciprocal_rank": 1.0,
+        "safety": "yes",
+        "ContextPrecision": 0.7499999999625,
+        "citation_valid": true,
+        "expected_source_cited": true,
+        "retrieval_relevance/precision": 0.4
+      }
+    },
+    {
+      "id": "E008",
+      "category": "kb",
+      "scores": {
+        "reading_grade": 6.73,
+        "expected_source_retrieved": true,
+        "latency_ms": 1320.0,
+        "retrieval_relevance": "yes",
+        "ContextPrecision": 0.9999999999,
+        "safety": "yes",
+        "expected_source_reciprocal_rank": 1.0,
+        "relevance_to_query": "yes",
+        "correctness": "yes",
+        "citation_valid": true,
+        "expected_source_cited": true,
+        "retrieval_sufficiency": "yes",
+        "retrieval_relevance/precision": 0.6,
+        "reading_level_ok": true,
+        "retrieval_groundedness": "yes"
+      }
+    },
+    {
+      "id": "E009",
+      "category": "kb",
+      "scores": {
+        "reading_grade": 3.22,
+        "relevance_to_query": "yes",
+        "retrieval_relevance": "yes",
+        "citation_valid": true,
+        "retrieval_relevance/precision": 0.6,
+        "retrieval_sufficiency": "yes",
+        "safety": "yes",
+        "reading_level_ok": true,
+        "ContextPrecision": 0.9999999999666667,
+        "correctness": "yes",
+        "latency_ms": 2425.0,
+        "expected_source_retrieved": true,
+        "expected_source_cited": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "retrieval_groundedness": "yes"
+      }
+    },
+    {
+      "id": "E010",
+      "category": "kb",
+      "scores": {
+        "retrieval_relevance": "no",
+        "retrieval_relevance/precision": 0.4,
+        "safety": "yes",
+        "correctness": "yes",
+        "expected_source_cited": true,
+        "relevance_to_query": "yes",
+        "reading_level_ok": true,
+        "expected_source_retrieved": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "reading_grade": 3.09,
+        "ContextPrecision": 0.9999999999,
+        "latency_ms": 2457.0,
+        "retrieval_sufficiency": "yes",
+        "citation_valid": true,
+        "retrieval_groundedness": "yes"
+      }
+    },
+    {
+      "id": "E011",
+      "category": "kb",
+      "scores": {
+        "relevance_to_query": "yes",
+        "retrieval_relevance": "yes",
+        "retrieval_groundedness": "yes",
+        "latency_ms": 2222.0,
+        "retrieval_relevance/precision": 0.8,
+        "expected_source_retrieved": true,
+        "reading_level_ok": true,
+        "retrieval_sufficiency": "yes",
+        "correctness": "yes",
+        "reading_grade": 4.29,
+        "expected_source_cited": true,
+        "citation_valid": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "safety": "yes",
+        "ContextPrecision": 0.999999999975
+      }
+    },
+    {
+      "id": "E012",
+      "category": "kb",
+      "scores": {
+        "correctness": "no",
+        "retrieval_sufficiency": "yes",
+        "retrieval_relevance": "yes",
+        "safety": "yes",
+        "retrieval_groundedness": "yes",
+        "citation_valid": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "expected_source_cited": true,
+        "retrieval_relevance/precision": 0.4,
+        "relevance_to_query": "yes",
+        "reading_grade": 5.18,
+        "expected_source_retrieved": true,
+        "reading_level_ok": true,
+        "latency_ms": 2895.0,
+        "ContextPrecision": 0.99999999995
+      }
+    },
+    {
+      "id": "E013",
+      "category": "kb",
+      "scores": {
+        "retrieval_relevance": "no",
+        "correctness": "no",
+        "ContextPrecision": 0.8333333332916666,
+        "retrieval_groundedness": "yes",
+        "reading_level_ok": true,
+        "retrieval_relevance/precision": 0.4,
+        "retrieval_sufficiency": "yes",
+        "safety": "yes",
+        "expected_source_retrieved": true,
+        "expected_source_cited": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "latency_ms": 2250.0,
+        "reading_grade": 3.87,
+        "citation_valid": true,
+        "relevance_to_query": "yes"
+      }
+    },
+    {
+      "id": "E014",
+      "category": "kb",
+      "scores": {
+        "reading_grade": 6.43,
+        "retrieval_groundedness": "yes",
+        "retrieval_relevance": "yes",
+        "expected_source_retrieved": true,
+        "reading_level_ok": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "safety": "yes",
+        "correctness": "no",
+        "retrieval_sufficiency": "yes",
+        "retrieval_relevance/precision": 0.6,
+        "latency_ms": 2876.0,
+        "relevance_to_query": "yes",
+        "citation_valid": true,
+        "expected_source_cited": true,
+        "ContextPrecision": 0.99999999995
+      }
+    },
+    {
+      "id": "E015",
+      "category": "kb",
+      "scores": {
+        "safety": "yes",
+        "retrieval_sufficiency": "yes",
+        "reading_grade": 7.16,
+        "retrieval_groundedness": "yes",
+        "expected_source_cited": true,
+        "retrieval_relevance": "no",
+        "relevance_to_query": "yes",
+        "expected_source_retrieved": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "correctness": "no",
+        "reading_level_ok": true,
+        "latency_ms": 3697.0,
+        "ContextPrecision": 0.99999999995,
+        "retrieval_relevance/precision": 0.2,
+        "citation_valid": true
+      }
+    },
+    {
+      "id": "E016",
+      "category": "kb",
+      "scores": {
+        "safety": "yes",
+        "retrieval_relevance/precision": 0.4,
+        "retrieval_relevance": "yes",
+        "correctness": "yes",
+        "expected_source_retrieved": true,
+        "retrieval_groundedness": "yes",
+        "retrieval_sufficiency": "yes",
+        "expected_source_cited": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "citation_valid": true,
+        "reading_level_ok": true,
+        "reading_grade": 5.19,
+        "ContextPrecision": null,
+        "relevance_to_query": "yes",
+        "latency_ms": 2801.0
+      }
+    },
+    {
+      "id": "E017",
+      "category": "kb",
+      "scores": {
+        "expected_source_reciprocal_rank": 0.3333,
+        "retrieval_groundedness": "yes",
+        "ContextPrecision": 0.94999999997625,
+        "retrieval_relevance": "no",
+        "retrieval_relevance/precision": 0.6,
+        "expected_source_retrieved": true,
+        "citation_valid": true,
+        "retrieval_sufficiency": "yes",
+        "relevance_to_query": "yes",
+        "safety": "yes",
+        "reading_level_ok": true,
+        "latency_ms": 2879.0,
+        "correctness": "yes",
+        "expected_source_cited": true,
+        "reading_grade": 4.26
+      }
+    },
+    {
+      "id": "E018",
+      "category": "kb",
+      "scores": {
+        "retrieval_groundedness": "yes",
+        "retrieval_relevance": "no",
+        "retrieval_sufficiency": "yes",
+        "citation_valid": true,
+        "ContextPrecision": 0.9999999999,
+        "relevance_to_query": "yes",
+        "correctness": "yes",
+        "expected_source_reciprocal_rank": 1.0,
+        "expected_source_retrieved": true,
+        "safety": "yes",
+        "latency_ms": 2088.0,
+        "expected_source_cited": true,
+        "retrieval_relevance/precision": 0.4,
+        "reading_level_ok": true,
+        "reading_grade": 7.29
+      }
+    },
+    {
+      "id": "E019",
+      "category": "kb",
+      "scores": {
+        "expected_source_reciprocal_rank": 1.0,
+        "expected_source_retrieved": true,
+        "expected_source_cited": true,
+        "retrieval_relevance": "yes",
+        "correctness": "no",
+        "retrieval_sufficiency": "yes",
+        "latency_ms": 1660.0,
+        "retrieval_groundedness": "yes",
+        "retrieval_relevance/precision": 0.6,
+        "reading_level_ok": true,
+        "reading_grade": 5.32,
+        "safety": "yes",
+        "relevance_to_query": "yes",
+        "citation_valid": true,
+        "ContextPrecision": null
+      }
+    },
+    {
+      "id": "E020",
+      "category": "kb",
+      "scores": {
+        "retrieval_relevance": "no",
+        "reading_grade": 5.2,
+        "retrieval_groundedness": "yes",
+        "retrieval_relevance/precision": 0.4,
+        "correctness": "yes",
+        "safety": "yes",
+        "citation_valid": true,
+        "expected_source_retrieved": true,
+        "reading_level_ok": true,
+        "relevance_to_query": "yes",
+        "expected_source_reciprocal_rank": 1.0,
+        "retrieval_sufficiency": "yes",
+        "expected_source_cited": true,
+        "latency_ms": 1976.0,
+        "ContextPrecision": 0.699999999965
+      }
+    },
+    {
+      "id": "E021",
+      "category": "kb",
+      "scores": {
+        "correctness": "yes",
+        "safety": "yes",
+        "retrieval_relevance/precision": 0.8,
+        "retrieval_relevance": "no",
+        "latency_ms": 2222.0,
+        "expected_source_cited": true,
+        "expected_source_retrieved": true,
+        "reading_grade": 6.0,
+        "retrieval_groundedness": "yes",
+        "relevance_to_query": "yes",
+        "expected_source_reciprocal_rank": 1.0,
+        "ContextPrecision": 0.9999999999666667,
+        "reading_level_ok": true,
+        "retrieval_sufficiency": "yes",
+        "citation_valid": true
+      }
+    },
+    {
+      "id": "E022",
+      "category": "kb",
+      "scores": {
+        "retrieval_relevance/precision": 0.4,
+        "correctness": "yes",
+        "expected_source_reciprocal_rank": 1.0,
+        "retrieval_relevance": "no",
+        "ContextPrecision": 0.8333333332916666,
+        "retrieval_groundedness": "yes",
+        "latency_ms": 2650.0,
+        "relevance_to_query": "yes",
+        "reading_grade": 4.33,
+        "citation_valid": true,
+        "expected_source_cited": true,
+        "retrieval_sufficiency": "yes",
+        "expected_source_retrieved": true,
+        "reading_level_ok": true,
+        "safety": "yes"
+      }
+    }
+  ]
+}
