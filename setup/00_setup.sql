@@ -25,3 +25,14 @@ CREATE VOLUME IF NOT EXISTS frontline.raw.landing
 -- Confirm what exists.
 SHOW SCHEMAS IN frontline;
 SHOW VOLUMES IN frontline.raw;
+
+-- Hand-offs opened by the copilot (Milestone 4). The copilot redacts the reason
+-- before the insert, so this table never holds personal data as written.
+CREATE TABLE IF NOT EXISTS frontline.ops.escalations (
+  ticket_id  STRING NOT NULL COMMENT 'Reference given to the agent, such as ESC-1A2B3C4D',
+  created_at TIMESTAMP COMMENT 'UTC',
+  category   STRING COMMENT 'billing, plan_change, account_access, device, cancellation or other',
+  urgency    STRING COMMENT 'low, normal or high',
+  reason     STRING COMMENT 'What was asked for, redacted before the write',
+  status     STRING COMMENT 'open when created'
+) COMMENT 'Hand-offs to a human specialist opened by the copilot.';

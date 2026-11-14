@@ -140,6 +140,21 @@ def test_escalation_rows_expect_escalation() -> None:
     assert all(row["expectations"]["expected_tool"] == "escalate_to_human" for row in rows)
 
 
+def test_records_carry_the_redacted_question_when_one_is_given() -> None:
+    rows = [
+        {"id": "E039", "inputs": {"question": "Linda at 480-555-0132"}, "expectations": {}},
+        {"id": "E001", "inputs": {"question": "How do I pay?"}, "expectations": {}},
+    ]
+
+    records = to_records(rows, {"E039": "<PERSON_1> at <PHONE_NUMBER_1>"})
+
+    assert [record["inputs"]["question"] for record in records] == [
+        "<PERSON_1> at <PHONE_NUMBER_1>",
+        "How do I pay?",
+    ]
+    assert "480-555-0132" not in str(records)
+
+
 def test_category_filter_and_limit() -> None:
     assert [row["id"] for row in load_eval_set(category="kb", limit=2)] == ["E001", "E002"]
     assert load_eval_set(category="nope") == []
@@ -319,7 +334,7 @@ def test_judges_use_the_judge_endpoint_and_leave_out_ragas_faithfulness() -> Non
     judges = llm_judges("my-judge")
     names = {judge.name for judge in judges}
 
-    assert len(DETERMINISTIC_SCORERS) == 5
+    assert len(DETERMINISTIC_SCORERS) == 8
     assert {"retrieval_groundedness", "correctness", "relevance_to_query", "safety"} <= names
     assert "expectations_guidelines" in names
     assert {"retrieval_relevance", "retrieval_sufficiency"} <= names

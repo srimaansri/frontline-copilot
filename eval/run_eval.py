@@ -36,8 +36,9 @@ SUMMARY_HEADER = (
     "file named in the last column.\n\n"
     "| Date | Tag | Config | Query | Rows | Reviewed | Source retrieved | Chunk relevance | "
     "Context sufficient | Grounded | Correct | Relevant | Reading level ok | "
-    "Median latency (s) | Commit | File |\n"
-    "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|\n"
+    "Median latency (s) | Commit | File | Rules followed | Hand-off correct | Right tool | "
+    "No PII leak |\n"
+    "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|\n"
 )
 
 EVAL_ID_TAG = "eval_id"
@@ -73,11 +74,22 @@ def load_eval_set(
     return rows[:limit] if limit else rows
 
 
-def to_records(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
-    """Convert rows to the ``inputs`` / ``expectations`` shape MLflow evaluates."""
+def to_records(
+    rows: Sequence[Mapping[str, Any]], safe_questions: Mapping[str, str] | None = None
+) -> list[dict[str, Any]]:
+    """Convert rows to the ``inputs`` / ``expectations`` shape MLflow evaluates.
+
+    MLflow stores the inputs with the run. ``safe_questions`` maps a row id to
+    its redacted question, so a question that contains personal data on purpose
+    is never stored as written.
+    """
+    safe = safe_questions or {}
     return [
         {
-            "inputs": dict(row["inputs"]),
+            "inputs": {
+                **row["inputs"],
+                "question": safe.get(row.get("id", ""), row["inputs"]["question"]),
+            },
             "expectations": {k: v for k, v in row["expectations"].items() if v is not None},
         }
         for row in rows
@@ -156,7 +168,10 @@ def summary_row(report: Mapping[str, Any], file_name: str) -> str:
         f"{rate_text(metrics, 'retrieval_sufficiency')} | "
         f"{rate_text(metrics, 'retrieval_groundedness')} | {rate_text(metrics, 'correctness')} | "
         f"{rate_text(metrics, 'relevance_to_query')} | {rate_text(metrics, 'reading_level_ok')} | "
-        f"{latency_text} | `{report['git_sha'][:7]}` | {file_name} |\n"
+        f"{latency_text} | `{report['git_sha'][:7]}` | {file_name} | "
+        f"{rate_text(metrics, 'expectations_guidelines')} | "
+        f"{rate_text(metrics, 'escalation_correct')} | {rate_text(metrics, 'tool_choice')} | "
+        f"{rate_text(metrics, 'no_pii_leak')} |\n"
     )
 
 
@@ -237,7 +252,8 @@ def main(argv: list[str] | None = None) -> None:
     from copilot.agent import Copilot
     from copilot.config import load_settings
     from copilot.prompts import PROMPT_VERSION
-    from eval.scorers import DETERMINISTIC_SCORERS, llm_judges
+    from copilot.redaction import get_redactor
+    from eval.scorers import DETERMINISTIC_SCORERS, llm_judges, register_raw_questions
 
     # Puts DATABRICKS_HOST and DATABRICKS_CONFIG_PROFILE where the SDK and MLflow look.
     load_dotenv()
@@ -256,11 +272,20 @@ def main(argv: list[str] | None = None) -> None:
     mlflow.set_experiment(settings.mlflow_experiment)
     copilot = Copilot(settings)
 
-    id_by_question = {row["inputs"]["question"]: row["id"] for row in rows}
+    # MLflow stores the dataset, so it is given redacted questions. The copilot is
+    # still called with the question as written, which is what it has to handle.
+    redactor = get_redactor(product_names=tuple(settings.product_names))
+    raw_by_id = {row["id"]: row["inputs"]["question"] for row in rows}
+    safe_by_id = {row_id: redactor.redact(text).text for row_id, text in raw_by_id.items()}
+    id_by_safe_question = {text: row_id for row_id, text in safe_by_id.items()}
+    if len(id_by_safe_question) != len(rows):
+        print("not started: two rows have the same question after redaction")
+        raise SystemExit(1)
+    register_raw_questions(raw_by_id)
 
     def predict(question: str) -> str:
-        tags = {EVAL_ID_TAG: id_by_question[question]}
-        return copilot.run(question, trace_tags=tags).answer
+        eval_id = id_by_safe_question[question]
+        return copilot.run(raw_by_id[eval_id], trace_tags={EVAL_ID_TAG: eval_id}).answer
 
     run_name = f"{args.tag}-{args.config}-{args.query_type}"
     with mlflow.start_run(run_name=run_name) as run:
@@ -276,7 +301,9 @@ def main(argv: list[str] | None = None) -> None:
                 "category": args.category or "all",
             }
         )
-        mlflow.genai.evaluate(data=to_records(rows), predict_fn=predict, scorers=scorers)
+        mlflow.genai.evaluate(
+            data=to_records(rows, safe_by_id), predict_fn=predict, scorers=scorers
+        )
         traces = mlflow.search_traces(run_id=run.info.run_id, return_type="list")
 
     scored = rows_by_eval_id(traces)
@@ -286,6 +313,10 @@ def main(argv: list[str] | None = None) -> None:
         if row["id"] in scored
     ]
     metrics = aggregate([item["scores"] for item in per_row])
+    metrics_by_category = {
+        category: aggregate([item["scores"] for item in per_row if item["category"] == category])
+        for category in sorted({item["category"] for item in per_row})
+    }
     unanswered = rows_without_answer(rows, scored)
 
     report: dict[str, Any] = {
@@ -310,6 +341,7 @@ def main(argv: list[str] | None = None) -> None:
         "mlflow_run_id": run.info.run_id,
         "versions": {name: version(name) for name in ("mlflow", "ragas", "databricks-sdk")},
         "metrics": metrics,
+        "metrics_by_category": metrics_by_category,
         "per_row": per_row,
     }
 
