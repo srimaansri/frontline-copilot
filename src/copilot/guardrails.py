@@ -1,21 +1,35 @@
 """Checks applied to what goes into and comes out of the model.
 
-Milestone 3 has two: redacting the agent's question before anything is traced,
-and validating the citations in an answer. Intent and injection checks, the
-reading-level rewrite and output redaction arrive with the agent in Milestone 4.
+On the way in: personal data is redacted before anything is traced, then the
+redacted question is checked for a request to act on a customer's account and
+for an attempt to override the copilot's instructions.
+
+On the way out: an answer that is too hard to read is rewritten once, its
+citations are validated, and personal data is removed from it.
 """
 
 from __future__ import annotations
 
 import re
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from typing import Literal
 
+from copilot.readability import reading_grade
 from copilot.redaction import Redactor
 from copilot.text import to_plain_punctuation
 
 FLAG_PII_IN_QUESTION = "pii_in_question"
 FLAG_INVALID_CITATION = "invalid_citation_removed"
 FLAG_NO_CITATION = "no_citation"
+FLAG_ACCOUNT_ACTION = "account_action_requested"
+FLAG_INJECTION = "injection_suspected"
+FLAG_SIMPLIFIED = "answer_simplified"
+FLAG_PII_IN_ANSWER = "pii_removed_from_answer"
+
+# An answer is rewritten only when it is well above the target grade, so that
+# an answer a little over the line is not sent round the model a second time.
+REWRITE_MARGIN = 2.0
 
 # Matches [1], [2, 3] and [1][2].
 _CITATION_RE = re.compile(r"\[(\d+(?:\s*,\s*\d+)*)\]")
@@ -43,6 +57,112 @@ def redact_question(question: str, redactor: Redactor) -> RedactedInput:
         f"{FLAG_PII_IN_QUESTION}:{entity_type}" for entity_type in sorted(result.entity_counts)
     )
     return RedactedInput(result.text, flags)
+
+
+# --- input: what is the agent asking for? -------------------------------------------------
+
+Route = Literal["agent", "escalate", "refuse"]
+
+# A request to do something, as opposed to a question about how something is done.
+_ACTION_VERB_RE = re.compile(
+    r"^\s*(?:please\s+)?(?:can you\s+|could you\s+|go ahead and\s+|i need you to\s+)?"
+    r"(change|switch|move|upgrade|downgrade|refund|credit|waive|remove|cancel|close|suspend|"
+    r"unsuspend|restore|reset|unlock|unblock|block|activate|deactivate|add|apply|update|port|"
+    r"transfer|issue|process)\b",
+    re.IGNORECASE,
+)
+# The request is about one particular customer, not customers in general.
+_THIS_ACCOUNT_RE = re.compile(
+    r"\b(?:this|that)\s+(?:customer|caller|account|line|bill)\b"
+    r"|\b(?:this|that|the)\s+(?:customer|caller)'s\b"
+    r"|\bon\s+(?:this|their|his|her)\s+account\b",
+    re.IGNORECASE,
+)
+# Details only an account system holds.
+_ACCOUNT_DATA_RE = re.compile(
+    r"\b(?:pin|password|passcode|usage|used?|minutes|balance|owes?|owed|address|card number|"
+    r"payment history|call log|call history|last payment)\b",
+    re.IGNORECASE,
+)
+_INJECTION_RES: tuple[re.Pattern[str], ...] = (
+    re.compile(
+        r"\b(?:ignore|disregard|forget|override)\b.{0,40}"
+        r"\b(?:instructions?|rules?|prompts?|guidelines?)\b",
+        re.IGNORECASE | re.DOTALL,
+    ),
+    re.compile(
+        r"\b(?:system|developer|hidden)\s+(?:prompt|message|instructions?)\b", re.IGNORECASE
+    ),
+    re.compile(
+        r"\b(?:reveal|print|show|repeat|output)\b.{0,30}\b(?:your|the)\s+(?:instructions|rules)\b",
+        re.IGNORECASE | re.DOTALL,
+    ),
+    re.compile(r"\byou are now\b|\bdeveloper mode\b|\bjailbreak\b", re.IGNORECASE),
+)
+# Checked in order; the first match names the kind of hand-off.
+_CATEGORY_RES: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("account_access", re.compile(r"\b(?:pin|password|passcode)\b", re.IGNORECASE)),
+    # Before "usage", so "unlock the phone so they can use it" is a device request.
+    ("device", re.compile(r"\b(?:unlock|unblock|imei)\b", re.IGNORECASE)),
+    ("usage", re.compile(r"\b(?:usage|used?|minutes|call log|call history)\b", re.IGNORECASE)),
+    ("cancellation", re.compile(r"\b(?:cancel|close)\b", re.IGNORECASE)),
+    ("billing", re.compile(r"\b(?:refund|credit|waive|fee|bill|charge|payment)\b", re.IGNORECASE)),
+    ("device", re.compile(r"\b(?:unlock|unblock|block|imei|phone|device|sim)\b", re.IGNORECASE)),
+    (
+        "plan_change",
+        re.compile(r"\b(?:plan|upgrade|downgrade|switch|add-on|line)\b", re.IGNORECASE),
+    ),
+)
+# What the copilot says it cannot do, by kind of request.
+CANNOT_DO: dict[str, str] = {
+    "account_access": "I can't give out a transfer PIN, a password or any other account secret.",
+    "usage": "I can't see a specific customer's usage or any other account details.",
+    "cancellation": "I can't cancel or close an account myself.",
+    "billing": "I can't refund, credit or waive a charge myself.",
+    "device": "I can't unlock, block or change a customer's device myself.",
+    "plan_change": "I can't change a customer's plan myself.",
+    "other": "I can't see or change a customer's account myself.",
+}
+REFUSAL_ANSWER = (
+    "I can't help with that. I can answer Northline support questions, look up plans, "
+    "and summarize a call."
+)
+
+
+@dataclass(frozen=True)
+class InputCheck:
+    """Where a question should go, and why.
+
+    ``route`` is ``escalate`` for a request to act on, or read from, one
+    customer's account; ``refuse`` for an attempt to override the copilot's
+    instructions; and ``agent`` for everything else. ``category`` names the
+    kind of account request and is ``other`` when there is none.
+    """
+
+    route: Route
+    flags: tuple[str, ...]
+    category: str = "other"
+
+
+def check_input(text: str) -> InputCheck:
+    """Decide where an already-redacted question goes.
+
+    These are plain rules so they behave the same every time and cost nothing.
+    They catch the clear cases; the model can still call the hand-off tool
+    itself for a request the rules do not recognise.
+    """
+    if any(pattern.search(text) for pattern in _INJECTION_RES):
+        return InputCheck("refuse", (FLAG_INJECTION,))
+    about_this_account = bool(_THIS_ACCOUNT_RE.search(text))
+    wants_action = bool(_ACTION_VERB_RE.search(text)) and about_this_account
+    wants_account_data = about_this_account and bool(_ACCOUNT_DATA_RE.search(text))
+    if wants_action or wants_account_data:
+        category = next((name for name, pattern in _CATEGORY_RES if pattern.search(text)), "other")
+        return InputCheck("escalate", (FLAG_ACCOUNT_ACTION,), category)
+    return InputCheck("agent", ())
+
+
+# --- output: citations ----------------------------------------------------------------------
 
 
 @dataclass(frozen=True)
@@ -91,3 +211,113 @@ def check_citations(answer: str, source_count: int) -> CheckedCitations:
     if not cited:
         flags.append(FLAG_NO_CITATION)
     return CheckedCitations(text, tuple(cited), tuple(flags))
+
+
+# --- output: personal data --------------------------------------------------------------------
+
+
+def _digits(text: str) -> str:
+    return re.sub(r"\D", "", text)
+
+
+def appears_in_sources(value: str, sources: Sequence[str]) -> bool:
+    """Is ``value`` written out in the text the copilot was given to answer from?
+
+    A phone number counts as the same number however it is punctuated, so
+    "1-800-555-0199" in an answer matches "1 (800) 555-0199" in an article.
+    """
+    needle = " ".join(value.lower().split())
+    if not needle:
+        return False
+    digits = _digits(value)
+    for source in sources:
+        if needle in " ".join(source.lower().split()):
+            return True
+        if len(digits) >= 7 and digits in _digits(source):
+            return True
+    return False
+
+
+@dataclass(frozen=True)
+class RedactedAnswer:
+    """An answer with personal data removed, and the kinds of data that were removed."""
+
+    text: str
+    removed: tuple[str, ...]
+
+
+def redact_answer(answer: str, redactor: Redactor, sources: Sequence[str]) -> RedactedAnswer:
+    """Remove personal data from an answer, keeping what the sources state openly.
+
+    The support phone number, a price or a web address that is written in a
+    help article or a catalogue row is public information the answer is meant
+    to contain. Anything else the redactor finds is replaced with a placeholder.
+    """
+    result = redactor.redact(answer)
+    pieces: list[str] = []
+    removed: list[str] = []
+    cursor = 0
+    for entity in result.entities:
+        value = answer[entity.start : entity.end]
+        pieces.append(answer[cursor : entity.start])
+        if appears_in_sources(value, sources):
+            pieces.append(value)
+        else:
+            pieces.append(entity.placeholder)
+            removed.append(entity.entity_type)
+        cursor = entity.end
+    pieces.append(answer[cursor:])
+    return RedactedAnswer("".join(pieces), tuple(sorted(set(removed))))
+
+
+# --- output: the whole check --------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class CheckedAnswer:
+    """An answer that has passed every output check."""
+
+    text: str
+    cited: tuple[int, ...]
+    flags: tuple[str, ...]
+
+
+def check_output(
+    answer: str,
+    *,
+    source_count: int,
+    redactor: Redactor,
+    sources: Sequence[str],
+    target_grade: float,
+    simplify: Callable[[str], str] | None = None,
+) -> CheckedAnswer:
+    """Run the output checks in the order that keeps each one valid.
+
+    1. Reading level. An answer more than ``REWRITE_MARGIN`` grades above the
+       target is rewritten once by ``simplify``. The rewrite is kept only if it
+       is easier to read.
+    2. Citations, after the rewrite, because a rewrite can drop or renumber them.
+    3. Personal data, last, so nothing a rewrite adds is missed.
+
+    Args:
+        answer: The model's answer.
+        source_count: How many numbered sources the model was given.
+        redactor: The redactor used on questions and transcripts.
+        sources: The text the answer was written from: retrieved chunks and tool results.
+        target_grade: The reading grade answers should be at or below.
+        simplify: Rewrites an answer in plainer language. None skips the rewrite.
+    """
+    flags: list[str] = []
+    text = answer
+    if simplify is not None and text.strip():
+        grade = reading_grade(text)
+        if grade > target_grade + REWRITE_MARGIN:
+            rewritten = simplify(text).strip()
+            if rewritten and reading_grade(rewritten) < grade:
+                text = rewritten
+                flags.append(FLAG_SIMPLIFIED)
+    citations = check_citations(text, source_count)
+    flags.extend(citations.flags)
+    redacted = redact_answer(citations.text, redactor, sources)
+    flags.extend(f"{FLAG_PII_IN_ANSWER}:{entity_type}" for entity_type in redacted.removed)
+    return CheckedAnswer(redacted.text, citations.cited, tuple(flags))

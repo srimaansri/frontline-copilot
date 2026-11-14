@@ -12,11 +12,9 @@ Two kinds:
 
 from __future__ import annotations
 
-import re
 from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
-import textstat
 from mlflow.entities import Feedback, SpanType, Trace
 from mlflow.genai.scorers import (
     Correctness,
@@ -30,31 +28,13 @@ from mlflow.genai.scorers import (
 )
 from mlflow.genai.scorers.base import Scorer
 
+from copilot.readability import plain_text_for_reading_level, reading_grade
+
 READING_GRADE_TARGET = 8.0
 ROOT_SPAN_NAME = "run_copilot"
 
-_CITATION_RE = re.compile(r"\[\d+(?:\s*,\s*\d+)*\]")
-_MARKDOWN_RE = re.compile(r"[*_`#>]+")
-_LIST_MARKER_RE = re.compile(r"^[ \t]*(?:\d+[.)]|[-*])[ \t]+", re.MULTILINE)
-
 
 # --- plain functions ---------------------------------------------------------------------
-
-
-def plain_text_for_reading_level(answer: str) -> str:
-    """Strip citation markers and Markdown so they do not distort the reading grade."""
-    text = _CITATION_RE.sub("", answer)
-    text = _LIST_MARKER_RE.sub("", text)
-    text = _MARKDOWN_RE.sub("", text)
-    # Removing a citation leaves a space before the punctuation that followed it.
-    text = re.sub(r"[ \t]+([.,;:!?])", r"\1", text)
-    return re.sub(r"[ \t]+", " ", text).strip()
-
-
-def reading_grade(answer: str) -> float:
-    """Flesch-Kincaid grade of an answer. Lower is easier to read."""
-    text = plain_text_for_reading_level(answer)
-    return float(textstat.flesch_kincaid_grade(text)) if text else 0.0
 
 
 def source_rank(doc_uris: Sequence[str], expected_source: str) -> int | None:

@@ -33,13 +33,14 @@ rag = [
     "databricks-langchain==0.22.0",
     "databricks-sdk==0.166.0",
     "mlflow[databricks]==3.18.0",
+    # Reading grade, for the output guardrail and the evaluation.
+    "textstat==0.7.13",
 ]
 # Evaluation (eval/).
 eval = [
     "frontline-copilot[rag]",
     "python-dotenv==1.2.4",
     "ragas==0.4.4",
-    "textstat==0.7.13",
 ]
 # The spaCy pipeline the redactor uses by default. Models are not on PyPI.
 models = [
@@ -115,6 +116,11 @@ plugins = ["pydantic.mypy"]
 [[tool.mypy.overrides]]
 # Ships no type information. Used in one place, behind the `ChatModel` protocol.
 module = ["databricks_langchain", "databricks_langchain.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# Ships no type information. Used in one place, `copilot.readability`.
+module = ["textstat", "textstat.*"]
 ignore_missing_imports = true
 
 # --- pytest and coverage ----------------------------------------------------
