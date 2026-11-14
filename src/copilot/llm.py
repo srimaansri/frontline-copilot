@@ -8,10 +8,17 @@ from copilot.config import Settings
 
 
 class ChatModel(Protocol):
-    """The one method of a LangChain chat model that the copilot uses."""
+    """The two methods of a LangChain chat model that the copilot uses."""
 
-    def invoke(self, messages: list[tuple[str, str]]) -> Any:
-        """Send ``(role, text)`` messages and return the model's reply message."""
+    def invoke(self, messages: Any) -> Any:
+        """Send messages and return the model's reply message.
+
+        Messages are ``(role, text)`` pairs or LangChain message objects.
+        """
+        ...
+
+    def bind_tools(self, tools: Any) -> Any:
+        """Return a model that may answer with a call to one of ``tools``."""
         ...
 
 

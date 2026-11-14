@@ -32,6 +32,9 @@ data = [
 rag = [
     "databricks-langchain==0.22.0",
     "databricks-sdk==0.166.0",
+    # The agent graph. databricks-langchain already brings it in; pinned here
+    # because the copilot imports it directly.
+    "langgraph==1.2.22",
     "mlflow[databricks]==3.18.0",
     # Reading grade, for the output guardrail and the evaluation.
     "textstat==0.7.13",
