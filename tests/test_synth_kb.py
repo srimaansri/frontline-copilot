@@ -1,5 +1,6 @@
 """Synthetic KB generator, tested with a fake model. No network access."""
 
+import json
 import re
 from datetime import UTC, datetime
 from pathlib import Path
@@ -10,6 +11,8 @@ from data_gen.kb_topics import CARRIER_FACTS, SECTIONS, TOPICS, Topic
 from data_gen.plans import PLANS
 from data_gen.scrape_kb import article_id_for, write_articles
 from data_gen.synth_kb import (
+    DEFAULT_META,
+    DEFAULT_OUT,
     MAX_ATTEMPTS,
     article_url,
     build_user_prompt,
@@ -261,6 +264,45 @@ def test_generate_reuses_existing_articles_without_calling_the_model(tmp_path: P
     assert second == first
     assert failures == {}
     assert client.calls == []
+
+
+# --- the committed knowledge base ----------------------------------------------------------
+
+
+def test_the_committed_knowledge_base_passes_the_generator_checks() -> None:
+    """Guards hand corrections: an edited article must still pass what a generated one must."""
+    by_slug = {
+        article.url.rsplit("/", 1)[1]: article for article in read_existing(DEFAULT_OUT).values()
+    }
+
+    assert set(by_slug) == {topic.slug for topic in TOPICS}
+    for topic in TOPICS:
+        article = by_slug[topic.slug]
+        assert article.title == topic.title, topic.slug
+        assert article.section == topic.section, topic.slug
+        assert article.synthetic is True
+        assert find_problems(article.body_text) == [], topic.slug
+        assert unsupported_amounts(article.body_text, topic) == [], topic.slug
+
+
+def test_the_corrections_record_matches_the_metadata() -> None:
+    record = DEFAULT_OUT.with_name("kb_corrections.jsonl")
+    corrections = [
+        json.loads(line) for line in record.read_text(encoding="utf-8").splitlines() if line
+    ]
+    meta = json.loads(DEFAULT_META.read_text(encoding="utf-8"))["corrections"]
+    slugs = {topic.slug for topic in TOPICS}
+
+    assert len(corrections) == meta["count"]
+    assert len({item["slug"] for item in corrections}) == meta["articles_changed"]
+    for item in corrections:
+        assert set(item) == {
+            "slug", "severity", "kind", "quote", "replacement", "reason", "reviewer",
+        }  # fmt: skip
+        assert item["slug"] in slugs
+        assert item["severity"] in {"high", "medium", "low"}
+        assert item["quote"] and item["reason"]
+        assert item["replacement"].isascii()
 
 
 def test_read_existing_of_a_missing_file_is_empty(tmp_path: Path) -> None:

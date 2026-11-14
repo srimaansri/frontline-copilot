@@ -6,9 +6,29 @@
   "topics_requested": 87,
   "failed_slugs": [],
   "words_min_median_max": [
-    229,
-    293,
-    407
+    219,
+    288,
+    411
   ],
-  "databricks_sdk": "0.166.0"
+  "databricks_sdk": "0.166.0",
+  "corrections": {
+    "applied_on": "2026-11-14",
+    "count": 170,
+    "articles_changed": 68,
+    "by_severity": {
+      "high": 41,
+      "low": 74,
+      "medium": 55
+    },
+    "by_kind": {
+      "contradicts_brief": 28,
+      "contradicts_carrier_facts": 1,
+      "contradicts_other_article": 77,
+      "invented_fact": 48,
+      "missing_brief_fact": 9,
+      "self_contradiction": 4,
+      "wrong_plan_fact": 3
+    },
+    "method": "Two independent read-only reviews by Claude Code agents, one checking each article against its brief and one checking the articles against each other. Each correction replaces one sentence or list item; the full list is in kb_corrections.jsonl."
+  }
 }
