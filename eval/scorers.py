@@ -114,15 +114,30 @@ def reading_level(outputs: Any) -> list[Feedback]:
     ]
 
 
-@scorer
-def citation_valid(trace: Trace) -> Feedback:
-    """The answer cites at least one retrieved source and no invalid one was removed."""
-    output = root_output(trace)
+def citations_ok(output: Mapping[str, Any], *, citation_required: bool) -> bool:
+    """No invalid citation was removed and, where one is required, a source is cited.
+
+    A citation is required only when the row names an article that holds the
+    answer. A correct "the help articles do not cover this" has nothing to cite.
+    """
     flags = output.get("guardrail_flags") or []
     cited = len(output.get("citations") or [])
-    passed = cited > 0 and "invalid_citation_removed" not in flags
+    return "invalid_citation_removed" not in flags and (cited > 0 or not citation_required)
+
+
+@scorer
+def citation_valid(expectations: Mapping[str, Any], trace: Trace) -> Feedback:
+    """Citations are valid, and present where the row expects an article to be cited."""
+    output = root_output(trace)
+    required = bool(acceptable_sources(expectations))
     return Feedback(
-        name="citation_valid", value=passed, rationale=f"{cited} valid citations; flags {flags}"
+        name="citation_valid",
+        value=citations_ok(output, citation_required=required),
+        rationale=(
+            f"{len(output.get('citations') or [])} valid citations; "
+            f"citation {'required' if required else 'not required'}; "
+            f"flags {output.get('guardrail_flags') or []}"
+        ),
     )
 
 

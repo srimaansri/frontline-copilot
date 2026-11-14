@@ -26,6 +26,7 @@ from eval.scorers import (
     acceptable_sources,
     best_source_rank,
     citation_valid,
+    citations_ok,
     expected_source,
     latency_ms,
     llm_judges,
@@ -204,9 +205,24 @@ def test_citation_scorer() -> None:
     removed = {"citations": [{"url": f"{BASE}/a"}], "guardrail_flags": ["invalid_citation_removed"]}
     uncited = {"citations": [], "guardrail_flags": ["no_citation"]}
 
-    assert citation_valid(trace=fake_trace(answer=cited)).value is True
-    assert citation_valid(trace=fake_trace(answer=removed)).value is False
-    assert citation_valid(trace=fake_trace(answer=uncited)).value is False
+    row = {"expected_source": "a"}
+
+    assert citation_valid(expectations=row, trace=fake_trace(answer=cited)).value is True
+    assert citation_valid(expectations=row, trace=fake_trace(answer=removed)).value is False
+    assert citation_valid(expectations=row, trace=fake_trace(answer=uncited)).value is False
+
+
+def test_citation_is_required_only_where_the_row_names_an_article() -> None:
+    """A correct 'the articles do not cover this' has nothing to cite."""
+    uncited = {"citations": [], "guardrail_flags": ["no_citation"]}
+    removed = {"citations": [], "guardrail_flags": ["invalid_citation_removed"]}
+    no_source_row = {"guidelines": ["The response must say the articles do not answer this"]}
+
+    assert citation_valid(expectations=no_source_row, trace=fake_trace(answer=uncited)).value
+    # An invented citation still fails, whether or not one was required.
+    assert not citation_valid(expectations=no_source_row, trace=fake_trace(answer=removed)).value
+    assert citations_ok(uncited, citation_required=False) is True
+    assert citations_ok(uncited, citation_required=True) is False
 
 
 def test_expected_source_scorer() -> None:
