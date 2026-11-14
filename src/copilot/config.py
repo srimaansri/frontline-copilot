@@ -14,6 +14,7 @@ runs locally (CLI profile or token) and as a Databricks App (service principal).
 
 from __future__ import annotations
 
+import re
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal, Self
@@ -31,6 +32,9 @@ DEFAULT_YAML_FILE = REPO_ROOT / "config" / "settings.yaml"
 DEFAULT_ENV_FILE = REPO_ROOT / ".env"
 
 QueryType = Literal["ann", "hybrid"]
+
+_IDENTIFIER_PATTERN = r"^[A-Za-z_][A-Za-z0-9_]*$"
+_IDENTIFIER_RE = re.compile(_IDENTIFIER_PATTERN)
 
 
 class ChunkingConfig(BaseModel):
@@ -76,7 +80,8 @@ class Settings(BaseSettings):
 
     # Workspace
     databricks_host: str | None = None
-    catalog: str = "frontline"
+    # Table names are built from this, so it must be a plain identifier.
+    catalog: str = Field(default="frontline", pattern=_IDENTIFIER_PATTERN)
     sql_warehouse_id: str | None = None
     mlflow_experiment: str | None = None
 
@@ -147,8 +152,21 @@ class Settings(BaseSettings):
         return self.chunking[self.chunk_config]
 
     def table(self, schema: str, name: str) -> str:
-        """Return the three-part Unity Catalog name ``catalog.schema.name``."""
+        """Return the three-part Unity Catalog name ``catalog.schema.name``.
+
+        Raises:
+            ValueError: If ``schema`` or ``name`` is not a plain identifier. The
+                result is placed in SQL text, so nothing else is accepted.
+        """
+        for part in (schema, name):
+            if not _IDENTIFIER_RE.fullmatch(part):
+                msg = f"not a valid identifier: {part!r}"
+                raise ValueError(msg)
         return f"{self.catalog}.{schema}.{name}"
+
+    def volume_path(self, schema: str, volume: str) -> str:
+        """Return the filesystem path of a Unity Catalog volume."""
+        return "/Volumes/" + self.table(schema, volume).replace(".", "/")
 
 
 def load_settings(*, yaml_file: Path | None = None, env_file: Path | None = None) -> Settings:

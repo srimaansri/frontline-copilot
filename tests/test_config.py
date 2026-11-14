@@ -93,6 +93,26 @@ def test_table_builds_three_part_name(tmp_path: Path) -> None:
     )
 
 
+def test_volume_path(tmp_path: Path) -> None:
+    assert _load(tmp_path).volume_path("raw", "landing") == "/Volumes/frontline/raw/landing"
+
+
+@pytest.mark.parametrize("bad", ["gold; DROP TABLE x", "kb-chunks", "a.b", "", "1table", "x y"])
+def test_table_rejects_anything_but_a_plain_identifier(tmp_path: Path, bad: str) -> None:
+    settings = _load(tmp_path)
+
+    with pytest.raises(ValueError, match="not a valid identifier"):
+        settings.table("gold", bad)
+    with pytest.raises(ValueError, match="not a valid identifier"):
+        settings.table(bad, "kb_chunks")
+
+
+@pytest.mark.parametrize("bad", ["front line", "frontline;--", "my-catalog", "a.b"])
+def test_catalog_must_be_a_plain_identifier(tmp_path: Path, bad: str) -> None:
+    with pytest.raises(ValidationError, match="catalog"):
+        _load(tmp_path, yaml_text=f"catalog: '{bad}'\n")
+
+
 def test_query_type_accepts_any_case(tmp_path: Path) -> None:
     settings = _load(tmp_path, env_text="QUERY_TYPE=HYBRID\n")
 
