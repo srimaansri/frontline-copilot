@@ -13,7 +13,7 @@ Two kinds:
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
 import textstat
@@ -205,26 +205,59 @@ DETERMINISTIC_SCORERS: tuple[Scorer, ...] = (
 )
 
 
+def run_when(
+    judge: Scorer, applies: Callable[[Mapping[str, Any]], bool], *, fields: Sequence[str]
+) -> Scorer:
+    """Run ``judge`` only on rows where ``applies(expectations)`` is true.
+
+    On other rows it returns nothing, so the row is not counted for that judge.
+    ``fields`` names what the judge is called with, out of ``inputs``,
+    ``outputs``, ``expectations`` and ``trace``.
+    """
+
+    @scorer(name=judge.name)
+    def conditional(
+        inputs: Mapping[str, Any], outputs: Any, expectations: Mapping[str, Any], trace: Trace
+    ) -> Any:
+        if not applies(expectations or {}):
+            return None
+        available = {
+            "inputs": inputs,
+            "outputs": outputs,
+            "expectations": expectations,
+            "trace": trace,
+        }
+        return judge(**{name: available[name] for name in fields})
+
+    return conditional
+
+
 def when_expected(judge: Scorer, *keys: str) -> Scorer:
     """Run ``judge`` only on rows whose expectations hold one of ``keys``.
 
     The evaluation set mixes rows graded by facts with rows graded by rules.
     MLflow's ``Correctness`` and ``ExpectationsGuidelines`` raise on a row that
     lacks what they grade against, which would show as an error on every such
-    row. Wrapped this way the judge is skipped there and the row is not counted
-    for it.
+    row.
     """
+    return run_when(
+        judge,
+        lambda expectations: any(expectations.get(key) for key in keys),
+        fields=("inputs", "outputs", "expectations"),
+    )
 
-    @scorer(name=judge.name)
-    def conditional(
-        inputs: Mapping[str, Any], outputs: Any, expectations: Mapping[str, Any]
-    ) -> Feedback | None:
-        if not any((expectations or {}).get(key) for key in keys):
-            return None
-        result: Feedback = judge(inputs=inputs, outputs=outputs, expectations=expectations)
-        return result
 
-    return conditional
+def on_retrieval_rows(judge: Scorer, *, fields: Sequence[str] = ("trace",)) -> Scorer:
+    """Run a retrieval judge only on rows that name an article holding the answer.
+
+    A question that no article answers has nothing to retrieve. Its retrieved
+    chunks cannot be relevant or sufficient, and a correct "the articles do not
+    cover this" is not grounded in them, so these judges would fail a correct
+    answer.
+    """
+    return run_when(
+        judge, lambda expectations: bool(acceptable_sources(expectations)), fields=fields
+    )
 
 
 def llm_judges(judge_endpoint: str, *, include_ragas: bool = True) -> list[Scorer]:
@@ -238,10 +271,10 @@ def llm_judges(judge_endpoint: str, *, include_ragas: bool = True) -> list[Score
     """
     model = f"databricks:/{judge_endpoint}"
     judges: list[Scorer] = [
-        RetrievalGroundedness(model=model),
+        on_retrieval_rows(RetrievalGroundedness(model=model)),
         RelevanceToQuery(model=model),
-        RetrievalRelevance(model=model),
-        RetrievalSufficiency(model=model),
+        on_retrieval_rows(RetrievalRelevance(model=model)),
+        on_retrieval_rows(RetrievalSufficiency(model=model), fields=("trace", "expectations")),
         when_expected(Correctness(model=model), "expected_facts", "expected_response"),
         when_expected(ExpectationsGuidelines(model=model), "guidelines"),
         Safety(model=model),
@@ -249,5 +282,10 @@ def llm_judges(judge_endpoint: str, *, include_ragas: bool = True) -> list[Score
     if include_ragas:
         from mlflow.genai.scorers.ragas import ContextPrecision
 
-        judges.append(ContextPrecision(model=model))
+        judges.append(
+            on_retrieval_rows(
+                ContextPrecision(model=model),
+                fields=("inputs", "outputs", "expectations", "trace"),
+            )
+        )
     return judges

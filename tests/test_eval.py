@@ -33,6 +33,7 @@ from eval.scorers import (
     expected_source,
     latency_ms,
     llm_judges,
+    on_retrieval_rows,
     plain_text_for_reading_level,
     reading_grade,
     reading_level,
@@ -320,8 +321,9 @@ def test_judges_use_the_judge_endpoint_and_leave_out_ragas_faithfulness() -> Non
     assert len(DETERMINISTIC_SCORERS) == 5
     assert {"retrieval_groundedness", "correctness", "relevance_to_query", "safety"} <= names
     assert "expectations_guidelines" in names
-    assert any("ContextPrecision" in type(judge).__name__ for judge in judges)
-    assert not any("Faithfulness" in type(judge).__name__ for judge in judges)
+    assert {"retrieval_relevance", "retrieval_sufficiency"} <= names
+    assert any("ContextPrecision" in name for name in names)
+    assert not any("Faithfulness" in name for name in names)
     assert all(getattr(judge, "model", "databricks:/my-judge") == "databricks:/my-judge"
                for judge in judges)  # fmt: skip
     assert len(llm_judges("my-judge", include_ragas=False)) == len(judges) - 1
@@ -345,22 +347,43 @@ def test_a_judge_runs_only_on_rows_that_have_what_it_grades() -> None:
     wrapped = when_expected(judge, "guidelines")  # type: ignore[arg-type]
     rules = {"guidelines": ["The response must not contain a poem"]}
 
-    skipped = wrapped(inputs={"question": "Q"}, outputs="A", expectations={"expected_facts": ["x"]})
-    graded = wrapped(inputs={"question": "Q"}, outputs="A", expectations=rules)
+    question = {"question": "Q"}
+    facts_only = {"expected_facts": ["x"]}
+
+    skipped = wrapped(inputs=question, outputs="A", expectations=facts_only, trace=None)
+    graded = wrapped(inputs=question, outputs="A", expectations=rules, trace=None)
 
     assert wrapped.name == "fake_judge"
     assert skipped is None
     assert graded.value == "yes"
-    assert judge.calls == [{"inputs": {"question": "Q"}, "outputs": "A", "expectations": rules}]
+    # The judge gets the answer and the row, not the trace.
+    assert judge.calls == [{"inputs": question, "outputs": "A", "expectations": rules}]
 
 
 def test_a_judge_is_skipped_when_the_expectation_is_empty() -> None:
     judge = RecordingJudge()
     wrapped = when_expected(judge, "expected_facts", "expected_response")  # type: ignore[arg-type]
+    empty = {"expected_facts": []}
+    response = {"expected_response": "x"}
 
-    assert wrapped(inputs={}, outputs="A", expectations={"expected_facts": []}) is None
-    assert wrapped(inputs={}, outputs="A", expectations={"expected_response": "x"}) is not None
+    assert wrapped(inputs={}, outputs="A", expectations=empty, trace=None) is None
+    assert wrapped(inputs={}, outputs="A", expectations=response, trace=None) is not None
     assert len(judge.calls) == 1
+
+
+def test_retrieval_judges_run_only_on_rows_that_name_an_article() -> None:
+    """A question no article answers has nothing to retrieve, so nothing to judge."""
+    judge = RecordingJudge()
+    wrapped = on_retrieval_rows(judge)  # type: ignore[arg-type]
+    with_context = on_retrieval_rows(judge, fields=("trace", "expectations"))  # type: ignore[arg-type]
+    trace = fake_trace()
+    kb_row = {"expected_source": "late-payment-fee", "expected_facts": ["x"]}
+    no_answer_row = {"guidelines": ["The response must say the articles do not cover this"]}
+
+    assert wrapped(inputs={}, outputs="A", expectations=no_answer_row, trace=trace) is None
+    assert wrapped(inputs={}, outputs="A", expectations=kb_row, trace=trace) is not None
+    assert with_context(inputs={}, outputs="A", expectations=kb_row, trace=trace) is not None
+    assert judge.calls == [{"trace": trace}, {"trace": trace, "expectations": kb_row}]
 
 
 # --- runner bookkeeping ----------------------------------------------------------------------
