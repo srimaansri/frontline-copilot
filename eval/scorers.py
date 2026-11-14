@@ -64,6 +64,20 @@ def source_rank(doc_uris: Sequence[str], expected_source: str) -> int | None:
     return None
 
 
+def acceptable_sources(expectations: Mapping[str, Any] | None) -> list[str]:
+    """The expected article first, then any other article that also holds the full answer."""
+    expected = (expectations or {}).get("expected_source")
+    if not expected:
+        return []
+    return [str(expected), *(expectations or {}).get("also_acceptable_sources", [])]
+
+
+def best_source_rank(doc_uris: Sequence[str], sources: Sequence[str]) -> int | None:
+    """Best 1-based position of any acceptable article among the documents."""
+    ranks = [rank for source in sources if (rank := source_rank(doc_uris, source)) is not None]
+    return min(ranks) if ranks else None
+
+
 def root_output(trace: Trace) -> dict[str, Any]:
     """The ``CopilotAnswer`` recorded on the copilot's root span."""
     for span in trace.search_spans(name=ROOT_SPAN_NAME):
@@ -114,20 +128,28 @@ def citation_valid(trace: Trace) -> Feedback:
 
 @scorer
 def expected_source(expectations: Mapping[str, Any], trace: Trace) -> list[Feedback]:
-    """Was the article that holds the answer retrieved, at what rank, and was it cited?"""
-    wanted = (expectations or {}).get("expected_source")
+    """Was an article that holds the answer retrieved, at what rank, and was it cited?
+
+    A row may list ``also_acceptable_sources`` next to ``expected_source`` when a
+    second article holds the whole answer. The best-ranked of them counts.
+    """
+    wanted = acceptable_sources(expectations)
     if not wanted:
         return []
-    rank = source_rank(retrieved_uris(trace), wanted)
+    rank = best_source_rank(retrieved_uris(trace), wanted)
     cited_urls = [str(c.get("url", "")) for c in root_output(trace).get("citations") or []]
     return [
         Feedback(
             name="expected_source_retrieved",
             value=rank is not None,
-            rationale=f"rank {rank}" if rank else "not in the retrieved set",
+            rationale=f"rank {rank} (accepted: {', '.join(wanted)})"
+            if rank
+            else f"none of {', '.join(wanted)} in the retrieved set",
         ),
         Feedback(name="expected_source_reciprocal_rank", value=round(1 / rank, 4) if rank else 0.0),
-        Feedback(name="expected_source_cited", value=source_rank(cited_urls, wanted) is not None),
+        Feedback(
+            name="expected_source_cited", value=best_source_rank(cited_urls, wanted) is not None
+        ),
     ]
 
 

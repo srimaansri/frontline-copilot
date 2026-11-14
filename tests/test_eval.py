@@ -23,6 +23,8 @@ from eval.run_eval import (
 )
 from eval.scorers import (
     DETERMINISTIC_SCORERS,
+    acceptable_sources,
+    best_source_rank,
     citation_valid,
     expected_source,
     latency_ms,
@@ -89,13 +91,30 @@ def test_eval_set_has_the_planned_mix_and_unique_ids() -> None:
 
 
 def test_every_kb_row_points_at_a_real_article_and_has_facts() -> None:
+    """A kb row names its article and facts, unless it tests a question no article answers."""
     slugs = {topic.slug for topic in TOPICS}
 
     for row in load_eval_set(category="kb"):
         expectations = row["expectations"]
+        assert expectations["should_escalate"] is False
+        if "expected_source" not in expectations:
+            # A no-answer row: nothing true can be listed, so it is graded by its rules.
+            assert expectations["guidelines"], row["id"]
+            assert "expected_facts" not in expectations, row["id"]
+            continue
         assert expectations["expected_source"] in slugs, row["id"]
         assert len(expectations["expected_facts"]) >= 2, row["id"]
-        assert expectations["should_escalate"] is False
+
+
+def test_alternate_sources_are_real_articles_next_to_an_expected_one() -> None:
+    slugs = {topic.slug for topic in TOPICS}
+
+    for row in load_eval_set():
+        expectations = row["expectations"]
+        alternates = expectations.get("also_acceptable_sources", [])
+        if alternates:
+            assert expectations["expected_source"] not in alternates, row["id"]
+            assert set(alternates) <= slugs, row["id"]
 
 
 def test_prices_in_plan_rows_exist_in_the_catalogue() -> None:
@@ -217,6 +236,41 @@ def test_expected_source_scorer_when_the_article_was_not_retrieved() -> None:
 
 def test_expected_source_scorer_is_silent_without_an_expected_source() -> None:
     assert expected_source(expectations={}, trace=fake_trace()) == []
+    # Alternates alone do not make a row a retrieval row.
+    only_alternates = {"also_acceptable_sources": ["compare-plans"]}
+    assert expected_source(expectations=only_alternates, trace=fake_trace()) == []
+
+
+def test_acceptable_sources_lists_the_expected_article_first() -> None:
+    row = {"expected_source": "canada-and-mexico", "also_acceptable_sources": ["compare-plans"]}
+
+    assert acceptable_sources(row) == ["canada-and-mexico", "compare-plans"]
+    assert acceptable_sources({"expected_source": "canada-and-mexico"}) == ["canada-and-mexico"]
+    assert acceptable_sources({}) == []
+    assert acceptable_sources(None) == []
+
+
+def test_best_source_rank_takes_the_highest_placed_acceptable_article() -> None:
+    uris = [f"{BASE}/a", f"{BASE}/compare-plans", f"{BASE}/canada-and-mexico"]
+
+    assert best_source_rank(uris, ["canada-and-mexico", "compare-plans"]) == 2
+    assert best_source_rank(uris, ["canada-and-mexico"]) == 3
+    assert best_source_rank(uris, ["late-payment-fee"]) is None
+
+
+def test_expected_source_scorer_accepts_an_alternate_article() -> None:
+    answer = {"citations": [{"url": f"{BASE}/compare-plans"}]}
+    trace = fake_trace(answer=answer, uris=[f"{BASE}/compare-plans", f"{BASE}/set-up-autopay"])
+    row = {"expected_source": "canada-and-mexico", "also_acceptable_sources": ["compare-plans"]}
+
+    retrieved, reciprocal_rank, cited = expected_source(expectations=row, trace=trace)
+
+    assert retrieved.value is True
+    assert reciprocal_rank.value == 1.0
+    assert cited.value is True
+    # Without the alternate listed, the same trace is a miss.
+    strict = expected_source(expectations={"expected_source": "canada-and-mexico"}, trace=trace)
+    assert [item.value for item in strict] == [False, 0.0, False]
 
 
 def test_latency_scorer_reads_the_trace_duration() -> None:
