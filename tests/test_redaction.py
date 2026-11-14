@@ -13,6 +13,7 @@ from copilot.redaction import (
     PlaceholderMap,
     Redactor,
     _Detection,
+    _outside_protected,
     _resolve_overlaps,
     _trim_greeting,
     get_redactor,
@@ -283,6 +284,95 @@ def test_allow_list_is_configurable() -> None:
     custom = Redactor(TEST_MODEL, allow_list=["Linda Garcia"])
 
     assert custom.redact("My name is Linda Garcia.").entities == ()
+
+
+# --- product names are not people ------------------------------------------------------------
+
+PRODUCTS = ("Northline", "Northline Talk", "Northline Two-Line Unlimited", "Extra Line")
+
+
+def test_person_detection_inside_a_product_name_is_dropped() -> None:
+    text = "Northline Two-Line Unlimited is $80 a month."
+    whole = _Detection("PERSON", 0, 28, 0.85)
+    part = _Detection("PERSON", 0, 18, 0.85)  # "Northline Two-Line"
+    protected = [(0, 28)]
+
+    assert _outside_protected(whole, text, protected) is None
+    assert _outside_protected(part, text, protected) is None
+
+
+def test_a_real_name_next_to_a_product_name_is_kept() -> None:
+    text = "Maria with Northline Talk"
+    detection = _Detection("PERSON", 0, len(text), 0.85)
+
+    trimmed = _outside_protected(detection, text, [(11, 25)])
+
+    assert trimmed is not None
+    assert text[trimmed.start : trimmed.end] == "Maria with"
+
+
+def test_the_largest_piece_outside_a_product_name_is_kept() -> None:
+    text = "Al Northline Talk Montgomery"
+    detection = _Detection("PERSON", 0, len(text), 0.85)
+
+    trimmed = _outside_protected(detection, text, [(3, 17)])
+
+    assert trimmed is not None
+    assert text[trimmed.start : trimmed.end] == "Montgomery"
+
+
+def test_leftover_punctuation_is_not_kept_as_a_person() -> None:
+    text = "Northline Talk."
+    detection = _Detection("PERSON", 0, len(text), 0.85)
+
+    assert _outside_protected(detection, text, [(0, 14)]) is None
+
+
+def test_only_person_detections_are_affected_by_product_names() -> None:
+    phone = _Detection("PHONE_NUMBER", 0, 12, 0.75)
+
+    assert _outside_protected(phone, "480-555-0132", [(0, 12)]) is phone
+
+
+def test_no_protected_names_changes_nothing() -> None:
+    detection = _Detection("PERSON", 0, 5, 0.85)
+
+    assert _outside_protected(detection, "Linda", []) == detection
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Northline Talk costs $15 a month.",
+        "Northline Two-Line Unlimited is $80 a month.",
+        "Is the northline talk plan good for a customer who only makes calls?",
+        "An Extra Line is $15 a month.",
+        # "This is" is a name cue, and the cue pattern stops inside "Two-Line".
+        "This is Northline Two-Line Unlimited.",
+    ],
+)
+def test_product_names_survive_redaction(text: str) -> None:
+    custom = Redactor(TEST_MODEL, allow_list=PRODUCTS)
+
+    assert "PERSON" not in _types(custom.redact(text))
+    assert custom.redact(text).text == text
+
+
+def test_a_customer_name_is_still_redacted_beside_a_product_name() -> None:
+    custom = Redactor(TEST_MODEL, allow_list=PRODUCTS)
+
+    result = custom.redact("My name is Linda Garcia and I am on Northline Talk.")
+
+    assert "Linda Garcia" not in result.text
+    assert "Northline Talk" in result.text
+
+
+def test_get_redactor_adds_product_names_to_the_default_allow_list() -> None:
+    shared = get_redactor(TEST_MODEL, ("Northline Talk",))
+
+    assert shared is get_redactor(TEST_MODEL, ("Northline Talk",))
+    assert shared is not get_redactor(TEST_MODEL)
+    assert shared.redact("Northline Talk costs $15 a month.").entities == ()
 
 
 # --- helpers ----------------------------------------------------------------------------

@@ -158,6 +158,18 @@ def test_committed_settings_file_matches_the_plan(tmp_path: Path) -> None:
     assert settings.judge_endpoint != settings.llm_endpoint
 
 
+def test_product_names_in_the_committed_settings_match_the_plan_catalogue(tmp_path: Path) -> None:
+    from data_gen.plans import PLANS
+
+    settings = load_settings(yaml_file=DEFAULT_YAML_FILE, env_file=tmp_path / ".env")
+
+    assert settings.product_names == [row.name for row in PLANS]
+    assert (
+        load_settings(yaml_file=tmp_path / "none.yaml", env_file=tmp_path / ".env").product_names
+        == []
+    )
+
+
 def test_get_settings_is_cached() -> None:
     get_settings.cache_clear()
 

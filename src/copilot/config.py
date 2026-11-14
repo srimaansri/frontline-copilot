@@ -107,6 +107,12 @@ class Settings(BaseSettings):
     chunk_config: str = "A"
     chunking: dict[str, ChunkingConfig] = Field(default_factory=_default_chunking)
 
+    # Redaction
+    product_names: list[str] = Field(
+        default_factory=list,
+        description="Plan and add-on names. The redactor never treats these as a person.",
+    )
+
     # Behaviour
     reading_grade_target: float = Field(default=8.0, gt=0.0)
     max_tool_iterations: int = Field(default=4, ge=1)

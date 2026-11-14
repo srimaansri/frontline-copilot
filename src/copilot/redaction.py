@@ -524,6 +524,50 @@ def _trim_greeting(detection: _Detection, text: str) -> _Detection:
     return _Detection(detection.entity_type, match.end(), detection.end, detection.score)
 
 
+def _outside_protected(
+    detection: _Detection, text: str, protected: Sequence[tuple[int, int]]
+) -> _Detection | None:
+    """Remove the part of a person detection that is a protected name.
+
+    A named-entity model can tag a product name such as "Northline Talk" as a
+    person, in whole or in part. Presidio's own allow-list only drops a
+    detection whose text equals an allow-listed string exactly, so a detection
+    of part of a product name ("Northline Two-Line" inside "Northline Two-Line
+    Unlimited") would slip through. Here any overlap with a protected name is
+    cut away. If nothing is left the detection is dropped; otherwise the largest
+    remaining piece is kept, so a real name next to a product name is still
+    redacted.
+
+    Only ``PERSON`` is treated this way. Detections that come from a validated
+    pattern (a phone number, a card number) are never weakened.
+    """
+    if detection.entity_type != "PERSON":
+        return detection
+    pieces = [(detection.start, detection.end)]
+    for start, end in protected:
+        remaining: list[tuple[int, int]] = []
+        for piece_start, piece_end in pieces:
+            if end <= piece_start or start >= piece_end:
+                remaining.append((piece_start, piece_end))
+                continue
+            if piece_start < start:
+                remaining.append((piece_start, start))
+            if end < piece_end:
+                remaining.append((end, piece_end))
+        pieces = remaining
+    trimmed: list[tuple[int, int]] = []
+    for piece_start, piece_end in pieces:
+        segment = text[piece_start:piece_end]
+        stripped = segment.strip(" \t\n,.;:-")
+        if any(char.isalpha() for char in stripped):
+            offset = segment.index(stripped)
+            trimmed.append((piece_start + offset, piece_start + offset + len(stripped)))
+    if not trimmed:
+        return None
+    best_start, best_end = max(trimmed, key=lambda piece: piece[1] - piece[0])
+    return _Detection(detection.entity_type, best_start, best_end, detection.score)
+
+
 _WORD_RE = re.compile(r"[a-z']+")
 
 
@@ -546,7 +590,9 @@ class Redactor:
         Args:
             spacy_model: Name of an installed spaCy English pipeline.
             score_threshold: Detections scoring below this are dropped.
-            allow_list: Exact strings that are never treated as personal data.
+            allow_list: Names that are never treated as a person, such as the
+                carrier's name and its plan names. Matched without regard to
+                case, wherever they appear in the text.
         """
         nlp_engine = NlpEngineProvider(
             nlp_configuration={
@@ -567,6 +613,13 @@ class Redactor:
             ),
         )
         self._allow_list = list(allow_list)
+        # Longest first, so "Northline Wireless" is matched before "Northline".
+        names = sorted({name for name in allow_list if name.strip()}, key=len, reverse=True)
+        self._protected_re = (
+            re.compile("|".join(re.escape(name) for name in names), re.IGNORECASE)
+            if names
+            else None
+        )
         self.spacy_model = spacy_model
         self.score_threshold = score_threshold
 
@@ -580,13 +633,24 @@ class Redactor:
             context=list(context) or None,
             allow_list=self._allow_list,
         )
-        return _resolve_overlaps(
-            _trim_greeting(
-                _Detection(result.entity_type, result.start, result.end, float(result.score)),
-                text,
-            )
-            for result in results
+        protected = (
+            [match.span() for match in self._protected_re.finditer(text)]
+            if self._protected_re is not None
+            else []
         )
+        detections: list[_Detection] = []
+        for result in results:
+            detection = _outside_protected(
+                _trim_greeting(
+                    _Detection(result.entity_type, result.start, result.end, float(result.score)),
+                    text,
+                ),
+                text,
+                protected,
+            )
+            if detection is not None:
+                detections.append(detection)
+        return _resolve_overlaps(detections)
 
     def redact(
         self,
@@ -645,10 +709,17 @@ class Redactor:
         return results
 
 
-@lru_cache(maxsize=2)
-def get_redactor(spacy_model: str = DEFAULT_SPACY_MODEL) -> Redactor:
-    """Return a shared ``Redactor`` for ``spacy_model``, building it on first use."""
-    return Redactor(spacy_model)
+@lru_cache(maxsize=4)
+def get_redactor(
+    spacy_model: str = DEFAULT_SPACY_MODEL, product_names: tuple[str, ...] = ()
+) -> Redactor:
+    """Return a shared ``Redactor``, building it on first use.
+
+    Args:
+        spacy_model: Name of an installed spaCy English pipeline.
+        product_names: Plan and add-on names, which are never a person.
+    """
+    return Redactor(spacy_model, allow_list=(*DEFAULT_ALLOW_LIST, *product_names))
 
 
 def redact(text: str) -> RedactionResult:

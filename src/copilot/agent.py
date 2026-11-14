@@ -68,7 +68,7 @@ class Copilot:
             The answer, its citations and any guardrail flags.
         """
         if self._redactor is None:
-            self._redactor = get_redactor()
+            self._redactor = get_redactor(product_names=tuple(self.settings.product_names))
         redacted = redact_question(question, self._redactor)
         safe_history = [
             (turn["role"], self._redactor.redact(turn["content"]).text) for turn in history or []

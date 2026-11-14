@@ -31,6 +31,29 @@ chunking:
     chunk_size_tokens: 350
     overlap_tokens: 60
 
+# Redaction. Product names are not personal data, but a named-entity model can
+# tag "Northline Talk" as a person. A test keeps this list equal to the names in
+# the plan catalogue (data_gen/plans.py).
+product_names:
+  - Northline Talk
+  - Northline Starter 1
+  - Northline Everyday 5
+  - Northline Plus 10
+  - Northline Extra 20
+  - Northline Unlimited Essentials
+  - Northline Unlimited Premium
+  - Northline Two-Line Unlimited
+  - Extra Line
+  - International Day Pass
+  - International Calling Pack
+  - Hotspot Boost
+  - Device Protection
+  - Data Top-Up 5
+  - Activation Fee
+  - Late Payment Fee
+  - SIM Replacement Fee
+  - Paper Bill Fee
+
 # Behaviour.
 reading_grade_target: 8.0
 max_tool_iterations: 4

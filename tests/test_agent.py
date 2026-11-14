@@ -221,13 +221,22 @@ def test_parts_are_built_on_first_use(monkeypatch: pytest.MonkeyPatch, redactor:
     def query(**_: Any) -> tuple[list[str], list[list[Any]]]:
         return NAMES, ROWS
 
-    monkeypatch.setattr(agent_module, "get_redactor", lambda: redactor)
+    requested: dict[str, Any] = {}
+
+    def fake_get_redactor(**kwargs: Any) -> Redactor:
+        requested.update(kwargs)
+        return redactor
+
+    monkeypatch.setattr(agent_module, "get_redactor", fake_get_redactor)
     monkeypatch.setattr(agent_module, "build_chat_model", lambda _settings: model)
+    settings = settings.model_copy(update={"product_names": ["Northline Talk"]})
 
     answer = Copilot(settings, retriever=Retriever(settings, query)).run("Late fee?")
 
     assert answer.answer == "It is $5 [1]."
     assert len(model.calls) == 1
+    # The copilot's redactor is told the product names, so a plan name is not a person.
+    assert requested == {"product_names": ("Northline Talk",)}
 
 
 def test_get_copilot_is_cached(monkeypatch: pytest.MonkeyPatch) -> None:
