@@ -26,6 +26,7 @@ from importlib.metadata import version
 from pathlib import Path
 from typing import Protocol
 
+from copilot.text import to_plain_punctuation
 from data_gen.kb_topics import CARRIER_FACTS, TOPICS, Topic
 from data_gen.plans import PLANS
 from data_gen.scrape_kb import Article, article_id_for, write_articles
@@ -107,32 +108,13 @@ def build_user_prompt(topic: Topic) -> str:
     )
 
 
-# Models like typographic punctuation. A phone number written with non-breaking
-# hyphens no longer matches a keyword search for it, so everything is mapped to
-# plain ASCII. Keyed by code point so this source file stays plain ASCII too.
-_PLAIN_PUNCTUATION: dict[int, str] = {
-    0x2010: "-",  # hyphen
-    0x2011: "-",  # non-breaking hyphen
-    0x2012: "-",  # figure dash
-    0x2013: "-",  # en dash
-    0x2014: " - ",  # em dash
-    0x2018: "'",  # left single quote
-    0x2019: "'",  # right single quote
-    0x201C: '"',  # left double quote
-    0x201D: '"',  # right double quote
-    0x2026: "...",  # ellipsis
-    0x00A0: " ",  # no-break space
-    0x202F: " ",  # narrow no-break space
-    0x2009: " ",  # thin space
-}
-
 _FENCE_RE = re.compile(r"^```[a-zA-Z]*\s*\n(.*)\n```\s*$", re.DOTALL)
 _H1_RE = re.compile(r"^#\s+.*$", re.MULTILINE)
 
 
 def clean_body(raw: str, topic: Topic) -> str:
     """Strip a wrapping code fence and make the first heading the exact title."""
-    text = raw.translate(_PLAIN_PUNCTUATION).strip()
+    text = to_plain_punctuation(raw).strip()
     fenced = _FENCE_RE.match(text)
     if fenced:
         text = fenced.group(1).strip()

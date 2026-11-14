@@ -26,12 +26,27 @@ data = [
     "python-dotenv==1.2.4",
     "trafilatura==2.3.1",
 ]
+# The copilot itself: retrieval, the chat model and tracing. Kept out of the core
+# dependencies so the pipeline job on Databricks, which only needs redaction and
+# chunking, does not install MLflow and LangChain.
+rag = [
+    "databricks-langchain==0.22.0",
+    "databricks-sdk==0.166.0",
+    "mlflow[databricks]==3.18.0",
+]
+# Evaluation (eval/).
+eval = [
+    "frontline-copilot[rag]",
+    "python-dotenv==1.2.4",
+    "ragas==0.4.4",
+    "textstat==0.7.13",
+]
 # The spaCy pipeline the redactor uses by default. Models are not on PyPI.
 models = [
     "en_core_web_md @ https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.8.0/en_core_web_md-3.8.0-py3-none-any.whl",
 ]
 dev = [
-    "frontline-copilot[data]",
+    "frontline-copilot[data,eval]",
     # Small pipeline for unit tests, so CI does not download the default one.
     "en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
     "mypy==2.4.1",
@@ -96,6 +111,11 @@ warn_unreachable = true
 plugins = ["pydantic.mypy"]
 # Third-party libraries without type stubs get an `ignore_missing_imports`
 # override here, each added when the library is first imported.
+
+[[tool.mypy.overrides]]
+# Ships no type information. Used in one place, behind the `ChatModel` protocol.
+module = ["databricks_langchain", "databricks_langchain.*"]
+ignore_missing_imports = true
 
 # --- pytest and coverage ----------------------------------------------------
 [tool.pytest.ini_options]
