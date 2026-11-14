@@ -205,14 +205,31 @@ DETERMINISTIC_SCORERS: tuple[Scorer, ...] = (
 )
 
 
+def reference_answer(expectations: Mapping[str, Any]) -> dict[str, str]:
+    """The expected facts as one plain-text reference answer, for RAGAS.
+
+    MLflow's RAGAS adapter builds the reference by joining every value in
+    ``expectations``. Given the whole row, the reference would read
+    "['fact', ...], late-payment-fee, False, search_kb". RAGAS should compare
+    the retrieved chunks with the expected answer and nothing else.
+    """
+    facts = [str(fact).strip().rstrip(".") for fact in expectations.get("expected_facts") or []]
+    return {"expected_output": " ".join(f"{fact}." for fact in facts if fact)}
+
+
 def run_when(
-    judge: Scorer, applies: Callable[[Mapping[str, Any]], bool], *, fields: Sequence[str]
+    judge: Scorer,
+    applies: Callable[[Mapping[str, Any]], bool],
+    *,
+    fields: Sequence[str],
+    reshape: Callable[[Mapping[str, Any]], Mapping[str, Any]] | None = None,
 ) -> Scorer:
     """Run ``judge`` only on rows where ``applies(expectations)`` is true.
 
     On other rows it returns nothing, so the row is not counted for that judge.
     ``fields`` names what the judge is called with, out of ``inputs``,
-    ``outputs``, ``expectations`` and ``trace``.
+    ``outputs``, ``expectations`` and ``trace``. ``reshape`` rewrites the
+    expectations the judge is given.
     """
 
     @scorer(name=judge.name)
@@ -224,7 +241,7 @@ def run_when(
         available = {
             "inputs": inputs,
             "outputs": outputs,
-            "expectations": expectations,
+            "expectations": reshape(expectations) if reshape else expectations,
             "trace": trace,
         }
         return judge(**{name: available[name] for name in fields})
@@ -247,7 +264,12 @@ def when_expected(judge: Scorer, *keys: str) -> Scorer:
     )
 
 
-def on_retrieval_rows(judge: Scorer, *, fields: Sequence[str] = ("trace",)) -> Scorer:
+def on_retrieval_rows(
+    judge: Scorer,
+    *,
+    fields: Sequence[str] = ("trace",),
+    reshape: Callable[[Mapping[str, Any]], Mapping[str, Any]] | None = None,
+) -> Scorer:
     """Run a retrieval judge only on rows that name an article holding the answer.
 
     A question that no article answers has nothing to retrieve. Its retrieved
@@ -256,7 +278,10 @@ def on_retrieval_rows(judge: Scorer, *, fields: Sequence[str] = ("trace",)) -> S
     answer.
     """
     return run_when(
-        judge, lambda expectations: bool(acceptable_sources(expectations)), fields=fields
+        judge,
+        lambda expectations: bool(acceptable_sources(expectations)),
+        fields=fields,
+        reshape=reshape,
     )
 
 
@@ -286,6 +311,7 @@ def llm_judges(judge_endpoint: str, *, include_ragas: bool = True) -> list[Score
             on_retrieval_rows(
                 ContextPrecision(model=model),
                 fields=("inputs", "outputs", "expectations", "trace"),
+                reshape=reference_answer,
             )
         )
     return judges

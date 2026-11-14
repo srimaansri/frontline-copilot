@@ -37,6 +37,7 @@ from eval.scorers import (
     plain_text_for_reading_level,
     reading_grade,
     reading_level,
+    reference_answer,
     retrieved_uris,
     root_output,
     source_rank,
@@ -384,6 +385,28 @@ def test_retrieval_judges_run_only_on_rows_that_name_an_article() -> None:
     assert wrapped(inputs={}, outputs="A", expectations=kb_row, trace=trace) is not None
     assert with_context(inputs={}, outputs="A", expectations=kb_row, trace=trace) is not None
     assert judge.calls == [{"trace": trace}, {"trace": trace, "expectations": kb_row}]
+
+
+def test_ragas_gets_the_expected_facts_as_its_only_reference() -> None:
+    """MLflow joins every expectation value into the RAGAS reference, so only facts are passed."""
+    row = {
+        "expected_facts": ["The Late Payment Fee is $5", "It is charged after 10 days."],
+        "expected_source": "late-payment-fee",
+        "should_escalate": False,
+        "expected_tool": "search_kb",
+    }
+    judge = RecordingJudge()
+    wrapped = on_retrieval_rows(  # type: ignore[arg-type]
+        judge, fields=("expectations", "trace"), reshape=reference_answer
+    )
+    trace = fake_trace()
+
+    wrapped(inputs={}, outputs="A", expectations=row, trace=trace)
+
+    reference = {"expected_output": "The Late Payment Fee is $5. It is charged after 10 days."}
+    assert reference_answer(row) == reference
+    assert judge.calls == [{"expectations": reference, "trace": trace}]
+    assert reference_answer({}) == {"expected_output": ""}
 
 
 # --- runner bookkeeping ----------------------------------------------------------------------
