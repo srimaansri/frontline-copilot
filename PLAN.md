@@ -103,7 +103,7 @@ A frontline support agent at a wireless carrier, talking to an older customer on
 - *Catalog:* `CREATE CATALOG frontline` works on Free Edition. The default-catalog fallback is not needed.
 - *Models:* `databricks-gpt-oss-120b`, `databricks-meta-llama-3-3-70b-instruct` and `databricks-gte-large-en` are all listed and READY. Other open-weight chat models listed: `gpt-oss-20b`, `llama-4-maverick`, `meta-llama-3-1-8b-instruct`, `gemma-3-12b`, `qwen35-122b-a10b`, `qwen3-next-80b-a3b-instruct`.
 - *Tool calling:* one request to `databricks-gpt-oss-120b` with a single tool returned `finish_reason: tool_calls` and correct arguments. One request shows the feature works; it does not show reliability.
-- *Still to check, in the first M2 notebook run:* in a serverless notebook, do `%pip install presidio-analyzer spacy`, a spaCy model download, and `tiktoken.get_encoding("cl100k_base")` succeed? Serverless outbound access is limited to an unpublished list of trusted domains, and the last two fetch files from GitHub and an Azure blob host. See §14 for the fallbacks.
+- *Serverless installs and downloads* (`setup/01_probe_serverless.py`, run 2026-11-14): PyPI, GitHub release downloads and the `tiktoken` blob host are all reachable from serverless. Presidio, spaCy, `en_core_web_md` and `tiktoken` install and load, **provided the job declares serverless environment version 4** (Python 3.12). A notebook task with no declared environment gets an older one (Python 3.11.10, pydantic 1.10.6), and installing over it mid-run leaves a stale `typing_extensions` that breaks the spaCy model load. None of the fallbacks in §14 were needed.
 
 **Free Edition limits that shape this plan:** exceeding the daily quota shuts compute off for the rest of the day; apps stop 24 hours after each start or deploy; no Direct Vector Access indexes; 5 concurrent job tasks.
 
@@ -139,8 +139,12 @@ frontline-copilot/
 ├── app.yaml                     # Databricks Apps config; at the root so the deployed source includes src/copilot (added at M5)
 ├── config/
 │   └── settings.yaml            # chunk sizes, top_k, thresholds, model names (env overrides)
+├── databricks.yml               # bundle: builds the wheel, deploys the pipeline job
+├── resources/
+│   └── frontline_pipeline.job.yml   # the five notebooks as one serverless job
 ├── setup/
-│   └── 00_setup.sql             # catalog/schemas/volume
+│   ├── 00_setup.sql             # catalog/schemas/volume
+│   └── 01_probe_serverless.py   # what serverless can install and reach
 ├── data/
 │   ├── raw/                     # generated or scraped locally; NOT committed
 │   └── synthetic/               # committed output of synth_kb.py, if the fallback is used
@@ -255,7 +259,14 @@ Uses `databricks-sdk` `WorkspaceClient().files.upload(...)` to put all `data/raw
 
 ## 6. Pipelines (Databricks, PySpark, serverless)
 
-Write each as a Databricks notebook source `.py` file so it runs in the workspace and diffs cleanly in Git. Business logic lives in `src/copilot/` (pure Python) and is imported, so it can be unit-tested locally. Each notebook: parameters via widgets (`catalog`), idempotent (`CREATE OR REPLACE` / `MERGE`), logs row counts. Serverless notebooks run Python 3.12.
+Write each as a Databricks notebook source `.py` file so it runs in the workspace and diffs cleanly in Git. Business logic lives in `src/copilot/` (pure Python) and is imported, so it can be unit-tested locally. Each notebook: parameters via widgets (`catalog`), idempotent (`CREATE OR REPLACE` / `MERGE`), logs row counts, and returns a small JSON summary with `dbutils.notebook.exit`.
+
+**How they run.** The five notebooks are one job, `frontline_pipeline`, defined as a Declarative Automation Bundle (`databricks.yml`, `resources/frontline_pipeline.job.yml`):
+
+- `databricks bundle deploy --profile frontline` builds the project wheel and uploads it with the notebooks.
+- `databricks bundle run frontline_pipeline --profile frontline` runs the chain on serverless.
+- The job declares serverless **environment version 4** (Python 3.12) with three dependencies: the project wheel, the `en_core_web_md` wheel, and `databricks-ai-search`. Installing `copilot` as a wheel is what lets Spark functions (`mapInPandas`) import it, not only the notebook driver.
+- `git_sha` is passed to the notebooks from `${bundle.git.commit}` and stored with every metric, so a number in `ops.*` can be traced to the code that produced it. Deploy from a clean, committed tree.
 
 ### 01_ingest → bronze
 - `bronze.kb_articles`, `bronze.transcripts` (turns as `ARRAY<STRUCT<speaker STRING, text STRING>>`), `bronze.pii_labels`, `bronze.plans`.
@@ -270,14 +281,20 @@ Write each as a Databricks notebook source `.py` file so it runs in the workspac
   - Known limits, kept visible as strict `xfail` tests: digits spoken as words, and email addresses spelled out loud. Both need inverse text normalisation before redaction.
   - Replace with typed placeholders: `<PERSON>`, `<PHONE_NUMBER>`, `<IMEI>`, etc. (consistent per transcript: `<PERSON_1>`, `<PERSON_2>` so summaries stay coherent).
   - Pure function: `redact(text: str) -> RedactionResult(text: str, entities: list[Entity])`.
-- In Spark: apply via `mapInPandas` or a pandas UDF; if Presidio won't install on serverless, run redaction as a local batch step before upload and document why (and keep the Spark step for the rest). Try serverless first. The spaCy model downloads from GitHub, which serverless may block; if so, upload the model wheel to the UC volume and `%pip install` it from there before falling back to local redaction.
+- In Spark: applied with `mapInPandas`, one whole conversation per row, so a short answer can borrow cue words from the question before it. Presidio and the spaCy model install on serverless (see §3), so redaction runs on Databricks and the local-batch fallback was not needed.
+- The redactor's output is written once to a staging table and then split, so the model runs a single time: `silver.transcripts_redacted` gets the redacted turns, and `ops.redaction_detections` gets `(transcript_id, turn_index, start, end, entity_type, score)`. Positions and types only: the detected values themselves are never stored.
+- Plan names are passed to the redactor as an allow-list, so a named-entity model cannot tag a product name as a person.
 - Tables: `silver.transcripts_redacted` (redacted turns + `entity_counts MAP<STRING,INT>`), `silver.kb_articles_clean` (dedupe by URL, strip boilerplate, drop < 200 chars), `silver.plans`.
 - **Redaction evaluation** (in 02_redact and `eval/redaction_eval.py`): compare detected spans against `pii_labels` for T0001–T0030. Report per-entity and overall **precision, recall, F1**. A detection matches a label when their intersection-over-union is ≥ 0.5 and the entity type is the same. Two type-blind figures are reported next to it, because they are what matters for leakage: the share of labeled values overlapped by any detection, and the share of labeled characters covered. Logic lives in `src/copilot/span_metrics.py`. `--save` refuses to write a report from a dirty working tree, so every saved number has a real git SHA. Write to `ops.redaction_metrics` and `eval/results/redaction_<date>.json`. Target recall ≥ 0.95 overall on the PII types; recall matters more than precision here — explain that tradeoff in RESPONSIBLE_AI.md. `CPNI_AMOUNT` and `CPNI_USAGE` are measured and reported in their own rows and are not part of the 0.95 target: they depend on context, not format, and the honest number belongs in the limitations section.
 - Never write unredacted transcript text to silver/gold. Bronze holds raw data only because it's synthetic; document that in production bronze would be access-restricted (UC grants, column masks).
 
 ### 03_chunk → gold
-- `chunking.py`: heading-aware recursive splitter. Config-driven `chunk_size_tokens` and `overlap_tokens` (count with `tiktoken` cl100k as an approximation). Each chunk prefixed with `"{title} — {heading}\n"` for retrieval context.
-- `tiktoken` downloads its encoding file on first use, which serverless may block. The token counter is therefore injected into the splitter. If the download fails in the notebook, put the encoding file on the UC volume and point `TIKTOKEN_CACHE_DIR` at it; failing that, run chunking locally and upload the chunks.
+- `chunking.py`: heading-aware recursive splitter. Config-driven `chunk_size_tokens` and `overlap_tokens` (count with `tiktoken` cl100k as an approximation). Each chunk starts with the line `{title} - {heading}` for retrieval context (a plain hyphen, because the knowledge base is kept ASCII-only).
+- **Whole sections are packed into a chunk up to the size limit.** A section is split (paragraphs, then lines, sentences, words) only when it is too large on its own. One chunk per section was rejected: the articles are about 400 tokens with sections of 60 to 150, so every section would fit under both size limits and configs A and B would produce identical chunks. With packing, A keeps each article whole (87 chunks) and B splits them (168 chunks).
+- A new chunk repeats the last whole sentences of the previous one, up to `overlap_tokens`. If the overlap would not fit beside the first new piece, it is dropped for that chunk.
+- The token counter is passed into the splitter, so unit tests count words and need no tokenizer. On serverless `tiktoken` downloads its encoding without trouble (see §3).
+- 87 articles are chunked on the driver. The same code would move into `mapInPandas` for a large knowledge base.
+- Rows are merged into `gold.kb_chunks` by `chunk_id` (`MERGE` with `WHEN NOT MATCHED BY SOURCE THEN DELETE`), so a re-run with unchanged articles writes nothing and the index has nothing to re-embed.
 - `gold.kb_chunks`: `chunk_id STRING (PK), article_id, url, title, section, heading, chunk_index INT, text STRING, n_tokens INT, chunk_config STRING`.
 - **Enable Change Data Feed** on `gold.kb_chunks` (required for Delta Sync index): `TBLPROPERTIES (delta.enableChangeDataFeed = true)`.
 - Two configs for the experiment (see §9.4): `A = 800/100`, `B = 350/60`. Build them as the same table with a `chunk_config` column and one index, filtered at query time with `filters={"chunk_config": "A"}`. Fall back to two indexes on the one endpoint only if the filter misbehaves with hybrid search.
@@ -293,7 +310,7 @@ Write each as a Databricks notebook source `.py` file so it runs in the workspac
 - Assertions: no nulls in keys; no duplicate chunk_ids; chunk token sizes within bounds; zero regex hits for raw phone/email/IMEI patterns in `silver.transcripts_redacted` and anything derived from transcripts (a "PII leak scan"); every chunk has a URL. Fail loudly. Write results to `ops.quality_checks`.
 - The leak scan does not cover the KB tables. Help articles legitimately contain the carrier's own support phone numbers and email addresses, and those must stay.
 
-Optional: wire 01–05 as a Databricks **Job** (Free Edition caps concurrent tasks, keep it a simple chain) and/or a Databricks Asset Bundle `databricks.yml`. Nice to have, not required for MVP.
+The job and bundle that were optional here are now how the pipeline runs (see the start of this section). Running five notebooks by hand in the UI would not have recorded a git SHA with the metrics.
 
 ---
 

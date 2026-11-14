@@ -33,6 +33,8 @@ Portfolio demo: an AI copilot for wireless-carrier frontline support agents, on 
 - Knowledge base: `data/synthetic/kb_articles.jsonl` is committed and is the source. `python -m data_gen.synth_kb` only writes articles that are missing; `--force` rewrites all of them and should be a deliberate act. `python -m data_gen.scrape_kb` exists but is not used.
 - Databricks CLI: signed in as profile `frontline`. Pass `--profile frontline` on every CLI command.
 - Upload: `python -m data_gen.upload`
+- Pipeline: commit first, then `databricks bundle deploy --profile frontline` and `databricks bundle run frontline_pipeline --profile frontline`. The job records the deployed git SHA with its metrics, so deploying uncommitted code makes those numbers untraceable.
+- In Git Bash, Databricks paths such as `/Workspace/...` and `/Volumes/...` get rewritten into Windows paths. Use the Python SDK or PowerShell for commands that take them.
 - Dev set for tuning the redactor: `python -m data_gen.synth_transcripts --seed 7 --out-dir data/raw/dev --labeled 200`
 - Redaction eval: `python -m eval.redaction_eval` (test set), `--data-dir data/raw/dev --show-errors` (dev set), `--challenge` (hand-written set). Add `--save --tag <name>` to record a result; it needs a clean working tree.
 - Eval: `python -m eval.run_eval --config A --query-type ann --tag baseline` (always try `--limit 5` first)

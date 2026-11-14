@@ -216,3 +216,62 @@ The plan's target was PII recall of at least 0.95. The test set meets it and the
 - Two of its scripted file edits corrupted escape sequences and broke two files. It repaired them by hand and the checks passed before anything was committed.
 
 **M1 acceptance** (PLAN.md §12): at least 40 articles (87), 200 transcripts with 30 labeled, `plans.csv`, `redaction.py` with tests passing, and a local redaction evaluation that prints precision, recall and F1. All met.
+
+---
+
+## 2026-11-14 — M2: pipelines on Databricks
+
+**Tool:** Claude Code, with the Databricks CLI and SDK.
+
+**Asked:** start Milestone 2.
+
+**What it built**
+
+- `src/copilot/chunking.py`: the heading-aware chunker, with core tests.
+- `data_gen/upload.py`: sends the four data files to the landing volume.
+- `pipelines/01_ingest.py` to `05_quality_checks.py`: thin notebooks over `src/copilot`.
+- `databricks.yml` and `resources/frontline_pipeline.job.yml`: a bundle that builds the project wheel and runs the five notebooks as one serverless job.
+- `setup/01_probe_serverless.py`: a probe of what serverless can install and reach.
+
+**Result of the first full run** (2026-11-14, commit `55692f5`, all five tasks succeeded)
+
+| Task | Seconds | Outcome |
+|---|---|---|
+| ingest | 86 | 87 articles, 200 transcripts, 221 labels, 18 plan rows |
+| redact | 82 | 200 transcripts redacted, 1,472 detections. PII 209/209 with 0 false positives; CPNI 12/12 with 1 false positive |
+| chunk | 34 | 87 chunks for config A, 168 for config B, 255 rows inserted, Change Data Feed on |
+| index | 1,922 | index created, 255 of 255 rows indexed, 20 of 20 smoke queries had the expected article in the top 3 |
+| quality_checks | 48 | 18 of 18 checks passed, 0 PII leak hits |
+
+The redaction numbers computed on Databricks are identical to the local test-set run, which is what should happen: same code, same 30 labeled transcripts.
+
+**What the probe settled**
+
+- The plan carried three fallbacks in case serverless could not download things. None was needed: PyPI, GitHub release downloads and the `tiktoken` file host are all reachable.
+- The catch is the environment. A notebook task with no declared environment got Python 3.11.10 with pydantic 1.10.6, and installing Presidio over it left a stale `typing_extensions`, so the spaCy model failed to load. With serverless environment version 4 declared on the job, everything installs before the notebook starts and loads cleanly.
+
+**Decisions**
+
+- **Sections are packed into chunks.** The plan read as one chunk per section. On this knowledge base that would have made the experiment meaningless: sections are 60 to 150 tokens, so both the 800 and the 350 setting would have produced the same chunks. Claude Code raised this before writing the chunker. Packing whole sections up to the limit gives 87 chunks for A and 168 for B.
+- **The job is a bundle, not notebooks run by hand.** The plan called this optional. It became the way the pipeline runs because it records the git commit with every metric.
+- **Redaction output goes through a staging table**, so the model runs once and the result is split into redacted text (`silver`) and detection positions (`ops`). Detected values are never stored.
+- **Chunks are merged by key**, so a re-run with unchanged articles writes nothing and the index does not re-embed.
+- **Table names are validated.** `Settings.table()` and the catalog setting accept plain identifiers only, because the notebooks put them in SQL text.
+
+**Things that went wrong on the way**
+
+- Git Bash rewrote `/Workspace/...` into a Windows path, so the first CLI attempts failed. The SDK is used for those calls now, and CLAUDE.md says so.
+- The folder I first chose for the probe notebook had the same path as the MLflow experiment, which is also a workspace object.
+- Two new chunking tests miscounted the words in a chunk's first line. The tests were wrong, not the chunker.
+- Another scripted edit corrupted escape sequences, the second time in two days. Claude Code now makes such edits one at a time.
+
+**Worth knowing**
+
+- The index task took 32 minutes, almost all of it Databricks provisioning the endpoint for its first index. A later sync should be much quicker, but that has not been measured.
+- In one smoke query (config A, hybrid search, "How do I set up voicemail on a new phone?") the top hit was the article on resetting a voicemail PIN, with the expected article still in the top 3. Twenty smoke queries are not an evaluation; whether hybrid search helps or hurts is a Milestone 3 question.
+
+**For me to review**
+
+- `tests/test_chunking_core.py` was written by Claude Code so the chunker was verified before it ran on Databricks. `tests/test_chunking.py` is still mine to write with Copilot, with my own log entry.
+
+**M2 acceptance** (PLAN.md §12): setup SQL run, data uploaded, notebooks 01 to 05 green on serverless, `gold.kb_chunks` with Change Data Feed, quality checks passing with zero PII leaks. All met.

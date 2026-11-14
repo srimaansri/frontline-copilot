@@ -14,7 +14,7 @@ This repo is being built milestone by milestone. Every number here comes from a 
 |---|---|---|
 | M0 | Scaffold: tooling, config loader, CI | Done |
 | M1 | Data generation and PII redaction, measured locally | Done |
-| M2 | Databricks pipelines: bronze, silver, gold, quality checks | |
+| M2 | Databricks pipelines: bronze, silver, gold, quality checks | Done |
 | M3 | Retrieval-augmented answers and the first evaluation | |
 | M4 | Agent with tools, guardrails, escalation | |
 | M5 | Streamlit app on Databricks Apps, MCP server | |
@@ -29,6 +29,22 @@ Nothing here comes from a real carrier or a real customer.
 - **Knowledge base:** 87 help articles for a fictional carrier, "Northline Wireless", in [data/synthetic](data/synthetic). An open-weight model (`databricks-gpt-oss-120b`) wrote the prose on 2026-11-13. Every price, fee and policy comes from hand-written briefs in [data_gen/kb_topics.py](data_gen/kb_topics.py) and the plan catalogue, and an article is rejected if it quotes a dollar amount found in neither. The scraper in `data_gen/scrape_kb.py` exists but was not used.
 - **Transcripts:** 200 support conversations assembled from templates by code, with no language model, so the position of every piece of personal data is known exactly.
 - **Plans:** 8 invented plans and 10 add-ons and fees.
+
+## The pipeline on Databricks
+
+Five notebooks in [pipelines](pipelines) run as one serverless job, defined in [databricks.yml](databricks.yml) and [resources/frontline_pipeline.job.yml](resources/frontline_pipeline.job.yml). The logic they call lives in `src/copilot` and is installed on the cluster as a wheel. The figures below are from the run of 2026-11-14 at commit `55692f5`, on Databricks Free Edition.
+
+| Step | What it does | Result |
+|---|---|---|
+| 01 Ingest | Landing volume to bronze Delta tables | 87 articles, 200 transcripts, 221 labels, 18 plan rows |
+| 02 Redact | Presidio + spaCy inside Spark (`mapInPandas`), then scores itself on the labeled transcripts | 200 transcripts redacted, 1,472 values replaced. PII recall 1.000 (209/209), precision 1.000. Same as the local test-set run. |
+| 03 Chunk | Heading-aware chunks into `gold.kb_chunks`, Change Data Feed on, merged by key | 87 chunks at 800/100 tokens, 168 at 350/60 |
+| 04 Index | Delta Sync index on Databricks AI Search with `databricks-gte-large-en` embeddings | 255 of 255 rows indexed |
+| 05 Quality checks | Keys, chunk sizes, coverage, and a scan of redacted transcripts for leftover phone numbers, emails and long digit runs | 18 of 18 checks passed, 0 leak hits |
+
+The index step also runs 20 smoke queries (5 questions, both chunk settings, vector and hybrid search). The expected article was in the top 3 for all 20. That shows the query paths work; it is not an evaluation. Retrieval quality is measured in Milestone 3.
+
+Every metric written to the `ops` schema carries the git commit of the code that produced it.
 
 ## Redaction results so far
 
