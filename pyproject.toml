@@ -84,7 +84,8 @@ convention = "google"
 # Databricks notebooks: `spark` and `dbutils` are injected globals (F821), cells are
 # not a public API (D), imports follow the `%pip`-style setup cell (E402), and table
 # names come from a widget set by the job, not from a user or a model (S608).
-"pipelines/**" = ["D", "F821", "E402", "S608"]
+# `F` and `T` are the usual PySpark aliases for functions and types (N812).
+"pipelines/**" = ["D", "F821", "E402", "S608", "N812"]
 "setup/**" = ["D", "F821", "E402", "S310", "S603"]
 
 # --- mypy -------------------------------------------------------------------

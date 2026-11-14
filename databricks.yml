@@ -1,0 +1,36 @@
+# Declarative Automation Bundle for the data pipeline.
+#
+#   databricks bundle deploy --profile frontline
+#   databricks bundle run frontline_pipeline --profile frontline
+#
+# The workspace is chosen by the CLI profile, so no host is written here.
+
+bundle:
+  name: frontline-copilot
+
+include:
+  - resources/*.yml
+
+# The project's own code is installed on serverless as a wheel, so the notebooks
+# and the Spark functions they run import `copilot` the same way.
+artifacts:
+  copilot_wheel:
+    type: whl
+    path: .
+    build: python -m pip wheel . --no-deps --wheel-dir dist
+
+variables:
+  catalog:
+    description: Unity Catalog catalog that holds every schema used by the pipeline.
+    default: frontline
+  vs_endpoint:
+    description: AI Search endpoint that hosts the index.
+    default: frontline-vs
+  embedding_endpoint:
+    description: Model serving endpoint that computes embeddings for the index.
+    default: databricks-gte-large-en
+
+targets:
+  dev:
+    default: true
+    mode: development

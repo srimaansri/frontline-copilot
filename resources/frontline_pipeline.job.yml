@@ -1,0 +1,73 @@
+# The five pipeline notebooks as one job, run in order on serverless compute.
+#
+# Free Edition allows 5 concurrent job tasks. This is a simple chain, so one task
+# runs at a time.
+
+resources:
+  jobs:
+    frontline_pipeline:
+      name: frontline-pipeline
+      description: >-
+        Ingest, redact, chunk, index and check the Frontline Copilot data.
+        Every task is safe to re-run.
+      max_concurrent_runs: 1
+
+      environments:
+        - environment_key: pipeline
+          spec:
+            # Serverless environment version 4: Python 3.12. Declared here because a
+            # notebook with no environment gets an older one (Python 3.11,
+            # pydantic 1.x) that the redactor's dependencies do not install on cleanly.
+            environment_version: "4"
+            dependencies:
+              - ../dist/*.whl
+              - en_core_web_md @ https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.8.0/en_core_web_md-3.8.0-py3-none-any.whl
+              - databricks-ai-search==0.83
+
+      tasks:
+        - task_key: ingest
+          environment_key: pipeline
+          notebook_task:
+            notebook_path: ../pipelines/01_ingest.py
+            base_parameters:
+              catalog: ${var.catalog}
+
+        - task_key: redact
+          depends_on:
+            - task_key: ingest
+          environment_key: pipeline
+          notebook_task:
+            notebook_path: ../pipelines/02_redact.py
+            base_parameters:
+              catalog: ${var.catalog}
+              git_sha: ${bundle.git.commit}
+
+        - task_key: chunk
+          depends_on:
+            - task_key: redact
+          environment_key: pipeline
+          notebook_task:
+            notebook_path: ../pipelines/03_chunk.py
+            base_parameters:
+              catalog: ${var.catalog}
+
+        - task_key: index
+          depends_on:
+            - task_key: chunk
+          environment_key: pipeline
+          notebook_task:
+            notebook_path: ../pipelines/04_index.py
+            base_parameters:
+              catalog: ${var.catalog}
+              vs_endpoint: ${var.vs_endpoint}
+              embedding_endpoint: ${var.embedding_endpoint}
+
+        - task_key: quality_checks
+          depends_on:
+            - task_key: index
+          environment_key: pipeline
+          notebook_task:
+            notebook_path: ../pipelines/05_quality_checks.py
+            base_parameters:
+              catalog: ${var.catalog}
+              git_sha: ${bundle.git.commit}
