@@ -37,7 +37,8 @@ export default defineConfig(({ command, mode }) => {
   }
 
   return {
-    base: "/",
+    // The public demo is served from a sub-path (GitHub Pages), set with VITE_BASE.
+    base: process.env.VITE_BASE ?? "/",
     plugins: [react(), tailwindcss(), ...(command === "serve" || mock ? [themeFromUrl()] : [])],
     resolve: {
       alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
