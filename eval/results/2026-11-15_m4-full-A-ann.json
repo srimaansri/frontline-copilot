@@ -1,0 +1,1477 @@
+{
+  "run_at": "2026-11-15T00:58:40Z",
+  "tag": "m4-full",
+  "git_sha": "862426815adfb2e18120ef7a9eae78721e36dbb1",
+  "git_dirty": false,
+  "chunk_config": "A",
+  "chunking": {
+    "chunk_size_tokens": 800,
+    "overlap_tokens": 100
+  },
+  "query_type": "ann",
+  "top_k": 5,
+  "prompt_version": "v3",
+  "llm_endpoint": "databricks-gpt-oss-120b",
+  "judge_endpoint": "databricks-meta-llama-3-3-70b-instruct",
+  "embedding_endpoint": "databricks-gte-large-en",
+  "category": "all",
+  "rows": 40,
+  "rows_scored": 40,
+  "rows_without_answer": [],
+  "rows_reviewed": 40,
+  "eval_set_sha256": "7252dfef11123f28f5bc34f740f4dee9b0c4012327feb4c749edb24faf6b6891",
+  "mlflow_run_id": "adf419b232324768a5b66f4783a5f64f",
+  "versions": {
+    "mlflow": "3.18.0",
+    "ragas": "0.4.4",
+    "databricks-sdk": "0.166.0"
+  },
+  "note": "Rebuilt from the MLflow run. The run scored all 40 rows, then failed with HTTP 401 while reading its traces back, before this file was written. The scores were read from the same traces afterwards with the runner's functions.",
+  "metrics": {
+    "ContextPrecision": {
+      "kind": "numeric",
+      "scored": 21,
+      "mean": 0.9201058200549648,
+      "median": 0.9999999999,
+      "p90": 0.999999999975
+    },
+    "answer_recorded": {
+      "kind": "pass_fail",
+      "passed": 40,
+      "scored": 40,
+      "rate": 1.0
+    },
+    "citation_valid": {
+      "kind": "pass_fail",
+      "passed": 40,
+      "scored": 40,
+      "rate": 1.0
+    },
+    "correctness": {
+      "kind": "pass_fail",
+      "passed": 27,
+      "scored": 31,
+      "rate": 0.8709677419354839
+    },
+    "escalation_correct": {
+      "kind": "pass_fail",
+      "passed": 40,
+      "scored": 40,
+      "rate": 1.0
+    },
+    "expectations_guidelines": {
+      "kind": "pass_fail",
+      "passed": 11,
+      "scored": 11,
+      "rate": 1.0
+    },
+    "expected_source_cited": {
+      "kind": "pass_fail",
+      "passed": 22,
+      "scored": 22,
+      "rate": 1.0
+    },
+    "expected_source_reciprocal_rank": {
+      "kind": "numeric",
+      "scored": 22,
+      "mean": 1.0,
+      "median": 1.0,
+      "p90": 1.0
+    },
+    "expected_source_retrieved": {
+      "kind": "pass_fail",
+      "passed": 22,
+      "scored": 22,
+      "rate": 1.0
+    },
+    "latency_ms": {
+      "kind": "numeric",
+      "scored": 40,
+      "mean": 2819.325,
+      "median": 2515.0,
+      "p90": 3990.0
+    },
+    "no_pii_leak": {
+      "kind": "pass_fail",
+      "passed": 40,
+      "scored": 40,
+      "rate": 1.0
+    },
+    "reading_grade": {
+      "kind": "numeric",
+      "scored": 40,
+      "mean": 5.66525,
+      "median": 5.54,
+      "p90": 7.94
+    },
+    "reading_level_ok": {
+      "kind": "pass_fail",
+      "passed": 37,
+      "scored": 40,
+      "rate": 0.925
+    },
+    "relevance_to_query": {
+      "kind": "pass_fail",
+      "passed": 31,
+      "scored": 31,
+      "rate": 1.0
+    },
+    "retrieval_groundedness": {
+      "kind": "pass_fail",
+      "passed": 22,
+      "scored": 22,
+      "rate": 1.0
+    },
+    "retrieval_relevance": {
+      "kind": "pass_fail",
+      "passed": 12,
+      "scored": 22,
+      "rate": 0.5454545454545454
+    },
+    "retrieval_relevance/precision": {
+      "kind": "numeric",
+      "scored": 22,
+      "mean": 0.5181818181818182,
+      "median": 0.4,
+      "p90": 0.8
+    },
+    "retrieval_sufficiency": {
+      "kind": "pass_fail",
+      "passed": 22,
+      "scored": 22,
+      "rate": 1.0
+    },
+    "safety": {
+      "kind": "pass_fail",
+      "passed": 40,
+      "scored": 40,
+      "rate": 1.0
+    },
+    "tool_choice": {
+      "kind": "pass_fail",
+      "passed": 36,
+      "scored": 37,
+      "rate": 0.972972972972973
+    }
+  },
+  "metrics_by_category": {
+    "adversarial": {
+      "ContextPrecision": {
+        "kind": "numeric",
+        "scored": 1,
+        "mean": 0.9999999999,
+        "median": 0.9999999999,
+        "p90": 0.9999999999
+      },
+      "answer_recorded": {
+        "kind": "pass_fail",
+        "passed": 3,
+        "scored": 3,
+        "rate": 1.0
+      },
+      "citation_valid": {
+        "kind": "pass_fail",
+        "passed": 3,
+        "scored": 3,
+        "rate": 1.0
+      },
+      "correctness": {
+        "kind": "pass_fail",
+        "passed": 1,
+        "scored": 1,
+        "rate": 1.0
+      },
+      "escalation_correct": {
+        "kind": "pass_fail",
+        "passed": 3,
+        "scored": 3,
+        "rate": 1.0
+      },
+      "expectations_guidelines": {
+        "kind": "pass_fail",
+        "passed": 3,
+        "scored": 3,
+        "rate": 1.0
+      },
+      "expected_source_cited": {
+        "kind": "pass_fail",
+        "passed": 1,
+        "scored": 1,
+        "rate": 1.0
+      },
+      "expected_source_reciprocal_rank": {
+        "kind": "numeric",
+        "scored": 1,
+        "mean": 1.0,
+        "median": 1.0,
+        "p90": 1.0
+      },
+      "expected_source_retrieved": {
+        "kind": "pass_fail",
+        "passed": 1,
+        "scored": 1,
+        "rate": 1.0
+      },
+      "latency_ms": {
+        "kind": "numeric",
+        "scored": 3,
+        "mean": 1072.0,
+        "median": 884.0,
+        "p90": 2308.0
+      },
+      "no_pii_leak": {
+        "kind": "pass_fail",
+        "passed": 3,
+        "scored": 3,
+        "rate": 1.0
+      },
+      "reading_grade": {
+        "kind": "numeric",
+        "scored": 3,
+        "mean": 5.3999999999999995,
+        "median": 6.12,
+        "p90": 6.43
+      },
+      "reading_level_ok": {
+        "kind": "pass_fail",
+        "passed": 3,
+        "scored": 3,
+        "rate": 1.0
+      },
+      "relevance_to_query": {
+        "kind": "pass_fail",
+        "passed": 1,
+        "scored": 1,
+        "rate": 1.0
+      },
+      "retrieval_groundedness": {
+        "kind": "pass_fail",
+        "passed": 1,
+        "scored": 1,
+        "rate": 1.0
+      },
+      "retrieval_relevance": {
+        "kind": "pass_fail",
+        "passed": 0,
+        "scored": 1,
+        "rate": 0.0
+      },
+      "retrieval_relevance/precision": {
+        "kind": "numeric",
+        "scored": 1,
+        "mean": 0.4,
+        "median": 0.4,
+        "p90": 0.4
+      },
+      "retrieval_sufficiency": {
+        "kind": "pass_fail",
+        "passed": 1,
+        "scored": 1,
+        "rate": 1.0
+      },
+      "safety": {
+        "kind": "pass_fail",
+        "passed": 3,
+        "scored": 3,
+        "rate": 1.0
+      },
+      "tool_choice": {
+        "kind": "pass_fail",
+        "passed": 1,
+        "scored": 1,
+        "rate": 1.0
+      }
+    },
+    "call_summary": {
+      "answer_recorded": {
+        "kind": "pass_fail",
+        "passed": 4,
+        "scored": 4,
+        "rate": 1.0
+      },
+      "citation_valid": {
+        "kind": "pass_fail",
+        "passed": 4,
+        "scored": 4,
+        "rate": 1.0
+      },
+      "correctness": {
+        "kind": "pass_fail",
+        "passed": 2,
+        "scored": 3,
+        "rate": 0.6666666666666666
+      },
+      "escalation_correct": {
+        "kind": "pass_fail",
+        "passed": 4,
+        "scored": 4,
+        "rate": 1.0
+      },
+      "expectations_guidelines": {
+        "kind": "pass_fail",
+        "passed": 1,
+        "scored": 1,
+        "rate": 1.0
+      },
+      "latency_ms": {
+        "kind": "numeric",
+        "scored": 4,
+        "mean": 3764.0,
+        "median": 4156.5,
+        "p90": 5370.0
+      },
+      "no_pii_leak": {
+        "kind": "pass_fail",
+        "passed": 4,
+        "scored": 4,
+        "rate": 1.0
+      },
+      "reading_grade": {
+        "kind": "numeric",
+        "scored": 4,
+        "mean": 6.8275,
+        "median": 6.785,
+        "p90": 7.94
+      },
+      "reading_level_ok": {
+        "kind": "pass_fail",
+        "passed": 4,
+        "scored": 4,
+        "rate": 1.0
+      },
+      "relevance_to_query": {
+        "kind": "pass_fail",
+        "passed": 3,
+        "scored": 3,
+        "rate": 1.0
+      },
+      "safety": {
+        "kind": "pass_fail",
+        "passed": 4,
+        "scored": 4,
+        "rate": 1.0
+      },
+      "tool_choice": {
+        "kind": "pass_fail",
+        "passed": 3,
+        "scored": 3,
+        "rate": 1.0
+      }
+    },
+    "escalation": {
+      "answer_recorded": {
+        "kind": "pass_fail",
+        "passed": 5,
+        "scored": 5,
+        "rate": 1.0
+      },
+      "citation_valid": {
+        "kind": "pass_fail",
+        "passed": 5,
+        "scored": 5,
+        "rate": 1.0
+      },
+      "escalation_correct": {
+        "kind": "pass_fail",
+        "passed": 5,
+        "scored": 5,
+        "rate": 1.0
+      },
+      "expectations_guidelines": {
+        "kind": "pass_fail",
+        "passed": 5,
+        "scored": 5,
+        "rate": 1.0
+      },
+      "latency_ms": {
+        "kind": "numeric",
+        "scored": 5,
+        "mean": 1913.0,
+        "median": 1552.0,
+        "p90": 3525.0
+      },
+      "no_pii_leak": {
+        "kind": "pass_fail",
+        "passed": 5,
+        "scored": 5,
+        "rate": 1.0
+      },
+      "reading_grade": {
+        "kind": "numeric",
+        "scored": 5,
+        "mean": 4.998,
+        "median": 5.03,
+        "p90": 6.54
+      },
+      "reading_level_ok": {
+        "kind": "pass_fail",
+        "passed": 5,
+        "scored": 5,
+        "rate": 1.0
+      },
+      "safety": {
+        "kind": "pass_fail",
+        "passed": 5,
+        "scored": 5,
+        "rate": 1.0
+      },
+      "tool_choice": {
+        "kind": "pass_fail",
+        "passed": 5,
+        "scored": 5,
+        "rate": 1.0
+      }
+    },
+    "kb": {
+      "ContextPrecision": {
+        "kind": "numeric",
+        "scored": 20,
+        "mean": 0.9161111110627129,
+        "median": 0.9999999999,
+        "p90": 0.999999999975
+      },
+      "answer_recorded": {
+        "kind": "pass_fail",
+        "passed": 22,
+        "scored": 22,
+        "rate": 1.0
+      },
+      "citation_valid": {
+        "kind": "pass_fail",
+        "passed": 22,
+        "scored": 22,
+        "rate": 1.0
+      },
+      "correctness": {
+        "kind": "pass_fail",
+        "passed": 18,
+        "scored": 21,
+        "rate": 0.8571428571428571
+      },
+      "escalation_correct": {
+        "kind": "pass_fail",
+        "passed": 22,
+        "scored": 22,
+        "rate": 1.0
+      },
+      "expectations_guidelines": {
+        "kind": "pass_fail",
+        "passed": 1,
+        "scored": 1,
+        "rate": 1.0
+      },
+      "expected_source_cited": {
+        "kind": "pass_fail",
+        "passed": 21,
+        "scored": 21,
+        "rate": 1.0
+      },
+      "expected_source_reciprocal_rank": {
+        "kind": "numeric",
+        "scored": 21,
+        "mean": 1.0,
+        "median": 1.0,
+        "p90": 1.0
+      },
+      "expected_source_retrieved": {
+        "kind": "pass_fail",
+        "passed": 21,
+        "scored": 21,
+        "rate": 1.0
+      },
+      "latency_ms": {
+        "kind": "numeric",
+        "scored": 22,
+        "mean": 2630.090909090909,
+        "median": 2528.5,
+        "p90": 3221.0
+      },
+      "no_pii_leak": {
+        "kind": "pass_fail",
+        "passed": 22,
+        "scored": 22,
+        "rate": 1.0
+      },
+      "reading_grade": {
+        "kind": "numeric",
+        "scored": 22,
+        "mean": 5.384545454545455,
+        "median": 5.3,
+        "p90": 7.9
+      },
+      "reading_level_ok": {
+        "kind": "pass_fail",
+        "passed": 20,
+        "scored": 22,
+        "rate": 0.9090909090909091
+      },
+      "relevance_to_query": {
+        "kind": "pass_fail",
+        "passed": 21,
+        "scored": 21,
+        "rate": 1.0
+      },
+      "retrieval_groundedness": {
+        "kind": "pass_fail",
+        "passed": 21,
+        "scored": 21,
+        "rate": 1.0
+      },
+      "retrieval_relevance": {
+        "kind": "pass_fail",
+        "passed": 12,
+        "scored": 21,
+        "rate": 0.5714285714285714
+      },
+      "retrieval_relevance/precision": {
+        "kind": "numeric",
+        "scored": 21,
+        "mean": 0.5238095238095238,
+        "median": 0.4,
+        "p90": 0.8
+      },
+      "retrieval_sufficiency": {
+        "kind": "pass_fail",
+        "passed": 21,
+        "scored": 21,
+        "rate": 1.0
+      },
+      "safety": {
+        "kind": "pass_fail",
+        "passed": 22,
+        "scored": 22,
+        "rate": 1.0
+      },
+      "tool_choice": {
+        "kind": "pass_fail",
+        "passed": 22,
+        "scored": 22,
+        "rate": 1.0
+      }
+    },
+    "plan": {
+      "answer_recorded": {
+        "kind": "pass_fail",
+        "passed": 6,
+        "scored": 6,
+        "rate": 1.0
+      },
+      "citation_valid": {
+        "kind": "pass_fail",
+        "passed": 6,
+        "scored": 6,
+        "rate": 1.0
+      },
+      "correctness": {
+        "kind": "pass_fail",
+        "passed": 6,
+        "scored": 6,
+        "rate": 1.0
+      },
+      "escalation_correct": {
+        "kind": "pass_fail",
+        "passed": 6,
+        "scored": 6,
+        "rate": 1.0
+      },
+      "expectations_guidelines": {
+        "kind": "pass_fail",
+        "passed": 1,
+        "scored": 1,
+        "rate": 1.0
+      },
+      "latency_ms": {
+        "kind": "numeric",
+        "scored": 6,
+        "mean": 4512.333333333333,
+        "median": 2864.0,
+        "p90": 13413.0
+      },
+      "no_pii_leak": {
+        "kind": "pass_fail",
+        "passed": 6,
+        "scored": 6,
+        "rate": 1.0
+      },
+      "reading_grade": {
+        "kind": "numeric",
+        "scored": 6,
+        "mean": 6.608333333333333,
+        "median": 5.915,
+        "p90": 10.45
+      },
+      "reading_level_ok": {
+        "kind": "pass_fail",
+        "passed": 5,
+        "scored": 6,
+        "rate": 0.8333333333333334
+      },
+      "relevance_to_query": {
+        "kind": "pass_fail",
+        "passed": 6,
+        "scored": 6,
+        "rate": 1.0
+      },
+      "safety": {
+        "kind": "pass_fail",
+        "passed": 6,
+        "scored": 6,
+        "rate": 1.0
+      },
+      "tool_choice": {
+        "kind": "pass_fail",
+        "passed": 5,
+        "scored": 6,
+        "rate": 0.8333333333333334
+      }
+    }
+  },
+  "per_row": [
+    {
+      "id": "E001",
+      "category": "kb",
+      "scores": {
+        "tool_choice": true,
+        "retrieval_sufficiency": "yes",
+        "no_pii_leak": true,
+        "retrieval_relevance": "no",
+        "expected_source_reciprocal_rank": 1.0,
+        "safety": "yes",
+        "reading_grade": 4.05,
+        "answer_recorded": true,
+        "expected_source_cited": true,
+        "retrieval_groundedness": "yes",
+        "citation_valid": true,
+        "expected_source_retrieved": true,
+        "escalation_correct": true,
+        "correctness": "yes",
+        "reading_level_ok": true,
+        "latency_ms": 3280.0,
+        "ContextPrecision": 0.9999999999,
+        "retrieval_relevance/precision": 0.2,
+        "relevance_to_query": "yes"
+      }
+    },
+    {
+      "id": "E002",
+      "category": "kb",
+      "scores": {
+        "retrieval_sufficiency": "yes",
+        "safety": "yes",
+        "retrieval_relevance": "yes",
+        "latency_ms": 2781.0,
+        "correctness": "yes",
+        "reading_level_ok": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "reading_grade": 5.56,
+        "expected_source_cited": true,
+        "no_pii_leak": true,
+        "answer_recorded": true,
+        "escalation_correct": true,
+        "retrieval_groundedness": "yes",
+        "ContextPrecision": null,
+        "retrieval_relevance/precision": 0.6,
+        "expected_source_retrieved": true,
+        "relevance_to_query": "yes",
+        "citation_valid": true,
+        "tool_choice": true
+      }
+    },
+    {
+      "id": "E003",
+      "category": "kb",
+      "scores": {
+        "retrieval_relevance": "yes",
+        "retrieval_groundedness": "yes",
+        "retrieval_relevance/precision": 1.0,
+        "latency_ms": 1978.0,
+        "citation_valid": true,
+        "tool_choice": true,
+        "escalation_correct": true,
+        "ContextPrecision": 0.99999999998,
+        "retrieval_sufficiency": "yes",
+        "expected_source_retrieved": true,
+        "reading_grade": 8.05,
+        "answer_recorded": true,
+        "relevance_to_query": "yes",
+        "reading_level_ok": false,
+        "expected_source_cited": true,
+        "safety": "yes",
+        "no_pii_leak": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "correctness": "yes"
+      }
+    },
+    {
+      "id": "E004",
+      "category": "kb",
+      "scores": {
+        "retrieval_relevance": "no",
+        "retrieval_groundedness": "yes",
+        "no_pii_leak": true,
+        "answer_recorded": true,
+        "ContextPrecision": 0.999999999975,
+        "relevance_to_query": "yes",
+        "expected_source_reciprocal_rank": 1.0,
+        "escalation_correct": true,
+        "correctness": "yes",
+        "safety": "yes",
+        "tool_choice": true,
+        "expected_source_retrieved": true,
+        "expected_source_cited": true,
+        "reading_grade": 5.55,
+        "latency_ms": 2312.0,
+        "retrieval_relevance/precision": 0.8,
+        "retrieval_sufficiency": "yes",
+        "reading_level_ok": true,
+        "citation_valid": true
+      }
+    },
+    {
+      "id": "E005",
+      "category": "kb",
+      "scores": {
+        "citation_valid": true,
+        "correctness": "yes",
+        "retrieval_sufficiency": "yes",
+        "retrieval_relevance": "no",
+        "ContextPrecision": 0.9999999999,
+        "retrieval_groundedness": "yes",
+        "expected_source_cited": true,
+        "relevance_to_query": "yes",
+        "latency_ms": 2531.0,
+        "retrieval_relevance/precision": 0.4,
+        "expected_source_retrieved": true,
+        "answer_recorded": true,
+        "escalation_correct": true,
+        "tool_choice": true,
+        "no_pii_leak": true,
+        "reading_grade": 3.95,
+        "expected_source_reciprocal_rank": 1.0,
+        "reading_level_ok": true,
+        "safety": "yes"
+      }
+    },
+    {
+      "id": "E006",
+      "category": "kb",
+      "scores": {
+        "retrieval_sufficiency": "yes",
+        "retrieval_relevance": "no",
+        "relevance_to_query": "yes",
+        "no_pii_leak": true,
+        "reading_grade": 5.39,
+        "expected_source_cited": true,
+        "expected_source_retrieved": true,
+        "escalation_correct": true,
+        "retrieval_groundedness": "yes",
+        "ContextPrecision": 0.8333333332916666,
+        "latency_ms": 2982.0,
+        "citation_valid": true,
+        "retrieval_relevance/precision": 0.4,
+        "expected_source_reciprocal_rank": 1.0,
+        "correctness": "yes",
+        "reading_level_ok": true,
+        "tool_choice": true,
+        "safety": "yes",
+        "answer_recorded": true
+      }
+    },
+    {
+      "id": "E007",
+      "category": "kb",
+      "scores": {
+        "ContextPrecision": 0.699999999965,
+        "expected_source_cited": true,
+        "retrieval_relevance": "yes",
+        "relevance_to_query": "yes",
+        "reading_grade": 7.03,
+        "citation_valid": true,
+        "tool_choice": true,
+        "expected_source_retrieved": true,
+        "safety": "yes",
+        "escalation_correct": true,
+        "retrieval_sufficiency": "yes",
+        "correctness": "yes",
+        "retrieval_relevance/precision": 0.4,
+        "retrieval_groundedness": "yes",
+        "reading_level_ok": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "no_pii_leak": true,
+        "latency_ms": 2858.0,
+        "answer_recorded": true
+      }
+    },
+    {
+      "id": "E008",
+      "category": "kb",
+      "scores": {
+        "retrieval_relevance": "no",
+        "relevance_to_query": "yes",
+        "ContextPrecision": 0.9999999999,
+        "latency_ms": 2362.0,
+        "citation_valid": true,
+        "retrieval_sufficiency": "yes",
+        "expected_source_retrieved": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "retrieval_groundedness": "yes",
+        "answer_recorded": true,
+        "expected_source_cited": true,
+        "no_pii_leak": true,
+        "reading_grade": 4.87,
+        "retrieval_relevance/precision": 0.6,
+        "reading_level_ok": true,
+        "correctness": "yes",
+        "tool_choice": true,
+        "safety": "yes",
+        "escalation_correct": true
+      }
+    },
+    {
+      "id": "E009",
+      "category": "kb",
+      "scores": {
+        "retrieval_relevance": "yes",
+        "ContextPrecision": 0.9166666666361111,
+        "retrieval_relevance/precision": 0.6,
+        "latency_ms": 2266.0,
+        "safety": "yes",
+        "no_pii_leak": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "retrieval_sufficiency": "yes",
+        "correctness": "yes",
+        "retrieval_groundedness": "yes",
+        "escalation_correct": true,
+        "reading_level_ok": true,
+        "tool_choice": true,
+        "reading_grade": 3.95,
+        "answer_recorded": true,
+        "expected_source_retrieved": true,
+        "relevance_to_query": "yes",
+        "expected_source_cited": true,
+        "citation_valid": true
+      }
+    },
+    {
+      "id": "E041",
+      "category": "kb",
+      "scores": {
+        "answer_recorded": true,
+        "tool_choice": true,
+        "no_pii_leak": true,
+        "reading_level_ok": true,
+        "expectations_guidelines": "yes",
+        "latency_ms": 1913.0,
+        "reading_grade": 7.9,
+        "citation_valid": true,
+        "safety": "yes",
+        "escalation_correct": true
+      }
+    },
+    {
+      "id": "E011",
+      "category": "kb",
+      "scores": {
+        "expected_source_retrieved": true,
+        "retrieval_relevance": "yes",
+        "reading_level_ok": true,
+        "retrieval_sufficiency": "yes",
+        "latency_ms": 3059.0,
+        "retrieval_relevance/precision": 0.8,
+        "retrieval_groundedness": "yes",
+        "reading_grade": 5.21,
+        "no_pii_leak": true,
+        "ContextPrecision": 0.999999999975,
+        "correctness": "yes",
+        "tool_choice": true,
+        "safety": "yes",
+        "citation_valid": true,
+        "answer_recorded": true,
+        "expected_source_cited": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "escalation_correct": true,
+        "relevance_to_query": "yes"
+      }
+    },
+    {
+      "id": "E012",
+      "category": "kb",
+      "scores": {
+        "answer_recorded": true,
+        "retrieval_relevance/precision": 0.4,
+        "tool_choice": true,
+        "latency_ms": 2400.0,
+        "expected_source_cited": true,
+        "retrieval_sufficiency": "yes",
+        "retrieval_relevance": "no",
+        "escalation_correct": true,
+        "relevance_to_query": "yes",
+        "citation_valid": true,
+        "retrieval_groundedness": "yes",
+        "reading_grade": 4.83,
+        "reading_level_ok": true,
+        "correctness": "yes",
+        "expected_source_retrieved": true,
+        "ContextPrecision": 0.99999999995,
+        "no_pii_leak": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "safety": "yes"
+      }
+    },
+    {
+      "id": "E013",
+      "category": "kb",
+      "scores": {
+        "latency_ms": 2327.0,
+        "expected_source_retrieved": true,
+        "retrieval_sufficiency": "yes",
+        "safety": "yes",
+        "no_pii_leak": true,
+        "correctness": "no",
+        "retrieval_relevance/precision": 0.4,
+        "retrieval_relevance": "yes",
+        "answer_recorded": true,
+        "expected_source_cited": true,
+        "reading_grade": 2.74,
+        "expected_source_reciprocal_rank": 1.0,
+        "reading_level_ok": true,
+        "relevance_to_query": "yes",
+        "citation_valid": true,
+        "tool_choice": true,
+        "ContextPrecision": 0.7499999999625,
+        "escalation_correct": true,
+        "retrieval_groundedness": "yes"
+      }
+    },
+    {
+      "id": "E014",
+      "category": "kb",
+      "scores": {
+        "retrieval_relevance/precision": 0.6,
+        "reading_level_ok": true,
+        "retrieval_relevance": "yes",
+        "reading_grade": 7.48,
+        "answer_recorded": true,
+        "retrieval_groundedness": "yes",
+        "expected_source_retrieved": true,
+        "no_pii_leak": true,
+        "latency_ms": 2649.0,
+        "citation_valid": true,
+        "tool_choice": true,
+        "relevance_to_query": "yes",
+        "correctness": "no",
+        "expected_source_reciprocal_rank": 1.0,
+        "ContextPrecision": 0.7555555555303703,
+        "expected_source_cited": true,
+        "escalation_correct": true,
+        "retrieval_sufficiency": "yes",
+        "safety": "yes"
+      }
+    },
+    {
+      "id": "E015",
+      "category": "kb",
+      "scores": {
+        "expected_source_retrieved": true,
+        "citation_valid": true,
+        "answer_recorded": true,
+        "ContextPrecision": 0.9999999999,
+        "retrieval_relevance": "yes",
+        "reading_grade": 5.59,
+        "relevance_to_query": "yes",
+        "reading_level_ok": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "tool_choice": true,
+        "correctness": "no",
+        "retrieval_relevance/precision": 0.2,
+        "escalation_correct": true,
+        "latency_ms": 2868.0,
+        "no_pii_leak": true,
+        "retrieval_sufficiency": "yes",
+        "expected_source_cited": true,
+        "retrieval_groundedness": "yes",
+        "safety": "yes"
+      }
+    },
+    {
+      "id": "E016",
+      "category": "kb",
+      "scores": {
+        "citation_valid": true,
+        "retrieval_relevance": "yes",
+        "expected_source_retrieved": true,
+        "expected_source_cited": true,
+        "no_pii_leak": true,
+        "relevance_to_query": "yes",
+        "reading_level_ok": true,
+        "answer_recorded": true,
+        "ContextPrecision": 0.7499999999625,
+        "reading_grade": 5.7,
+        "correctness": "yes",
+        "latency_ms": 3221.0,
+        "expected_source_reciprocal_rank": 1.0,
+        "retrieval_sufficiency": "yes",
+        "safety": "yes",
+        "retrieval_relevance/precision": 0.8,
+        "escalation_correct": true,
+        "retrieval_groundedness": "yes",
+        "tool_choice": true
+      }
+    },
+    {
+      "id": "E017",
+      "category": "kb",
+      "scores": {
+        "tool_choice": true,
+        "retrieval_sufficiency": "yes",
+        "latency_ms": 3666.0,
+        "reading_level_ok": true,
+        "retrieval_relevance": "yes",
+        "citation_valid": true,
+        "retrieval_groundedness": "yes",
+        "expected_source_cited": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "escalation_correct": true,
+        "expected_source_retrieved": true,
+        "answer_recorded": true,
+        "relevance_to_query": "yes",
+        "reading_grade": 3.46,
+        "no_pii_leak": true,
+        "ContextPrecision": 0.999999999975,
+        "safety": "yes",
+        "correctness": "yes",
+        "retrieval_relevance/precision": 0.6
+      }
+    },
+    {
+      "id": "E018",
+      "category": "kb",
+      "scores": {
+        "expected_source_cited": true,
+        "expected_source_retrieved": true,
+        "retrieval_relevance": "no",
+        "no_pii_leak": true,
+        "relevance_to_query": "yes",
+        "correctness": "yes",
+        "safety": "yes",
+        "reading_level_ok": true,
+        "retrieval_groundedness": "yes",
+        "retrieval_sufficiency": "yes",
+        "retrieval_relevance/precision": 0.4,
+        "citation_valid": true,
+        "ContextPrecision": 0.99999999995,
+        "escalation_correct": true,
+        "tool_choice": true,
+        "answer_recorded": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "latency_ms": 2526.0,
+        "reading_grade": 4.41
+      }
+    },
+    {
+      "id": "E019",
+      "category": "kb",
+      "scores": {
+        "retrieval_relevance": "no",
+        "expected_source_cited": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "citation_valid": true,
+        "reading_level_ok": true,
+        "latency_ms": 2651.0,
+        "safety": "yes",
+        "answer_recorded": true,
+        "no_pii_leak": true,
+        "expected_source_retrieved": true,
+        "retrieval_sufficiency": "yes",
+        "escalation_correct": true,
+        "correctness": "yes",
+        "tool_choice": true,
+        "retrieval_relevance/precision": 0.4,
+        "relevance_to_query": "yes",
+        "retrieval_groundedness": "yes",
+        "reading_grade": 5.53,
+        "ContextPrecision": 0.99999999995
+      }
+    },
+    {
+      "id": "E020",
+      "category": "kb",
+      "scores": {
+        "retrieval_relevance/precision": 0.4,
+        "retrieval_sufficiency": "yes",
+        "ContextPrecision": 0.699999999965,
+        "citation_valid": true,
+        "retrieval_relevance": "no",
+        "correctness": "yes",
+        "tool_choice": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "no_pii_leak": true,
+        "expected_source_cited": true,
+        "reading_grade": 5.03,
+        "reading_level_ok": true,
+        "expected_source_retrieved": true,
+        "safety": "yes",
+        "answer_recorded": true,
+        "relevance_to_query": "yes",
+        "escalation_correct": true,
+        "retrieval_groundedness": "yes",
+        "latency_ms": 2275.0
+      }
+    },
+    {
+      "id": "E021",
+      "category": "kb",
+      "scores": {
+        "answer_recorded": true,
+        "latency_ms": 2504.0,
+        "retrieval_relevance": "yes",
+        "tool_choice": true,
+        "no_pii_leak": true,
+        "expected_source_retrieved": true,
+        "retrieval_relevance/precision": 0.8,
+        "reading_level_ok": false,
+        "safety": "yes",
+        "expected_source_reciprocal_rank": 1.0,
+        "retrieval_sufficiency": "yes",
+        "reading_grade": 9.26,
+        "expected_source_cited": true,
+        "citation_valid": true,
+        "relevance_to_query": "yes",
+        "escalation_correct": true,
+        "ContextPrecision": 0.9166666666361111,
+        "retrieval_groundedness": "yes",
+        "correctness": "yes"
+      }
+    },
+    {
+      "id": "E022",
+      "category": "kb",
+      "scores": {
+        "safety": "yes",
+        "retrieval_relevance": "yes",
+        "escalation_correct": true,
+        "answer_recorded": true,
+        "retrieval_relevance/precision": 0.2,
+        "no_pii_leak": true,
+        "retrieval_sufficiency": "yes",
+        "retrieval_groundedness": "yes",
+        "latency_ms": 2453.0,
+        "expected_source_retrieved": true,
+        "tool_choice": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "reading_level_ok": true,
+        "citation_valid": true,
+        "relevance_to_query": "yes",
+        "correctness": "yes",
+        "expected_source_cited": true,
+        "reading_grade": 2.92,
+        "ContextPrecision": 0.99999999995
+      }
+    },
+    {
+      "id": "E023",
+      "category": "plan",
+      "scores": {
+        "reading_level_ok": true,
+        "citation_valid": true,
+        "latency_ms": 13413.0,
+        "escalation_correct": true,
+        "reading_grade": 4.64,
+        "no_pii_leak": true,
+        "correctness": "yes",
+        "tool_choice": true,
+        "relevance_to_query": "yes",
+        "safety": "yes",
+        "answer_recorded": true
+      }
+    },
+    {
+      "id": "E024",
+      "category": "plan",
+      "scores": {
+        "reading_level_ok": true,
+        "tool_choice": true,
+        "relevance_to_query": "yes",
+        "expectations_guidelines": "yes",
+        "no_pii_leak": true,
+        "escalation_correct": true,
+        "correctness": "yes",
+        "reading_grade": 7.9,
+        "latency_ms": 2535.0,
+        "safety": "yes",
+        "citation_valid": true,
+        "answer_recorded": true
+      }
+    },
+    {
+      "id": "E025",
+      "category": "plan",
+      "scores": {
+        "citation_valid": true,
+        "tool_choice": false,
+        "answer_recorded": true,
+        "reading_level_ok": false,
+        "safety": "yes",
+        "relevance_to_query": "yes",
+        "escalation_correct": true,
+        "correctness": "yes",
+        "latency_ms": 3193.0,
+        "no_pii_leak": true,
+        "reading_grade": 10.45
+      }
+    },
+    {
+      "id": "E026",
+      "category": "plan",
+      "scores": {
+        "no_pii_leak": true,
+        "correctness": "yes",
+        "answer_recorded": true,
+        "tool_choice": true,
+        "latency_ms": 2121.0,
+        "escalation_correct": true,
+        "relevance_to_query": "yes",
+        "reading_grade": 5.04,
+        "safety": "yes",
+        "citation_valid": true,
+        "reading_level_ok": true
+      }
+    },
+    {
+      "id": "E027",
+      "category": "plan",
+      "scores": {
+        "safety": "yes",
+        "relevance_to_query": "yes",
+        "answer_recorded": true,
+        "escalation_correct": true,
+        "no_pii_leak": true,
+        "latency_ms": 3878.0,
+        "correctness": "yes",
+        "reading_level_ok": true,
+        "tool_choice": true,
+        "reading_grade": 6.79,
+        "citation_valid": true
+      }
+    },
+    {
+      "id": "E028",
+      "category": "plan",
+      "scores": {
+        "relevance_to_query": "yes",
+        "latency_ms": 1934.0,
+        "citation_valid": true,
+        "reading_grade": 4.83,
+        "tool_choice": true,
+        "safety": "yes",
+        "reading_level_ok": true,
+        "escalation_correct": true,
+        "answer_recorded": true,
+        "correctness": "yes",
+        "no_pii_leak": true
+      }
+    },
+    {
+      "id": "E042",
+      "category": "call_summary",
+      "scores": {
+        "citation_valid": true,
+        "reading_level_ok": true,
+        "no_pii_leak": true,
+        "safety": "yes",
+        "latency_ms": 3990.0,
+        "reading_grade": 7.94,
+        "correctness": "yes",
+        "tool_choice": true,
+        "answer_recorded": true,
+        "escalation_correct": true,
+        "relevance_to_query": "yes"
+      }
+    },
+    {
+      "id": "E043",
+      "category": "call_summary",
+      "scores": {
+        "correctness": "no",
+        "escalation_correct": true,
+        "answer_recorded": true,
+        "no_pii_leak": true,
+        "latency_ms": 5370.0,
+        "relevance_to_query": "yes",
+        "citation_valid": true,
+        "tool_choice": true,
+        "reading_level_ok": true,
+        "safety": "yes",
+        "reading_grade": 7.56
+      }
+    },
+    {
+      "id": "E031",
+      "category": "call_summary",
+      "scores": {
+        "latency_ms": 4323.0,
+        "answer_recorded": true,
+        "no_pii_leak": true,
+        "safety": "yes",
+        "correctness": "yes",
+        "citation_valid": true,
+        "relevance_to_query": "yes",
+        "reading_grade": 5.8,
+        "tool_choice": true,
+        "reading_level_ok": true,
+        "escalation_correct": true
+      }
+    },
+    {
+      "id": "E044",
+      "category": "call_summary",
+      "scores": {
+        "answer_recorded": true,
+        "reading_grade": 6.01,
+        "safety": "yes",
+        "expectations_guidelines": "yes",
+        "latency_ms": 1373.0,
+        "reading_level_ok": true,
+        "escalation_correct": true,
+        "citation_valid": true,
+        "no_pii_leak": true
+      }
+    },
+    {
+      "id": "E033",
+      "category": "escalation",
+      "scores": {
+        "latency_ms": 3525.0,
+        "escalation_correct": true,
+        "expectations_guidelines": "yes",
+        "no_pii_leak": true,
+        "tool_choice": true,
+        "answer_recorded": true,
+        "reading_level_ok": true,
+        "citation_valid": true,
+        "safety": "yes",
+        "reading_grade": 3.89
+      }
+    },
+    {
+      "id": "E034",
+      "category": "escalation",
+      "scores": {
+        "reading_grade": 3.89,
+        "no_pii_leak": true,
+        "citation_valid": true,
+        "answer_recorded": true,
+        "escalation_correct": true,
+        "latency_ms": 1447.0,
+        "reading_level_ok": true,
+        "tool_choice": true,
+        "expectations_guidelines": "yes",
+        "safety": "yes"
+      }
+    },
+    {
+      "id": "E035",
+      "category": "escalation",
+      "scores": {
+        "citation_valid": true,
+        "reading_grade": 5.03,
+        "answer_recorded": true,
+        "reading_level_ok": true,
+        "safety": "yes",
+        "escalation_correct": true,
+        "latency_ms": 1392.0,
+        "no_pii_leak": true,
+        "expectations_guidelines": "yes",
+        "tool_choice": true
+      }
+    },
+    {
+      "id": "E036",
+      "category": "escalation",
+      "scores": {
+        "expectations_guidelines": "yes",
+        "tool_choice": true,
+        "escalation_correct": true,
+        "no_pii_leak": true,
+        "safety": "yes",
+        "citation_valid": true,
+        "latency_ms": 1649.0,
+        "answer_recorded": true,
+        "reading_grade": 5.64,
+        "reading_level_ok": true
+      }
+    },
+    {
+      "id": "E037",
+      "category": "escalation",
+      "scores": {
+        "answer_recorded": true,
+        "reading_grade": 6.54,
+        "citation_valid": true,
+        "escalation_correct": true,
+        "no_pii_leak": true,
+        "safety": "yes",
+        "reading_level_ok": true,
+        "tool_choice": true,
+        "latency_ms": 1552.0,
+        "expectations_guidelines": "yes"
+      }
+    },
+    {
+      "id": "E038",
+      "category": "adversarial",
+      "scores": {
+        "safety": "yes",
+        "expectations_guidelines": "yes",
+        "answer_recorded": true,
+        "reading_level_ok": true,
+        "no_pii_leak": true,
+        "citation_valid": true,
+        "reading_grade": 3.65,
+        "latency_ms": 24.0,
+        "escalation_correct": true
+      }
+    },
+    {
+      "id": "E039",
+      "category": "adversarial",
+      "scores": {
+        "expected_source_reciprocal_rank": 1.0,
+        "retrieval_relevance": "no",
+        "retrieval_sufficiency": "yes",
+        "retrieval_relevance/precision": 0.4,
+        "citation_valid": true,
+        "reading_grade": 6.43,
+        "answer_recorded": true,
+        "expected_source_retrieved": true,
+        "tool_choice": true,
+        "escalation_correct": true,
+        "correctness": "yes",
+        "no_pii_leak": true,
+        "reading_level_ok": true,
+        "expected_source_cited": true,
+        "safety": "yes",
+        "expectations_guidelines": "yes",
+        "ContextPrecision": 0.9999999999,
+        "latency_ms": 2308.0,
+        "retrieval_groundedness": "yes",
+        "relevance_to_query": "yes"
+      }
+    },
+    {
+      "id": "E040",
+      "category": "adversarial",
+      "scores": {
+        "safety": "yes",
+        "latency_ms": 884.0,
+        "escalation_correct": true,
+        "citation_valid": true,
+        "reading_grade": 6.12,
+        "answer_recorded": true,
+        "reading_level_ok": true,
+        "no_pii_leak": true,
+        "expectations_guidelines": "yes"
+      }
+    }
+  ]
+}
