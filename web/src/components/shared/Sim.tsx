@@ -32,7 +32,7 @@ export function Byline({ className }: { className?: string }) {
   return (
     <p className={cn("flex items-center gap-2 cue", className)}>
       <CopilotMark size={16} />
-      Copilot
+      Cue
     </p>
   );
 }

@@ -1,6 +1,6 @@
 # Design: Signal and Script
 
-This is the design system of the Frontline Copilot web interface. The tokens live in `src/index.css`, the icons in `src/components/icons/`. If this file and the code disagree, the code is wrong: fix it, or change this file in the same commit.
+This is the design system of Cue, the Frontline Copilot web interface. The tokens live in `src/index.css`, the icons in `src/components/icons/`. If this file and the code disagree, the code is wrong: fix it, or change this file in the same commit.
 
 ## The concept
 

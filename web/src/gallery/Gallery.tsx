@@ -94,7 +94,7 @@ export function Gallery() {
           <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-6 py-3">
             <CopilotMark size={32} />
             <h1 className="display-title">Component gallery</h1>
-            <p className="text-meta text-ink-2">Frontline Copilot. Fixtures only, no server.</p>
+            <p className="text-meta text-ink-2">Cue. Fixtures only, no server.</p>
             <div className="ml-auto">
               <ThemeToggle theme={theme} onToggle={toggleTheme} />
             </div>

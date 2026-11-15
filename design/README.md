@@ -96,3 +96,13 @@ Aside was then tuned in three passes, each changing one thing ([aside-refine.htm
 3. **Colour.** Cobalt head and ink eyes in both themes. The first drawings gave it highlighter eyes on dark; that spends the highlighter on something that is not said out loud. The dark theme gets a lighter cobalt for the head (`#6480FF`, 4.2:1 on the bar) because the fill cobalt is only 3.2:1 there.
 
 The final drawing and its rules are in [web/DESIGN.md](../web/DESIGN.md) under "The mark".
+
+## The name
+
+In the interface the copilot is called **Cue**. The project and the repository keep the name Frontline Copilot, which says what the thing is; Cue is what an agent would call it.
+
+- A cue is the line someone is given just before they speak. That is the job: the agent reads the answer aloud.
+- It is one syllable, so "ask Cue" and "Cue says" work in speech.
+- It starts with the letter the mark already draws.
+
+Where it appears: the name in the top bar, the line over each answer, "What Cue did" over the steps, and the browser tab. Running text still says "the copilot" where it means the kind of thing, as in "the copilot cannot change an account".

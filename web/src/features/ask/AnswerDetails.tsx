@@ -77,7 +77,7 @@ export function AnswerDetails({ response, tools, highlight }: AnswerDetailsProps
         <SourceList citations={citations} highlight={highlight} />
       </Section>
       <Section
-        title="What the copilot did"
+        title="What Cue did"
         aside={
           <>
             {countOf(steps.length, "step")}

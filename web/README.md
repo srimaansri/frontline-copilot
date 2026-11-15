@@ -1,6 +1,6 @@
-# Frontline Copilot: web interface
+# Cue: the Frontline Copilot web interface
 
-The browser front end for Frontline Copilot. It is a single page with two views:
+The browser front end for Frontline Copilot. In the interface the copilot has a name, Cue. It is a single page with two views:
 
 - **Ask**: a conversation with the copilot. Each answer shows its sources and the route of steps the copilot took to produce it.
 - **Calls**: the redacted call transcripts, with a summary on request.

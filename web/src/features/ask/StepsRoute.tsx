@@ -108,7 +108,7 @@ export function RouteLegend() {
       <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-2">
         <li className="flex items-center gap-2">
           <span aria-hidden="true" className="legend-line" />
-          Done by the copilot
+          Done by Cue
         </li>
         <li className="flex items-center gap-2">
           <span aria-hidden="true" className="legend-line" data-leg="dashed" />

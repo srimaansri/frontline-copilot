@@ -109,7 +109,7 @@ export function AskView({ meta, onRetryMeta, firstQuestion = null }: AskViewProp
   return (
     <div className="flex h-full min-h-0">
       <section aria-label="Conversation" className="flex min-w-0 flex-1 flex-col">
-        <h1 className="sr-only">Ask the copilot</h1>
+        <h1 className="sr-only">Ask Cue</h1>
         <p role="status" className="sr-only">
           {announcement}
         </p>

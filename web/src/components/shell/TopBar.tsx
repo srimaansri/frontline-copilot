@@ -135,7 +135,7 @@ export function TopBar({
         <div className="flex min-w-0 items-center gap-2">
           <CopilotMark size={32} />
           {/* On a phone the name is set at the reading size, so the bar fits on one row. */}
-          <p className="truncate display-title max-sm:text-read">Frontline Copilot</p>
+          <p className="truncate display-title max-sm:text-read">Cue</p>
         </div>
         <DataTag className="hidden lg:inline">Demo, synthetic data</DataTag>
         {USE_MOCK && <DataTag className="hidden xl:inline">Mock mode</DataTag>}
