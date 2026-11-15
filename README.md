@@ -15,7 +15,7 @@ This repo is being built milestone by milestone. Every number here comes from a 
 | M0 | Scaffold: tooling, config loader, CI | Done |
 | M1 | Data generation and PII redaction, measured locally | Done |
 | M2 | Databricks pipelines: bronze, silver, gold, quality checks | Done |
-| M3 | Retrieval-augmented answers and the first evaluation | |
+| M3 | Retrieval-augmented answers and the first evaluation | Done |
 | M4 | Agent with tools, guardrails, escalation | |
 | M5 | Streamlit app on Databricks Apps, MCP server | |
 | M6 | Results, model and data cards, responsible-AI notes | |
@@ -26,7 +26,7 @@ The full specification is in [PLAN.md](PLAN.md).
 
 Nothing here comes from a real carrier or a real customer.
 
-- **Knowledge base:** 87 help articles for a fictional carrier, "Northline Wireless", in [data/synthetic](data/synthetic). An open-weight model (`databricks-gpt-oss-120b`) wrote the prose on 2026-11-13. Every price, fee and policy comes from hand-written briefs in [data_gen/kb_topics.py](data_gen/kb_topics.py) and the plan catalogue, and an article is rejected if it quotes a dollar amount found in neither. The scraper in `data_gen/scrape_kb.py` exists but was not used.
+- **Knowledge base:** 87 help articles for a fictional carrier, "Northline Wireless", in [data/synthetic](data/synthetic). An open-weight model (`databricks-gpt-oss-120b`) wrote the prose on 2026-11-13. Every price, fee and policy comes from hand-written briefs in [data_gen/kb_topics.py](data_gen/kb_topics.py) and the plan catalogue, and an article is rejected if it quotes a dollar amount found in neither. Two review passes then read every article, one for contradictions between articles and one against each article's brief. That led to 170 corrections in 68 articles, each recorded with its reason in [data/synthetic/kb_corrections.jsonl](data/synthetic/kb_corrections.jsonl). The scraper in `data_gen/scrape_kb.py` exists but was not used.
 - **Transcripts:** 200 support conversations assembled from templates by code, with no language model, so the position of every piece of personal data is known exactly.
 - **Plans:** 8 invented plans and 10 add-ons and fees.
 
@@ -45,6 +45,62 @@ Five notebooks in [pipelines](pipelines) run as one serverless job, defined in [
 The index step also runs 20 smoke queries (5 questions, both chunk settings, vector and hybrid search). The expected article was in the top 3 for all 20. That shows the query paths work; it is not an evaluation. Retrieval quality is measured in Milestone 3.
 
 Every metric written to the `ops` schema carries the git commit of the code that produced it.
+
+After the knowledge-base corrections the job was run again, on 2026-11-14 at commit `972de18`: 87 chunks at 800/100 tokens and 161 at 350/60, 248 rows indexed, and 18 of 18 quality checks passed. The evaluation below uses that index.
+
+## Answer quality: the first evaluation
+
+The copilot at this stage retrieves the five best chunks, answers with `databricks-gpt-oss-120b`, cites its sources, and has its citations checked. It was scored on 22 knowledge-base questions: 21 that one help article answers, and 1 that no article answers. Every question and its expected facts were reviewed by hand before the runs.
+
+Three runs, so that each step changes one thing. All three are from 2026-11-14 at commit `1a35afb`, with prompt v2, MLflow 3.18.0 and RAGAS 0.4.4. The judge is `databricks-meta-llama-3-3-70b-instruct`, a different model family from the one that answers.
+
+| Measure | A: 800-token chunks, vector search | B: 350-token chunks, vector search | B: 350-token chunks, hybrid search |
+|---|---|---|---|
+| Expected article in the top 5 | 21/21 | 20/21 | 21/21 |
+| Mean reciprocal rank of that article | 0.97 | 0.95 | 0.94 |
+| Share of retrieved chunks judged relevant | 0.53 | 0.64 | 0.65 |
+| RAGAS context precision | 0.94 (n=20) | 0.92 (n=21) | 0.91 (n=21) |
+| Retrieved text is enough to answer | 21/21 | 21/21 | 21/21 |
+| Answer is grounded in the retrieved text | 21/21 | 21/21 | 21/21 |
+| Answer is correct against the expected facts | 19/21 | 18/21 | 18/21 |
+| The question no article answers: says so, invents nothing | 1/1 | 1/1 | 1/1 |
+| Answer is relevant to the question | 22/22 | 22/22 | 22/22 |
+| Citations are valid | 22/22 | 22/22 | 22/22 |
+| Reading grade 8 or below | 20/22 | 19/22 | 20/22 |
+| Mean reading grade (Flesch-Kincaid) | 5.4 | 5.7 | 5.8 |
+| Median time to answer | 2.1 s | 2.1 s | 2.1 s |
+
+Rates are passed/scored. The retrieval measures are scored on the 21 questions that have an article. One RAGAS call in run A was rejected by the workspace rate limit, so that cell covers 20 rows.
+
+**What this shows**
+
+- No setting is clearly better. With 21 questions, a difference of one row is noise, and no claim is made that one setting beats another.
+- Smaller chunks made retrieval more focused: the share of retrieved chunks judged relevant rose from 0.53 to 0.64. They did not make answers more correct, because the larger chunks already held the answer for every question.
+- Hybrid search found the one article that vector search over small chunks missed.
+- Setting A with vector search stays the default. It has the fewest chunks to maintain and nothing here argues for a change.
+
+**The answers marked incorrect**
+
+Four of the eight "incorrect" marks were inspected against the answer text.
+
+- One is a retrieval miss. With small chunks and vector search, the question about a text message asking for a PIN did not retrieve the article on scam messages, so the answer left out where to forward the message.
+- One is a real mistake in the answer. It said the carrier "never asks for" the account PIN by phone, when support does ask for it on a call the customer makes. The article states both points close together and the answer merged them.
+- Two are judge mistakes. The answers contain every expected fact. The judge marked them incorrect because the article lists further steps that the expected facts do not.
+
+The table reports the marks as the judge gave them.
+
+**Limits**
+
+- 22 questions is a small set, and the knowledge base is synthetic and was written by the same model that answers.
+- The judge is a language model and is wrong some of the time, as above. A hand check of the judge on 10 rows, with an agreement rate, has not been done yet.
+- These runs cover knowledge-base questions only. Plan lookups, call summaries, hand-offs and trick questions are scored once the agent and guardrails exist (Milestone 4).
+- An earlier draft run is kept in [eval/results](eval/results) for the record. It used questions that had not been reviewed and articles that had not been corrected, and the grading has changed since, so it is not comparable with the runs above.
+
+Reproduce one run (it makes about 350 model calls and takes about 25 minutes on Free Edition; try `--limit 5` first):
+
+```bash
+python -m eval.run_eval --config A --query-type ann --tag my-run --category kb
+```
 
 ## Redaction results so far
 

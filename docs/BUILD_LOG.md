@@ -275,3 +275,88 @@ The redaction numbers computed on Databricks are identical to the local test-set
 - `tests/test_chunking_core.py` was written by Claude Code so the chunker was verified before it ran on Databricks. `tests/test_chunking.py` is still mine to write with Copilot, with my own log entry.
 
 **M2 acceptance** (PLAN.md §12): setup SQL run, data uploaded, notebooks 01 to 05 green on serverless, `gold.kb_chunks` with Change Data Feed, quality checks passing with zero PII leaks. All met.
+
+## 2026-11-14 — M3: the copilot, the evaluation set and the first results
+
+**Tool:** Claude Code, with reviewer agents for the knowledge base and the evaluation rows.
+
+**Asked:** continue with Milestone 3. Part way through I changed the order of work: fix the help articles first, then have the questions reviewed, then review every question myself.
+
+**What it built**
+
+- `src/copilot/`: `schemas.py`, `prompts.py`, `llm.py`, `retriever.py`, `guardrails.py` and `agent.py`. A retrieve-then-answer copilot that redacts the question before any traced code runs, retrieves from the index, answers with numbered citations and checks every citation against what was retrieved.
+- `eval/eval_set.jsonl`: 40 rows (22 knowledge base, 6 plan, 4 call summary, 5 escalation, 3 adversarial).
+- `eval/scorers.py`: checks that need no model (answer recorded, reading level, citations, expected article, latency) and the judge models' checks.
+- `eval/run_eval.py`: runs one configuration, matches rows to traces by tag and saves a result only from a clean working tree.
+
+**Results** (2026-11-14, commit `1a35afb`, 22 knowledge-base rows, all reviewed, prompt v2, judge `databricks-meta-llama-3-3-70b-instruct`)
+
+| Measure | A, vector | B, vector | B, hybrid |
+|---|---|---|---|
+| Expected article in the top 5 | 21/21 | 20/21 | 21/21 |
+| Share of retrieved chunks judged relevant | 0.53 | 0.64 | 0.65 |
+| RAGAS context precision | 0.94 (n=20) | 0.92 (n=21) | 0.91 (n=21) |
+| Retrieved text is enough to answer | 21/21 | 21/21 | 21/21 |
+| Grounded | 21/21 | 21/21 | 21/21 |
+| Correct | 19/21 | 18/21 | 18/21 |
+| No-answer question handled | 1/1 | 1/1 | 1/1 |
+| Relevant | 22/22 | 22/22 | 22/22 |
+| Citations valid | 22/22 | 22/22 | 22/22 |
+| Reading grade 8 or below | 20/22 | 19/22 | 20/22 |
+| Median time to answer | 2.1 s | 2.1 s | 2.1 s |
+
+A is 800-token chunks, B is 350-token chunks. No setting is clearly better: with 21 questions a difference of one row is noise. Smaller chunks made retrieval more focused and did not make answers more correct. Hybrid search found the one article that vector search over small chunks missed. Setting A with vector search stays the default. The README has the full table and the reading of it.
+
+Claude Code inspected four of the eight "incorrect" marks. One is a retrieval miss (E017 with B and vector search), one is a real mistake in the answer (E013, the account PIN), and two are judge mistakes (E014, E015: the answers contain every expected fact). The numbers are reported as the judge gave them.
+
+**The review, in the order it happened**
+
+1. A first draft pass (config A, plain search, commit `04138f9`) scored 16 of 22 on correctness. It is kept in `eval/results/` and marked superseded, because the rows had not been reviewed and the articles had not been corrected.
+2. Two reviewer agents read all 87 help articles, one for consistency between articles and one against each article's brief. They reported 247 issues, which came to 170 distinct corrections in 68 articles (41 high, 55 medium, 74 low). Every correction is recorded in `data/synthetic/kb_corrections.jsonl`. The pipeline was re-run and the index rebuilt.
+3. Two more reviewer agents read the 40 questions against the corrected articles, one for whether each question can be answered and one for how it is graded.
+4. I reviewed all 40 rows on a page that showed each current row next to one proposed version. I accepted all 31 proposals and confirmed the other 9.
+
+**What the question review changed**
+
+- 27 rows were changed. The most common fault: a row expected a fact the question never asked for, so a short, correct answer would have been marked wrong.
+- 4 rows were replaced to cover cases nothing tested: a question no article answers (E041), a call that was resolved (E042), a call that ended unresolved (E043) and an invalid transcript id (E044).
+- After a smoke run I loosened one rule on E041. The judge failed "I don't have information about this in the available resources" because the rule said "help articles". The rule now names the behaviour, and an invented discount still fails.
+
+**What changed in the grading**
+
+- A row can list a second article that also holds the whole answer (`also_acceptable_sources`).
+- A citation is required only where the row names an article.
+- Rows with rules and no facts are graded by MLflow's `ExpectationsGuidelines` judge.
+- The retrieval judges and RAGAS skip a row that names no article, because nothing retrieved can be sufficient for a question no article answers.
+- An empty or missing answer cannot pass a check, and the runner stops without saving if any row has no answer.
+- RAGAS now gets only the expected facts as its reference. MLflow's adapter joins every expectation value, so the reference used to read like `['fact', ...], late-payment-fee, False, search_kb`.
+- The prompt gained an out-of-scope rule and became v2.
+
+These changes mean the saved results are not comparable with the draft pass. They were made for fairness, each for a stated reason, and none lowers a bar the copilot has to clear.
+
+**Decisions**
+
+- **Retrieval queries use the Databricks SDK.** `AISearchClient` refused the OAuth sign-in a CLI profile gives, and the project rule is to let the SDK resolve auth.
+- **Evaluation runs one row at a time, two judge calls a second.** MLflow's defaults got HTTP 429 from the judge endpoint. A test with six judges at once was no faster (53 seconds a row against 55) and had rejected calls, so the limit is the workspace's cap on the judge model. A 22-row pass takes about 24 minutes.
+- **Product names are not people.** The redactor was replacing plan names such as "Northline Plus 10" with a person placeholder. Catalogue names are now protected. Redaction scores on the dev, test and challenge sets did not change.
+
+**Things that went wrong on the way**
+
+- I committed once with a lint error and fixed it in the next commit.
+- A count in a status message was wrong twice (87 topics, not 88; 21 proposals, not 20).
+- The model wrote citations as `【1】` and used non-breaking hyphens. Both are normalised now.
+
+**Worth knowing**
+
+- The judge is a model and makes mistakes. In the smoke run it marked a correct, cited answer about travel to Mexico as not grounded. The hand spot-check of the judge on 10 rows is still to do.
+- The output guard planned for Milestone 4 must leave alone the catalogue names, amounts and support contact details that appear in the retrieved text. The redactor would otherwise strip the support phone number from an answer.
+- The redactor turns a made-up transcript id such as "T99" into a person placeholder. To look at on the dev set in Milestone 4.
+
+**For me to review**
+
+- The results table above against `eval/results/SUMMARY.md`.
+- The four inspected "incorrect" marks, and the other four that were not inspected.
+- The judge has not been checked by hand on 10 rows yet. That needs a person.
+- `tests/test_chunking.py` is still mine to write with Copilot.
+
+**M3 acceptance** (PLAN.md §12): index online; `run_copilot` answers knowledge-base questions with citations; traces in MLflow carry no raw personal data in their inputs; all 40 evaluation rows reviewed; the three runs evaluated on the knowledge-base rows; results committed. All met. The hand check of the judge on 10 rows is not part of this milestone's criteria and is still open.
