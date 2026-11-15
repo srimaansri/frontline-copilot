@@ -54,9 +54,45 @@ Two ideas from the others are grafted in, because they serve jobs three and four
 
 Two fixes to A itself:
 
-- The mark becomes a robot whose head is the SIM shape with a signal antenna.
+- The mark is redrawn. The first attempt, a robot whose head was a SIM with a signal antenna, was too fussy to hold at small sizes. It was replaced; see "The mark" below.
 - The empty screen gains one true element: the four signal bars labelled with the four stages every request passes.
 
 The highlighter stays the single bold element. The route is structure, not decoration.
 
 The resulting system is documented in [web/DESIGN.md](../web/DESIGN.md).
+
+## The mark
+
+The first mark did too much: a head, an antenna, two signal arcs, eyes and a mouth, in 32 pixels. It was redone the same way as the interface: several candidates, judged against rules set beforehand.
+
+The rules, taken from what designers agree makes a mark hold up:
+
+- It is recognisable as a solid black shape.
+- It is built from simple geometry with one logic for its lines.
+- It works at 16 pixels, with a simpler drawing for that size if needed.
+- It uses at most three colours and works in one.
+- It has one small second reading, and it gets its character from very little.
+
+Twelve candidates in three families, each shown at 256, 96, 48, 32, 24 and 16 pixels, on light and dark, as a silhouette, in one colour, as an app icon and beside the name. The sheets are in [marks](marks).
+
+| Family | Idea | Candidates | File |
+|---|---|---|---|
+| A. SIM-shaped head | The head is the SIM card | Visor, Contact, Dual SIM, Cue | [a-sim-head.html](marks/a-sim-head.html) |
+| B. Signal | The character is made of signal | Full Bars, On Air, Cut Corner, Beacon | [b-signal.html](marks/b-signal.html) |
+| C. Voice | The copilot as the line in the agent's ear | Aside, Cue card, One line, Offcut | [c-voice.html](marks/c-voice.html) |
+
+A mark alone on a sheet is flattering. So the five strongest were put where the product puts its mark: a browser tab, the top bar, beside an answer, and the empty screen ([finalists.html](marks/finalists.html)).
+
+- **Aside** (chosen). A helmet whose visor opens sideways. It has the most presence in the top bar, keeps its shape at 16, and is the only one that is a face, the SIM outline and a letter at once. Its weakness: a blocky C is not ours alone, so it never appears without its eyes and its cut.
+- **Dual SIM.** Calm and scalable, but in use it is a blue tile with two bars: it could be any app.
+- **Cue card.** The most robot-like at 72. Under 32 it reads as a file icon.
+- **Full Bars.** The best idea on paper: four signal bars, and the fourth is the copilot. In use the face is a quarter of the mark, the eyes are one pixel in a tab, and the tall card with round eyes reads as a ghost.
+- **On Air.** Elegant and too light beside a bold name. At 16 it is a pair of brackets.
+
+Aside was then tuned in three passes, each changing one thing ([aside-refine.html](marks/aside-refine.html)):
+
+1. **Eyes.** From 3 by 6 with round ends to 4 by 8. Across the visor the spacing is now an even 4, 4, 4, 4, 4, and every edge is on a whole pixel at 32.
+2. **Corners.** Outer radius from 8 to 6, the same measure as the wall and the cut, and the eyes from round ends to a radius of 1. The rounder version looked soft beside the interface's 3px controls.
+3. **Colour.** Cobalt head and ink eyes in both themes. The first drawings gave it highlighter eyes on dark; that spends the highlighter on something that is not said out loud. The dark theme gets a lighter cobalt for the head (`#6480FF`, 4.2:1 on the bar) because the fill cobalt is only 3.2:1 there.
+
+The final drawing and its rules are in [web/DESIGN.md](../web/DESIGN.md) under "The mark".

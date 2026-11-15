@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mark candidates C: the voice in the agent's ear</title>
+<style>
+:root { --cobalt:#1D43D8; --ink:#0F1833; --marker:#D9F23E; --paper:#F2F4FA; --navy:#111B3D; --rule:#D5DAE8; --muted:#55607F; }
+* { box-sizing:border-box; }
+html { background:var(--paper); }
+body { margin:0; padding:40px 32px 72px; background:var(--paper); color:var(--ink);
+  font:15px/1.5 "Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif; }
+main { max-width:1320px; margin:0 auto; }
+h1 { font-size:30px; line-height:1.15; letter-spacing:-0.02em; margin:0 0 10px; font-weight:700; }
+.lede { max-width:92ch; margin:0 0 6px; color:var(--muted); }
+.swatches { display:flex; flex-wrap:wrap; gap:18px; margin:18px 0 0; padding:0; list-style:none; font-size:12.5px; color:var(--muted); }
+.swatches li { display:flex; align-items:center; gap:8px; }
+.swatches i { width:18px; height:18px; border-radius:4px; border:1px solid var(--rule); display:block; }
+.cand { margin-top:40px; background:#fff; border:1px solid var(--rule); border-radius:14px; padding:28px; }
+.cand > header { display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; margin-bottom:20px; }
+.cand > header h2 { font-size:24px; letter-spacing:-0.015em; margin:0; }
+.cand > header p { margin:0; color:var(--muted); }
+.num { font-weight:700; font-size:13px; color:#fff; background:var(--cobalt); width:26px; height:26px; border-radius:50%;
+  display:inline-flex; align-items:center; justify-content:center; align-self:center; }
+.sizes { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.panel { position:relative; border-radius:10px; padding:48px 24px 14px; border:1px solid var(--rule); min-width:0; }
+.paper { background:var(--paper); color:var(--ink); }
+.navy { background:var(--navy); color:#C9D1EA; border-color:var(--navy); }
+.white { background:#fff; }
+.cobalt { background:var(--cobalt); color:#fff; }
+.tag { position:absolute; top:14px; left:24px; font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; opacity:.75; }
+.strip { display:flex; align-items:flex-end; justify-content:space-between; gap:10px; }
+figure { margin:0; display:flex; flex-direction:column; align-items:center; gap:8px; }
+figcaption { font-size:11.5px; opacity:.75; white-space:nowrap; font-variant-numeric:tabular-nums; }
+figcaption i { font-style:normal; opacity:.8; }
+svg { display:block; flex:none; }
+.row { display:flex; flex-wrap:wrap; gap:16px; margin-top:16px; }
+.cell { display:flex; flex-direction:column; min-width:0; max-width:100%; }
+.cell.wide { flex:1 1 100%; }
+.cell h3 { margin:0 0 8px; font-size:11.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+.pair { flex:1; display:flex; align-items:flex-end; gap:20px; padding:18px 20px 12px; border:1px solid var(--rule); border-radius:10px; }
+.pair.split { padding:0; gap:0; overflow:hidden; align-items:stretch; flex-wrap:wrap; }
+.pair.split figure { padding:18px 20px 12px; justify-content:flex-end; flex:1 1 auto; }
+.tile { width:96px; height:96px; border-radius:22px; background:var(--cobalt); display:flex; align-items:center; justify-content:center; }
+.grid16, .grid32 { background-image:linear-gradient(to right,rgba(15,24,51,.09) 1px,transparent 1px),linear-gradient(to bottom,rgba(15,24,51,.09) 1px,transparent 1px); }
+.grid16 { background-size:8px 8px; }
+.grid32 { background-size:4px 4px; }
+.bars { flex:1; display:flex; flex-wrap:wrap; border:1px solid var(--rule); border-radius:10px; overflow:hidden; }
+.bar { flex:1 1 300px; display:flex; align-items:center; gap:10px; padding:14px 20px; min-height:56px; }
+.bar b { font-size:17px; font-weight:700; letter-spacing:-0.01em; white-space:nowrap; }
+.bar.navy b { color:#fff; }
+dl { margin:20px 0 0; display:grid; gap:8px; }
+dl div { display:grid; grid-template-columns:120px 1fr; gap:12px; }
+dt { font-size:11.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); padding-top:3px; }
+dd { margin:0; max-width:120ch; }
+.rank { margin-top:48px; }
+.rank h2 { font-size:24px; letter-spacing:-0.015em; margin:0 0 14px; }
+.rank ol { margin:0; padding:0; list-style:none; display:grid; gap:10px; counter-reset:r; }
+.rank li { display:grid; grid-template-columns:24px 40px 1fr; gap:16px; align-items:center; background:#fff; border:1px solid var(--rule); border-radius:10px; padding:12px 18px; }
+.rank li::before { counter-increment:r; content:counter(r); font-weight:700; font-size:18px; color:var(--cobalt); text-align:center; }
+.rank li p { margin:0; max-width:110ch; }
+.verdict { margin:20px 0 0; max-width:110ch; font-size:16px; }
+@media (max-width:1100px) { .sizes { grid-template-columns:1fr; } }
+@media (max-width:640px) {
+  body { padding:24px 16px 48px; } .cand { padding:18px; }
+  .strip { flex-wrap:wrap; justify-content:flex-start; } .panel { overflow-x:auto; }
+  dl div { grid-template-columns:1fr; gap:2px; }
+}
+</style>
+</head>
+<body>
+<main>
+  <h1>Mark candidates, family C: the voice in the agent’s ear</h1>
+  <p class="lede">Four marks for Frontline Copilot from one idea: the copilot is the calm voice that tells the agent what to say.
+  Each is drawn on a 32-unit grid, with a redrawn 16-unit version used at 24 and 16 pixels. Every size below is shown at true pixel size.</p>
+  <p class="lede">Colour rule used throughout: marker only ever sits on cobalt or navy, because on paper it has no contrast.
+  On dark grounds the cobalt body turns to paper so the mark keeps its weight.</p>
+  <ul class="swatches">
+    <li><i style="background:#1D43D8"></i>Cobalt #1D43D8</li>
+    <li><i style="background:#0F1833"></i>Ink #0F1833</li>
+    <li><i style="background:#D9F23E"></i>Marker #D9F23E</li>
+    <li><i style="background:#F2F4FA"></i>Paper #F2F4FA</li>
+    <li><i style="background:#111B3D"></i>Navy #111B3D</li>
+  </ul>
+  
+  <section class="cand" id="aside">
+    <header><span class="num">1</span><h2>Aside</h2><p>An aside is a line spoken to one side. A helmet whose visor opens sideways, towards whoever is listening.</p></header>
+    <div class="sizes">
+      <div class="panel paper"><span class="tag">Light · paper</span>
+        <div class="strip">
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 32 32" role="img" aria-label="Aside"><path fill="#1D43D8" d="M11 3H23L29 9H13A4 4 0 0 0 9 13V19A4 4 0 0 0 13 23H29A6 6 0 0 1 23 29H11A8 8 0 0 1 3 21V11A8 8 0 0 1 11 3Z"/><path fill="#0F1833" d="M15.5 13A1.5 1.5 0 0 1 17 14.5V17.5A1.5 1.5 0 0 1 15.5 19A1.5 1.5 0 0 1 14 17.5V14.5A1.5 1.5 0 0 1 15.5 13ZM22.5 13A1.5 1.5 0 0 1 24 14.5V17.5A1.5 1.5 0 0 1 22.5 19A1.5 1.5 0 0 1 21 17.5V14.5A1.5 1.5 0 0 1 22.5 13Z"/></svg><figcaption>256</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 32 32" role="img" aria-label="Aside"><path fill="#1D43D8" d="M11 3H23L29 9H13A4 4 0 0 0 9 13V19A4 4 0 0 0 13 23H29A6 6 0 0 1 23 29H11A8 8 0 0 1 3 21V11A8 8 0 0 1 11 3Z"/><path fill="#0F1833" d="M15.5 13A1.5 1.5 0 0 1 17 14.5V17.5A1.5 1.5 0 0 1 15.5 19A1.5 1.5 0 0 1 14 17.5V14.5A1.5 1.5 0 0 1 15.5 13ZM22.5 13A1.5 1.5 0 0 1 24 14.5V17.5A1.5 1.5 0 0 1 22.5 19A1.5 1.5 0 0 1 21 17.5V14.5A1.5 1.5 0 0 1 22.5 13Z"/></svg><figcaption>96</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 32 32" role="img" aria-label="Aside"><path fill="#1D43D8" d="M11 3H23L29 9H13A4 4 0 0 0 9 13V19A4 4 0 0 0 13 23H29A6 6 0 0 1 23 29H11A8 8 0 0 1 3 21V11A8 8 0 0 1 11 3Z"/><path fill="#0F1833" d="M15.5 13A1.5 1.5 0 0 1 17 14.5V17.5A1.5 1.5 0 0 1 15.5 19A1.5 1.5 0 0 1 14 17.5V14.5A1.5 1.5 0 0 1 15.5 13ZM22.5 13A1.5 1.5 0 0 1 24 14.5V17.5A1.5 1.5 0 0 1 22.5 19A1.5 1.5 0 0 1 21 17.5V14.5A1.5 1.5 0 0 1 22.5 13Z"/></svg><figcaption>48</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" role="img" aria-label="Aside"><path fill="#1D43D8" d="M11 3H23L29 9H13A4 4 0 0 0 9 13V19A4 4 0 0 0 13 23H29A6 6 0 0 1 23 29H11A8 8 0 0 1 3 21V11A8 8 0 0 1 11 3Z"/><path fill="#0F1833" d="M15.5 13A1.5 1.5 0 0 1 17 14.5V17.5A1.5 1.5 0 0 1 15.5 19A1.5 1.5 0 0 1 14 17.5V14.5A1.5 1.5 0 0 1 15.5 13ZM22.5 13A1.5 1.5 0 0 1 24 14.5V17.5A1.5 1.5 0 0 1 22.5 19A1.5 1.5 0 0 1 21 17.5V14.5A1.5 1.5 0 0 1 22.5 13Z"/></svg><figcaption>32</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 16 16" role="img" aria-label="Aside"><path fill="#1D43D8" d="M5 1H12L15 4H6A2 2 0 0 0 4 6V10A2 2 0 0 0 6 12H15A3 3 0 0 1 12 15H5A4 4 0 0 1 1 11V5A4 4 0 0 1 5 1Z"/><path fill="#0F1833" d="M7.5 6H8.5A0.5 0.5 0 0 1 9 6.5V9.5A0.5 0.5 0 0 1 8.5 10H7.5A0.5 0.5 0 0 1 7 9.5V6.5A0.5 0.5 0 0 1 7.5 6ZM11.5 6H12.5A0.5 0.5 0 0 1 13 6.5V9.5A0.5 0.5 0 0 1 12.5 10H11.5A0.5 0.5 0 0 1 11 9.5V6.5A0.5 0.5 0 0 1 11.5 6Z"/></svg><figcaption>24<i> small</i></figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" role="img" aria-label="Aside"><path fill="#1D43D8" d="M5 1H12L15 4H6A2 2 0 0 0 4 6V10A2 2 0 0 0 6 12H15A3 3 0 0 1 12 15H5A4 4 0 0 1 1 11V5A4 4 0 0 1 5 1Z"/><path fill="#0F1833" d="M7.5 6H8.5A0.5 0.5 0 0 1 9 6.5V9.5A0.5 0.5 0 0 1 8.5 10H7.5A0.5 0.5 0 0 1 7 9.5V6.5A0.5 0.5 0 0 1 7.5 6ZM11.5 6H12.5A0.5 0.5 0 0 1 13 6.5V9.5A0.5 0.5 0 0 1 12.5 10H11.5A0.5 0.5 0 0 1 11 9.5V6.5A0.5 0.5 0 0 1 11.5 6Z"/></svg><figcaption>16<i> small</i></figcaption></figure>
+        </div>
+      </div>
+      <div class="panel navy"><span class="tag">Dark · midnight navy</span>
+        <div class="strip">
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 32 32" role="img" aria-label="Aside"><path fill="#F2F4FA" d="M11 3H23L29 9H13A4 4 0 0 0 9 13V19A4 4 0 0 0 13 23H29A6 6 0 0 1 23 29H11A8 8 0 0 1 3 21V11A8 8 0 0 1 11 3Z"/><path fill="#D9F23E" d="M15.5 13A1.5 1.5 0 0 1 17 14.5V17.5A1.5 1.5 0 0 1 15.5 19A1.5 1.5 0 0 1 14 17.5V14.5A1.5 1.5 0 0 1 15.5 13ZM22.5 13A1.5 1.5 0 0 1 24 14.5V17.5A1.5 1.5 0 0 1 22.5 19A1.5 1.5 0 0 1 21 17.5V14.5A1.5 1.5 0 0 1 22.5 13Z"/></svg><figcaption>256</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 32 32" role="img" aria-label="Aside"><path fill="#F2F4FA" d="M11 3H23L29 9H13A4 4 0 0 0 9 13V19A4 4 0 0 0 13 23H29A6 6 0 0 1 23 29H11A8 8 0 0 1 3 21V11A8 8 0 0 1 11 3Z"/><path fill="#D9F23E" d="M15.5 13A1.5 1.5 0 0 1 17 14.5V17.5A1.5 1.5 0 0 1 15.5 19A1.5 1.5 0 0 1 14 17.5V14.5A1.5 1.5 0 0 1 15.5 13ZM22.5 13A1.5 1.5 0 0 1 24 14.5V17.5A1.5 1.5 0 0 1 22.5 19A1.5 1.5 0 0 1 21 17.5V14.5A1.5 1.5 0 0 1 22.5 13Z"/></svg><figcaption>96</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 32 32" role="img" aria-label="Aside"><path fill="#F2F4FA" d="M11 3H23L29 9H13A4 4 0 0 0 9 13V19A4 4 0 0 0 13 23H29A6 6 0 0 1 23 29H11A8 8 0 0 1 3 21V11A8 8 0 0 1 11 3Z"/><path fill="#D9F23E" d="M15.5 13A1.5 1.5 0 0 1 17 14.5V17.5A1.5 1.5 0 0 1 15.5 19A1.5 1.5 0 0 1 14 17.5V14.5A1.5 1.5 0 0 1 15.5 13ZM22.5 13A1.5 1.5 0 0 1 24 14.5V17.5A1.5 1.5 0 0 1 22.5 19A1.5 1.5 0 0 1 21 17.5V14.5A1.5 1.5 0 0 1 22.5 13Z"/></svg><figcaption>48</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" role="img" aria-label="Aside"><path fill="#F2F4FA" d="M11 3H23L29 9H13A4 4 0 0 0 9 13V19A4 4 0 0 0 13 23H29A6 6 0 0 1 23 29H11A8 8 0 0 1 3 21V11A8 8 0 0 1 11 3Z"/><path fill="#D9F23E" d="M15.5 13A1.5 1.5 0 0 1 17 14.5V17.5A1.5 1.5 0 0 1 15.5 19A1.5 1.5 0 0 1 14 17.5V14.5A1.5 1.5 0 0 1 15.5 13ZM22.5 13A1.5 1.5 0 0 1 24 14.5V17.5A1.5 1.5 0 0 1 22.5 19A1.5 1.5 0 0 1 21 17.5V14.5A1.5 1.5 0 0 1 22.5 13Z"/></svg><figcaption>32</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 16 16" role="img" aria-label="Aside"><path fill="#F2F4FA" d="M5 1H12L15 4H6A2 2 0 0 0 4 6V10A2 2 0 0 0 6 12H15A3 3 0 0 1 12 15H5A4 4 0 0 1 1 11V5A4 4 0 0 1 5 1Z"/><path fill="#D9F23E" d="M7.5 6H8.5A0.5 0.5 0 0 1 9 6.5V9.5A0.5 0.5 0 0 1 8.5 10H7.5A0.5 0.5 0 0 1 7 9.5V6.5A0.5 0.5 0 0 1 7.5 6ZM11.5 6H12.5A0.5 0.5 0 0 1 13 6.5V9.5A0.5 0.5 0 0 1 12.5 10H11.5A0.5 0.5 0 0 1 11 9.5V6.5A0.5 0.5 0 0 1 11.5 6Z"/></svg><figcaption>24<i> small</i></figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" role="img" aria-label="Aside"><path fill="#F2F4FA" d="M5 1H12L15 4H6A2 2 0 0 0 4 6V10A2 2 0 0 0 6 12H15A3 3 0 0 1 12 15H5A4 4 0 0 1 1 11V5A4 4 0 0 1 5 1Z"/><path fill="#D9F23E" d="M7.5 6H8.5A0.5 0.5 0 0 1 9 6.5V9.5A0.5 0.5 0 0 1 8.5 10H7.5A0.5 0.5 0 0 1 7 9.5V6.5A0.5 0.5 0 0 1 7.5 6ZM11.5 6H12.5A0.5 0.5 0 0 1 13 6.5V9.5A0.5 0.5 0 0 1 12.5 10H11.5A0.5 0.5 0 0 1 11 9.5V6.5A0.5 0.5 0 0 1 11.5 6Z"/></svg><figcaption>16<i> small</i></figcaption></figure>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="cell">
+        <h3>Silhouette</h3>
+        <div class="pair white">
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 32 32" role="img" aria-label="Aside"><path fill="#000000" d="M11 3H23L29 9H13A4 4 0 0 0 9 13V19A4 4 0 0 0 13 23H29A6 6 0 0 1 23 29H11A8 8 0 0 1 3 21V11A8 8 0 0 1 11 3ZM15.5 13A1.5 1.5 0 0 1 17 14.5V17.5A1.5 1.5 0 0 1 15.5 19A1.5 1.5 0 0 1 14 17.5V14.5A1.5 1.5 0 0 1 15.5 13ZM22.5 13A1.5 1.5 0 0 1 24 14.5V17.5A1.5 1.5 0 0 1 22.5 19A1.5 1.5 0 0 1 21 17.5V14.5A1.5 1.5 0 0 1 22.5 13Z"/></svg><figcaption>solid black, 96</figcaption></figure>
+          
+        </div>
+      </div>
+      <div class="cell">
+        <h3>Single colour</h3>
+        <div class="pair split">
+          <figure class="paper"><svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 32 32" role="img" aria-label="Aside"><path fill="#0F1833" d="M11 3H23L29 9H13A4 4 0 0 0 9 13V19A4 4 0 0 0 13 23H29A6 6 0 0 1 23 29H11A8 8 0 0 1 3 21V11A8 8 0 0 1 11 3ZM15.5 13A1.5 1.5 0 0 1 17 14.5V17.5A1.5 1.5 0 0 1 15.5 19A1.5 1.5 0 0 1 14 17.5V14.5A1.5 1.5 0 0 1 15.5 13ZM22.5 13A1.5 1.5 0 0 1 24 14.5V17.5A1.5 1.5 0 0 1 22.5 19A1.5 1.5 0 0 1 21 17.5V14.5A1.5 1.5 0 0 1 22.5 13Z"/></svg><figcaption>ink on paper</figcaption></figure>
+          <figure class="cobalt"><svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 32 32" role="img" aria-label="Aside"><path fill="#FFFFFF" d="M11 3H23L29 9H13A4 4 0 0 0 9 13V19A4 4 0 0 0 13 23H29A6 6 0 0 1 23 29H11A8 8 0 0 1 3 21V11A8 8 0 0 1 11 3ZM15.5 13A1.5 1.5 0 0 1 17 14.5V17.5A1.5 1.5 0 0 1 15.5 19A1.5 1.5 0 0 1 14 17.5V14.5A1.5 1.5 0 0 1 15.5 13ZM22.5 13A1.5 1.5 0 0 1 24 14.5V17.5A1.5 1.5 0 0 1 22.5 19A1.5 1.5 0 0 1 21 17.5V14.5A1.5 1.5 0 0 1 22.5 13Z"/></svg><figcaption>white on cobalt</figcaption></figure>
+        </div>
+      </div>
+      <div class="cell">
+        <h3>App icon</h3>
+        <div class="pair paper"><figure><div class="tile"><svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 32 32" role="img" aria-label="Aside"><path fill="#FFFFFF" d="M11 3H23L29 9H13A4 4 0 0 0 9 13V19A4 4 0 0 0 13 23H29A6 6 0 0 1 23 29H11A8 8 0 0 1 3 21V11A8 8 0 0 1 11 3Z"/><path fill="#D9F23E" d="M15.5 13A1.5 1.5 0 0 1 17 14.5V17.5A1.5 1.5 0 0 1 15.5 19A1.5 1.5 0 0 1 14 17.5V14.5A1.5 1.5 0 0 1 15.5 13ZM22.5 13A1.5 1.5 0 0 1 24 14.5V17.5A1.5 1.5 0 0 1 22.5 19A1.5 1.5 0 0 1 21 17.5V14.5A1.5 1.5 0 0 1 22.5 13Z"/></svg></div><figcaption>96 tile</figcaption></figure></div>
+      </div>
+      <div class="cell">
+        <h3>Small drawing, enlarged</h3>
+        <div class="pair paper">
+          <figure><svg class="grid32" xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 32 32" role="img" aria-label="Aside"><path fill="#1D43D8" d="M11 3H23L29 9H13A4 4 0 0 0 9 13V19A4 4 0 0 0 13 23H29A6 6 0 0 1 23 29H11A8 8 0 0 1 3 21V11A8 8 0 0 1 11 3Z"/><path fill="#0F1833" d="M15.5 13A1.5 1.5 0 0 1 17 14.5V17.5A1.5 1.5 0 0 1 15.5 19A1.5 1.5 0 0 1 14 17.5V14.5A1.5 1.5 0 0 1 15.5 13ZM22.5 13A1.5 1.5 0 0 1 24 14.5V17.5A1.5 1.5 0 0 1 22.5 19A1.5 1.5 0 0 1 21 17.5V14.5A1.5 1.5 0 0 1 22.5 13Z"/></svg><figcaption>full drawing, 32-unit grid</figcaption></figure>
+          <figure><svg class="grid16" xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 16 16" role="img" aria-label="Aside"><path fill="#1D43D8" d="M5 1H12L15 4H6A2 2 0 0 0 4 6V10A2 2 0 0 0 6 12H15A3 3 0 0 1 12 15H5A4 4 0 0 1 1 11V5A4 4 0 0 1 5 1Z"/><path fill="#0F1833" d="M7.5 6H8.5A0.5 0.5 0 0 1 9 6.5V9.5A0.5 0.5 0 0 1 8.5 10H7.5A0.5 0.5 0 0 1 7 9.5V6.5A0.5 0.5 0 0 1 7.5 6ZM11.5 6H12.5A0.5 0.5 0 0 1 13 6.5V9.5A0.5 0.5 0 0 1 12.5 10H11.5A0.5 0.5 0 0 1 11 9.5V6.5A0.5 0.5 0 0 1 11.5 6Z"/></svg><figcaption>small drawing, 16-unit grid</figcaption></figure>
+        </div>
+      </div>
+      <div class="cell wide">
+        <h3>Top-bar lockup, mark at 28</h3>
+        <div class="bars">
+          <div class="bar paper"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 32 32" role="img" aria-label="Aside"><path fill="#1D43D8" d="M11 3H23L29 9H13A4 4 0 0 0 9 13V19A4 4 0 0 0 13 23H29A6 6 0 0 1 23 29H11A8 8 0 0 1 3 21V11A8 8 0 0 1 11 3Z"/><path fill="#0F1833" d="M15.5 13A1.5 1.5 0 0 1 17 14.5V17.5A1.5 1.5 0 0 1 15.5 19A1.5 1.5 0 0 1 14 17.5V14.5A1.5 1.5 0 0 1 15.5 13ZM22.5 13A1.5 1.5 0 0 1 24 14.5V17.5A1.5 1.5 0 0 1 22.5 19A1.5 1.5 0 0 1 21 17.5V14.5A1.5 1.5 0 0 1 22.5 13Z"/></svg><b>Frontline Copilot</b></div>
+          <div class="bar navy"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 32 32" role="img" aria-label="Aside"><path fill="#F2F4FA" d="M11 3H23L29 9H13A4 4 0 0 0 9 13V19A4 4 0 0 0 13 23H29A6 6 0 0 1 23 29H11A8 8 0 0 1 3 21V11A8 8 0 0 1 11 3Z"/><path fill="#D9F23E" d="M15.5 13A1.5 1.5 0 0 1 17 14.5V17.5A1.5 1.5 0 0 1 15.5 19A1.5 1.5 0 0 1 14 17.5V14.5A1.5 1.5 0 0 1 15.5 13ZM22.5 13A1.5 1.5 0 0 1 24 14.5V17.5A1.5 1.5 0 0 1 22.5 19A1.5 1.5 0 0 1 21 17.5V14.5A1.5 1.5 0 0 1 22.5 13Z"/></svg><b>Frontline Copilot</b></div>
+        </div>
+      </div>
+    </div>
+    <dl>
+      <div><dt>Construction</dt><dd>32-unit grid, solid shapes only. A 26 × 26 rounded square, outer radius 8, hollowed to a wall of 6. The visor slot is 14 high with inner radius 4 and runs out through the right side. The upper arm ends in the 45° SIM cut (legs of 6); the lower arm ends in a quarter-circle of the wall’s own width. Eyes are 3 × 6 pills, 7 apart, centred in the slot.</dd></div>
+      <div><dt>The aha</dt><dd>The face looks out through the gap, so in a lockup it looks at its own name. Read as a letter it is a C, should the product become Cue. Read as an outline it is the SIM card: three round corners and one cut.</dd></div>
+    </dl>
+  </section>
+  <section class="cand" id="cuecard">
+    <header><span class="num">2</span><h2>Cue card</h2><p>A page of script with one line highlighted. The highlight is where the eyes are.</p></header>
+    <div class="sizes">
+      <div class="panel paper"><span class="tag">Light · paper</span>
+        <div class="strip">
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 32 32" role="img" aria-label="Cue card"><path fill="#1D43D8" fill-rule="evenodd" d="M8 3H21L28 10V25A4 4 0 0 1 24 29H8A4 4 0 0 1 4 25V7A4 4 0 0 1 8 3ZM7 23H17V25H7Z"/><path fill="#D9F23E" d="M8 12H24A1 1 0 0 1 25 13V19A1 1 0 0 1 24 20H8A1 1 0 0 1 7 19V13A1 1 0 0 1 8 12Z"/><path fill="#0F1833" d="M12 13.5A1.5 1.5 0 0 1 13.5 15V17A1.5 1.5 0 0 1 12 18.5A1.5 1.5 0 0 1 10.5 17V15A1.5 1.5 0 0 1 12 13.5ZM20 13.5A1.5 1.5 0 0 1 21.5 15V17A1.5 1.5 0 0 1 20 18.5A1.5 1.5 0 0 1 18.5 17V15A1.5 1.5 0 0 1 20 13.5Z"/></svg><figcaption>256</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 32 32" role="img" aria-label="Cue card"><path fill="#1D43D8" fill-rule="evenodd" d="M8 3H21L28 10V25A4 4 0 0 1 24 29H8A4 4 0 0 1 4 25V7A4 4 0 0 1 8 3ZM7 23H17V25H7Z"/><path fill="#D9F23E" d="M8 12H24A1 1 0 0 1 25 13V19A1 1 0 0 1 24 20H8A1 1 0 0 1 7 19V13A1 1 0 0 1 8 12Z"/><path fill="#0F1833" d="M12 13.5A1.5 1.5 0 0 1 13.5 15V17A1.5 1.5 0 0 1 12 18.5A1.5 1.5 0 0 1 10.5 17V15A1.5 1.5 0 0 1 12 13.5ZM20 13.5A1.5 1.5 0 0 1 21.5 15V17A1.5 1.5 0 0 1 20 18.5A1.5 1.5 0 0 1 18.5 17V15A1.5 1.5 0 0 1 20 13.5Z"/></svg><figcaption>96</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 32 32" role="img" aria-label="Cue card"><path fill="#1D43D8" fill-rule="evenodd" d="M8 3H21L28 10V25A4 4 0 0 1 24 29H8A4 4 0 0 1 4 25V7A4 4 0 0 1 8 3ZM7 23H17V25H7Z"/><path fill="#D9F23E" d="M8 12H24A1 1 0 0 1 25 13V19A1 1 0 0 1 24 20H8A1 1 0 0 1 7 19V13A1 1 0 0 1 8 12Z"/><path fill="#0F1833" d="M12 13.5A1.5 1.5 0 0 1 13.5 15V17A1.5 1.5 0 0 1 12 18.5A1.5 1.5 0 0 1 10.5 17V15A1.5 1.5 0 0 1 12 13.5ZM20 13.5A1.5 1.5 0 0 1 21.5 15V17A1.5 1.5 0 0 1 20 18.5A1.5 1.5 0 0 1 18.5 17V15A1.5 1.5 0 0 1 20 13.5Z"/></svg><figcaption>48</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" role="img" aria-label="Cue card"><path fill="#1D43D8" fill-rule="evenodd" d="M8 3H21L28 10V25A4 4 0 0 1 24 29H8A4 4 0 0 1 4 25V7A4 4 0 0 1 8 3ZM7 23H17V25H7Z"/><path fill="#D9F23E" d="M8 12H24A1 1 0 0 1 25 13V19A1 1 0 0 1 24 20H8A1 1 0 0 1 7 19V13A1 1 0 0 1 8 12Z"/><path fill="#0F1833" d="M12 13.5A1.5 1.5 0 0 1 13.5 15V17A1.5 1.5 0 0 1 12 18.5A1.5 1.5 0 0 1 10.5 17V15A1.5 1.5 0 0 1 12 13.5ZM20 13.5A1.5 1.5 0 0 1 21.5 15V17A1.5 1.5 0 0 1 20 18.5A1.5 1.5 0 0 1 18.5 17V15A1.5 1.5 0 0 1 20 13.5Z"/></svg><figcaption>32</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 16 16" role="img" aria-label="Cue card"><path fill="#1D43D8" fill-rule="evenodd" d="M4 1H10L14 5V13A2 2 0 0 1 12 15H4A2 2 0 0 1 2 13V3A2 2 0 0 1 4 1ZM3 12H8V13H3Z"/><path fill="#D9F23E" d="M3 6H13V10H3Z"/><path fill="#0F1833" d="M5 7H7V9H5ZM9 7H11V9H9Z"/></svg><figcaption>24<i> small</i></figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" role="img" aria-label="Cue card"><path fill="#1D43D8" fill-rule="evenodd" d="M4 1H10L14 5V13A2 2 0 0 1 12 15H4A2 2 0 0 1 2 13V3A2 2 0 0 1 4 1ZM3 12H8V13H3Z"/><path fill="#D9F23E" d="M3 6H13V10H3Z"/><path fill="#0F1833" d="M5 7H7V9H5ZM9 7H11V9H9Z"/></svg><figcaption>16<i> small</i></figcaption></figure>
+        </div>
+      </div>
+      <div class="panel navy"><span class="tag">Dark · midnight navy</span>
+        <div class="strip">
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 32 32" role="img" aria-label="Cue card"><path fill="#F2F4FA" fill-rule="evenodd" d="M8 3H21L28 10V25A4 4 0 0 1 24 29H8A4 4 0 0 1 4 25V7A4 4 0 0 1 8 3ZM7 23H17V25H7Z"/><path fill="#1D43D8" d="M8 12H24A1 1 0 0 1 25 13V19A1 1 0 0 1 24 20H8A1 1 0 0 1 7 19V13A1 1 0 0 1 8 12Z"/><path fill="#D9F23E" d="M12 13.5A1.5 1.5 0 0 1 13.5 15V17A1.5 1.5 0 0 1 12 18.5A1.5 1.5 0 0 1 10.5 17V15A1.5 1.5 0 0 1 12 13.5ZM20 13.5A1.5 1.5 0 0 1 21.5 15V17A1.5 1.5 0 0 1 20 18.5A1.5 1.5 0 0 1 18.5 17V15A1.5 1.5 0 0 1 20 13.5Z"/></svg><figcaption>256</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 32 32" role="img" aria-label="Cue card"><path fill="#F2F4FA" fill-rule="evenodd" d="M8 3H21L28 10V25A4 4 0 0 1 24 29H8A4 4 0 0 1 4 25V7A4 4 0 0 1 8 3ZM7 23H17V25H7Z"/><path fill="#1D43D8" d="M8 12H24A1 1 0 0 1 25 13V19A1 1 0 0 1 24 20H8A1 1 0 0 1 7 19V13A1 1 0 0 1 8 12Z"/><path fill="#D9F23E" d="M12 13.5A1.5 1.5 0 0 1 13.5 15V17A1.5 1.5 0 0 1 12 18.5A1.5 1.5 0 0 1 10.5 17V15A1.5 1.5 0 0 1 12 13.5ZM20 13.5A1.5 1.5 0 0 1 21.5 15V17A1.5 1.5 0 0 1 20 18.5A1.5 1.5 0 0 1 18.5 17V15A1.5 1.5 0 0 1 20 13.5Z"/></svg><figcaption>96</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 32 32" role="img" aria-label="Cue card"><path fill="#F2F4FA" fill-rule="evenodd" d="M8 3H21L28 10V25A4 4 0 0 1 24 29H8A4 4 0 0 1 4 25V7A4 4 0 0 1 8 3ZM7 23H17V25H7Z"/><path fill="#1D43D8" d="M8 12H24A1 1 0 0 1 25 13V19A1 1 0 0 1 24 20H8A1 1 0 0 1 7 19V13A1 1 0 0 1 8 12Z"/><path fill="#D9F23E" d="M12 13.5A1.5 1.5 0 0 1 13.5 15V17A1.5 1.5 0 0 1 12 18.5A1.5 1.5 0 0 1 10.5 17V15A1.5 1.5 0 0 1 12 13.5ZM20 13.5A1.5 1.5 0 0 1 21.5 15V17A1.5 1.5 0 0 1 20 18.5A1.5 1.5 0 0 1 18.5 17V15A1.5 1.5 0 0 1 20 13.5Z"/></svg><figcaption>48</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" role="img" aria-label="Cue card"><path fill="#F2F4FA" fill-rule="evenodd" d="M8 3H21L28 10V25A4 4 0 0 1 24 29H8A4 4 0 0 1 4 25V7A4 4 0 0 1 8 3ZM7 23H17V25H7Z"/><path fill="#1D43D8" d="M8 12H24A1 1 0 0 1 25 13V19A1 1 0 0 1 24 20H8A1 1 0 0 1 7 19V13A1 1 0 0 1 8 12Z"/><path fill="#D9F23E" d="M12 13.5A1.5 1.5 0 0 1 13.5 15V17A1.5 1.5 0 0 1 12 18.5A1.5 1.5 0 0 1 10.5 17V15A1.5 1.5 0 0 1 12 13.5ZM20 13.5A1.5 1.5 0 0 1 21.5 15V17A1.5 1.5 0 0 1 20 18.5A1.5 1.5 0 0 1 18.5 17V15A1.5 1.5 0 0 1 20 13.5Z"/></svg><figcaption>32</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 16 16" role="img" aria-label="Cue card"><path fill="#F2F4FA" fill-rule="evenodd" d="M4 1H10L14 5V13A2 2 0 0 1 12 15H4A2 2 0 0 1 2 13V3A2 2 0 0 1 4 1ZM3 12H8V13H3Z"/><path fill="#1D43D8" d="M3 6H13V10H3Z"/><path fill="#D9F23E" d="M5 7H7V9H5ZM9 7H11V9H9Z"/></svg><figcaption>24<i> small</i></figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" role="img" aria-label="Cue card"><path fill="#F2F4FA" fill-rule="evenodd" d="M4 1H10L14 5V13A2 2 0 0 1 12 15H4A2 2 0 0 1 2 13V3A2 2 0 0 1 4 1ZM3 12H8V13H3Z"/><path fill="#1D43D8" d="M3 6H13V10H3Z"/><path fill="#D9F23E" d="M5 7H7V9H5ZM9 7H11V9H9Z"/></svg><figcaption>16<i> small</i></figcaption></figure>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="cell">
+        <h3>Silhouette</h3>
+        <div class="pair white">
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 32 32" role="img" aria-label="Cue card"><path fill="#000000" fill-rule="evenodd" d="M8 3H21L28 10V25A4 4 0 0 1 24 29H8A4 4 0 0 1 4 25V7A4 4 0 0 1 8 3ZM8 12H24A1 1 0 0 1 25 13V19A1 1 0 0 1 24 20H8A1 1 0 0 1 7 19V13A1 1 0 0 1 8 12ZM12 13.5A1.5 1.5 0 0 1 13.5 15V17A1.5 1.5 0 0 1 12 18.5A1.5 1.5 0 0 1 10.5 17V15A1.5 1.5 0 0 1 12 13.5ZM20 13.5A1.5 1.5 0 0 1 21.5 15V17A1.5 1.5 0 0 1 20 18.5A1.5 1.5 0 0 1 18.5 17V15A1.5 1.5 0 0 1 20 13.5ZM7 23H17V25H7Z"/></svg><figcaption>solid black, 96</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 32 32" role="img" aria-label="Cue card"><path fill="#000000" d="M8 3H21L28 10V25A4 4 0 0 1 24 29H8A4 4 0 0 1 4 25V7A4 4 0 0 1 8 3Z"/></svg><figcaption>contour only</figcaption></figure>
+        </div>
+      </div>
+      <div class="cell">
+        <h3>Single colour</h3>
+        <div class="pair split">
+          <figure class="paper"><svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 32 32" role="img" aria-label="Cue card"><path fill="#0F1833" fill-rule="evenodd" d="M8 3H21L28 10V25A4 4 0 0 1 24 29H8A4 4 0 0 1 4 25V7A4 4 0 0 1 8 3ZM8 12H24A1 1 0 0 1 25 13V19A1 1 0 0 1 24 20H8A1 1 0 0 1 7 19V13A1 1 0 0 1 8 12ZM12 13.5A1.5 1.5 0 0 1 13.5 15V17A1.5 1.5 0 0 1 12 18.5A1.5 1.5 0 0 1 10.5 17V15A1.5 1.5 0 0 1 12 13.5ZM20 13.5A1.5 1.5 0 0 1 21.5 15V17A1.5 1.5 0 0 1 20 18.5A1.5 1.5 0 0 1 18.5 17V15A1.5 1.5 0 0 1 20 13.5ZM7 23H17V25H7Z"/></svg><figcaption>ink on paper</figcaption></figure>
+          <figure class="cobalt"><svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 32 32" role="img" aria-label="Cue card"><path fill="#FFFFFF" fill-rule="evenodd" d="M8 3H21L28 10V25A4 4 0 0 1 24 29H8A4 4 0 0 1 4 25V7A4 4 0 0 1 8 3ZM8 12H24A1 1 0 0 1 25 13V19A1 1 0 0 1 24 20H8A1 1 0 0 1 7 19V13A1 1 0 0 1 8 12ZM12 13.5A1.5 1.5 0 0 1 13.5 15V17A1.5 1.5 0 0 1 12 18.5A1.5 1.5 0 0 1 10.5 17V15A1.5 1.5 0 0 1 12 13.5ZM20 13.5A1.5 1.5 0 0 1 21.5 15V17A1.5 1.5 0 0 1 20 18.5A1.5 1.5 0 0 1 18.5 17V15A1.5 1.5 0 0 1 20 13.5ZM7 23H17V25H7Z"/></svg><figcaption>white on cobalt</figcaption></figure>
+        </div>
+      </div>
+      <div class="cell">
+        <h3>App icon</h3>
+        <div class="pair paper"><figure><div class="tile"><svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 32 32" role="img" aria-label="Cue card"><path fill="#FFFFFF" fill-rule="evenodd" d="M8 3H21L28 10V25A4 4 0 0 1 24 29H8A4 4 0 0 1 4 25V7A4 4 0 0 1 8 3ZM7 23H17V25H7ZM8 12H24A1 1 0 0 1 25 13V19A1 1 0 0 1 24 20H8A1 1 0 0 1 7 19V13A1 1 0 0 1 8 12Z"/><path fill="#D9F23E" d="M12 13.5A1.5 1.5 0 0 1 13.5 15V17A1.5 1.5 0 0 1 12 18.5A1.5 1.5 0 0 1 10.5 17V15A1.5 1.5 0 0 1 12 13.5ZM20 13.5A1.5 1.5 0 0 1 21.5 15V17A1.5 1.5 0 0 1 20 18.5A1.5 1.5 0 0 1 18.5 17V15A1.5 1.5 0 0 1 20 13.5Z"/></svg></div><figcaption>96 tile</figcaption></figure></div>
+      </div>
+      <div class="cell">
+        <h3>Small drawing, enlarged</h3>
+        <div class="pair paper">
+          <figure><svg class="grid32" xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 32 32" role="img" aria-label="Cue card"><path fill="#1D43D8" fill-rule="evenodd" d="M8 3H21L28 10V25A4 4 0 0 1 24 29H8A4 4 0 0 1 4 25V7A4 4 0 0 1 8 3ZM7 23H17V25H7Z"/><path fill="#D9F23E" d="M8 12H24A1 1 0 0 1 25 13V19A1 1 0 0 1 24 20H8A1 1 0 0 1 7 19V13A1 1 0 0 1 8 12Z"/><path fill="#0F1833" d="M12 13.5A1.5 1.5 0 0 1 13.5 15V17A1.5 1.5 0 0 1 12 18.5A1.5 1.5 0 0 1 10.5 17V15A1.5 1.5 0 0 1 12 13.5ZM20 13.5A1.5 1.5 0 0 1 21.5 15V17A1.5 1.5 0 0 1 20 18.5A1.5 1.5 0 0 1 18.5 17V15A1.5 1.5 0 0 1 20 13.5Z"/></svg><figcaption>full drawing, 32-unit grid</figcaption></figure>
+          <figure><svg class="grid16" xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 16 16" role="img" aria-label="Cue card"><path fill="#1D43D8" fill-rule="evenodd" d="M4 1H10L14 5V13A2 2 0 0 1 12 15H4A2 2 0 0 1 2 13V3A2 2 0 0 1 4 1ZM3 12H8V13H3Z"/><path fill="#D9F23E" d="M3 6H13V10H3Z"/><path fill="#0F1833" d="M5 7H7V9H5ZM9 7H11V9H9Z"/></svg><figcaption>small drawing, 16-unit grid</figcaption></figure>
+        </div>
+      </div>
+      <div class="cell wide">
+        <h3>Top-bar lockup, mark at 28</h3>
+        <div class="bars">
+          <div class="bar paper"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 32 32" role="img" aria-label="Cue card"><path fill="#1D43D8" fill-rule="evenodd" d="M8 3H21L28 10V25A4 4 0 0 1 24 29H8A4 4 0 0 1 4 25V7A4 4 0 0 1 8 3ZM7 23H17V25H7Z"/><path fill="#D9F23E" d="M8 12H24A1 1 0 0 1 25 13V19A1 1 0 0 1 24 20H8A1 1 0 0 1 7 19V13A1 1 0 0 1 8 12Z"/><path fill="#0F1833" d="M12 13.5A1.5 1.5 0 0 1 13.5 15V17A1.5 1.5 0 0 1 12 18.5A1.5 1.5 0 0 1 10.5 17V15A1.5 1.5 0 0 1 12 13.5ZM20 13.5A1.5 1.5 0 0 1 21.5 15V17A1.5 1.5 0 0 1 20 18.5A1.5 1.5 0 0 1 18.5 17V15A1.5 1.5 0 0 1 20 13.5Z"/></svg><b>Frontline Copilot</b></div>
+          <div class="bar navy"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 32 32" role="img" aria-label="Cue card"><path fill="#F2F4FA" fill-rule="evenodd" d="M8 3H21L28 10V25A4 4 0 0 1 24 29H8A4 4 0 0 1 4 25V7A4 4 0 0 1 8 3ZM7 23H17V25H7Z"/><path fill="#1D43D8" d="M8 12H24A1 1 0 0 1 25 13V19A1 1 0 0 1 24 20H8A1 1 0 0 1 7 19V13A1 1 0 0 1 8 12Z"/><path fill="#D9F23E" d="M12 13.5A1.5 1.5 0 0 1 13.5 15V17A1.5 1.5 0 0 1 12 18.5A1.5 1.5 0 0 1 10.5 17V15A1.5 1.5 0 0 1 12 13.5ZM20 13.5A1.5 1.5 0 0 1 21.5 15V17A1.5 1.5 0 0 1 20 18.5A1.5 1.5 0 0 1 18.5 17V15A1.5 1.5 0 0 1 20 13.5Z"/></svg><b>Frontline Copilot</b></div>
+        </div>
+      </div>
+    </div>
+    <dl>
+      <div><dt>Construction</dt><dd>32-unit grid, solid shapes only. Card 24 × 26, corner radius 4, top-right corner cut at 45° with legs of 7. The highlight is an 18 × 8 bar, radius 1, inset 3 from both sides; the eyes are 3 × 5 pills, 8 apart, centred in it. One 10 × 2 line is cut through the card below, on the same left margin.</dd></div>
+      <div><dt>The aha</dt><dd>It is a script: one line marked to read aloud and the next line waiting. It is also a robot looking at you through a visor, so the copilot’s whole job, pointing at the fact to say, is its face.</dd></div>
+    </dl>
+  </section>
+  <section class="cand" id="oneline">
+    <header><span class="num">3</span><h2>One line</h2><p>A headset drawn in a single stroke. There is no head, only the room the line leaves for one.</p></header>
+    <div class="sizes">
+      <div class="panel paper"><span class="tag">Light · paper</span>
+        <div class="strip">
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 32 32" role="img" aria-label="One line"><path fill="none" stroke="#1D43D8" stroke-width="4" stroke-linecap="round" d="M5 19V14A11 11 0 0 1 27 14V19A9 9 0 0 1 18 28H16"/><circle cx="12" cy="17" r="2" fill="#0F1833"/><circle cx="20" cy="17" r="2" fill="#0F1833"/></svg><figcaption>256</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 32 32" role="img" aria-label="One line"><path fill="none" stroke="#1D43D8" stroke-width="4" stroke-linecap="round" d="M5 19V14A11 11 0 0 1 27 14V19A9 9 0 0 1 18 28H16"/><circle cx="12" cy="17" r="2" fill="#0F1833"/><circle cx="20" cy="17" r="2" fill="#0F1833"/></svg><figcaption>96</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 32 32" role="img" aria-label="One line"><path fill="none" stroke="#1D43D8" stroke-width="4" stroke-linecap="round" d="M5 19V14A11 11 0 0 1 27 14V19A9 9 0 0 1 18 28H16"/><circle cx="12" cy="17" r="2" fill="#0F1833"/><circle cx="20" cy="17" r="2" fill="#0F1833"/></svg><figcaption>48</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" role="img" aria-label="One line"><path fill="none" stroke="#1D43D8" stroke-width="4" stroke-linecap="round" d="M5 19V14A11 11 0 0 1 27 14V19A9 9 0 0 1 18 28H16"/><circle cx="12" cy="17" r="2" fill="#0F1833"/><circle cx="20" cy="17" r="2" fill="#0F1833"/></svg><figcaption>32</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 16 16" role="img" aria-label="One line"><path fill="none" stroke="#1D43D8" stroke-width="2" stroke-linecap="round" d="M2 10V7A6 6 0 0 1 14 7V10A4 4 0 0 1 10 14H9"/><path fill="#0F1833" d="M6 7A1 1 0 0 1 7 8V9A1 1 0 0 1 6 10A1 1 0 0 1 5 9V8A1 1 0 0 1 6 7ZM10 7A1 1 0 0 1 11 8V9A1 1 0 0 1 10 10A1 1 0 0 1 9 9V8A1 1 0 0 1 10 7Z"/></svg><figcaption>24<i> small</i></figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" role="img" aria-label="One line"><path fill="none" stroke="#1D43D8" stroke-width="2" stroke-linecap="round" d="M2 10V7A6 6 0 0 1 14 7V10A4 4 0 0 1 10 14H9"/><path fill="#0F1833" d="M6 7A1 1 0 0 1 7 8V9A1 1 0 0 1 6 10A1 1 0 0 1 5 9V8A1 1 0 0 1 6 7ZM10 7A1 1 0 0 1 11 8V9A1 1 0 0 1 10 10A1 1 0 0 1 9 9V8A1 1 0 0 1 10 7Z"/></svg><figcaption>16<i> small</i></figcaption></figure>
+        </div>
+      </div>
+      <div class="panel navy"><span class="tag">Dark · midnight navy</span>
+        <div class="strip">
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 32 32" role="img" aria-label="One line"><path fill="none" stroke="#F2F4FA" stroke-width="4" stroke-linecap="round" d="M5 19V14A11 11 0 0 1 27 14V19A9 9 0 0 1 18 28H16"/><circle cx="12" cy="17" r="2" fill="#D9F23E"/><circle cx="20" cy="17" r="2" fill="#D9F23E"/></svg><figcaption>256</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 32 32" role="img" aria-label="One line"><path fill="none" stroke="#F2F4FA" stroke-width="4" stroke-linecap="round" d="M5 19V14A11 11 0 0 1 27 14V19A9 9 0 0 1 18 28H16"/><circle cx="12" cy="17" r="2" fill="#D9F23E"/><circle cx="20" cy="17" r="2" fill="#D9F23E"/></svg><figcaption>96</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 32 32" role="img" aria-label="One line"><path fill="none" stroke="#F2F4FA" stroke-width="4" stroke-linecap="round" d="M5 19V14A11 11 0 0 1 27 14V19A9 9 0 0 1 18 28H16"/><circle cx="12" cy="17" r="2" fill="#D9F23E"/><circle cx="20" cy="17" r="2" fill="#D9F23E"/></svg><figcaption>48</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" role="img" aria-label="One line"><path fill="none" stroke="#F2F4FA" stroke-width="4" stroke-linecap="round" d="M5 19V14A11 11 0 0 1 27 14V19A9 9 0 0 1 18 28H16"/><circle cx="12" cy="17" r="2" fill="#D9F23E"/><circle cx="20" cy="17" r="2" fill="#D9F23E"/></svg><figcaption>32</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 16 16" role="img" aria-label="One line"><path fill="none" stroke="#F2F4FA" stroke-width="2" stroke-linecap="round" d="M2 10V7A6 6 0 0 1 14 7V10A4 4 0 0 1 10 14H9"/><path fill="#D9F23E" d="M6 7A1 1 0 0 1 7 8V9A1 1 0 0 1 6 10A1 1 0 0 1 5 9V8A1 1 0 0 1 6 7ZM10 7A1 1 0 0 1 11 8V9A1 1 0 0 1 10 10A1 1 0 0 1 9 9V8A1 1 0 0 1 10 7Z"/></svg><figcaption>24<i> small</i></figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" role="img" aria-label="One line"><path fill="none" stroke="#F2F4FA" stroke-width="2" stroke-linecap="round" d="M2 10V7A6 6 0 0 1 14 7V10A4 4 0 0 1 10 14H9"/><path fill="#D9F23E" d="M6 7A1 1 0 0 1 7 8V9A1 1 0 0 1 6 10A1 1 0 0 1 5 9V8A1 1 0 0 1 6 7ZM10 7A1 1 0 0 1 11 8V9A1 1 0 0 1 10 10A1 1 0 0 1 9 9V8A1 1 0 0 1 10 7Z"/></svg><figcaption>16<i> small</i></figcaption></figure>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="cell">
+        <h3>Silhouette</h3>
+        <div class="pair white">
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 32 32" role="img" aria-label="One line"><path fill="none" stroke="#000000" stroke-width="4" stroke-linecap="round" d="M5 19V14A11 11 0 0 1 27 14V19A9 9 0 0 1 18 28H16"/><circle cx="12" cy="17" r="2" fill="#000000"/><circle cx="20" cy="17" r="2" fill="#000000"/></svg><figcaption>solid black, 96</figcaption></figure>
+          
+        </div>
+      </div>
+      <div class="cell">
+        <h3>Single colour</h3>
+        <div class="pair split">
+          <figure class="paper"><svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 32 32" role="img" aria-label="One line"><path fill="none" stroke="#0F1833" stroke-width="4" stroke-linecap="round" d="M5 19V14A11 11 0 0 1 27 14V19A9 9 0 0 1 18 28H16"/><circle cx="12" cy="17" r="2" fill="#0F1833"/><circle cx="20" cy="17" r="2" fill="#0F1833"/></svg><figcaption>ink on paper</figcaption></figure>
+          <figure class="cobalt"><svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 32 32" role="img" aria-label="One line"><path fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" d="M5 19V14A11 11 0 0 1 27 14V19A9 9 0 0 1 18 28H16"/><circle cx="12" cy="17" r="2" fill="#FFFFFF"/><circle cx="20" cy="17" r="2" fill="#FFFFFF"/></svg><figcaption>white on cobalt</figcaption></figure>
+        </div>
+      </div>
+      <div class="cell">
+        <h3>App icon</h3>
+        <div class="pair paper"><figure><div class="tile"><svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 32 32" role="img" aria-label="One line"><path fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" d="M5 19V14A11 11 0 0 1 27 14V19A9 9 0 0 1 18 28H16"/><circle cx="12" cy="17" r="2" fill="#D9F23E"/><circle cx="20" cy="17" r="2" fill="#D9F23E"/></svg></div><figcaption>96 tile</figcaption></figure></div>
+      </div>
+      <div class="cell">
+        <h3>Small drawing, enlarged</h3>
+        <div class="pair paper">
+          <figure><svg class="grid32" xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 32 32" role="img" aria-label="One line"><path fill="none" stroke="#1D43D8" stroke-width="4" stroke-linecap="round" d="M5 19V14A11 11 0 0 1 27 14V19A9 9 0 0 1 18 28H16"/><circle cx="12" cy="17" r="2" fill="#0F1833"/><circle cx="20" cy="17" r="2" fill="#0F1833"/></svg><figcaption>full drawing, 32-unit grid</figcaption></figure>
+          <figure><svg class="grid16" xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 16 16" role="img" aria-label="One line"><path fill="none" stroke="#1D43D8" stroke-width="2" stroke-linecap="round" d="M2 10V7A6 6 0 0 1 14 7V10A4 4 0 0 1 10 14H9"/><path fill="#0F1833" d="M6 7A1 1 0 0 1 7 8V9A1 1 0 0 1 6 10A1 1 0 0 1 5 9V8A1 1 0 0 1 6 7ZM10 7A1 1 0 0 1 11 8V9A1 1 0 0 1 10 10A1 1 0 0 1 9 9V8A1 1 0 0 1 10 7Z"/></svg><figcaption>small drawing, 16-unit grid</figcaption></figure>
+        </div>
+      </div>
+      <div class="cell wide">
+        <h3>Top-bar lockup, mark at 28</h3>
+        <div class="bars">
+          <div class="bar paper"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 32 32" role="img" aria-label="One line"><path fill="none" stroke="#1D43D8" stroke-width="4" stroke-linecap="round" d="M5 19V14A11 11 0 0 1 27 14V19A9 9 0 0 1 18 28H16"/><circle cx="12" cy="17" r="2" fill="#0F1833"/><circle cx="20" cy="17" r="2" fill="#0F1833"/></svg><b>Frontline Copilot</b></div>
+          <div class="bar navy"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 32 32" role="img" aria-label="One line"><path fill="none" stroke="#F2F4FA" stroke-width="4" stroke-linecap="round" d="M5 19V14A11 11 0 0 1 27 14V19A9 9 0 0 1 18 28H16"/><circle cx="12" cy="17" r="2" fill="#D9F23E"/><circle cx="20" cy="17" r="2" fill="#D9F23E"/></svg><b>Frontline Copilot</b></div>
+        </div>
+      </div>
+    </div>
+    <dl>
+      <div><dt>Construction</dt><dd>32-unit grid, one stroke of weight 4 with round ends. A semicircle of radius 11 over the top, both sides dropping 5 units; the right side turns under on a radius of 9 and runs 2 units along the base. The eyes are dots of the stroke’s own width, 8 apart, set low.</dd></div>
+      <div><dt>The aha</dt><dd>Band, earpiece and microphone are one unbroken line, and two dots make it a face. Look again and the same line is an ear: the copilot is the voice in it.</dd></div>
+    </dl>
+  </section>
+  <section class="cand" id="offcut">
+    <header><span class="num">4</span><h2>Offcut</h2><p>A SIM card that speaks. Nothing is added to make the bubble; a piece is only moved.</p></header>
+    <div class="sizes">
+      <div class="panel paper"><span class="tag">Light · paper</span>
+        <div class="strip">
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 32 32" role="img" aria-label="Offcut"><path fill="#1D43D8" d="M8 2H22L29 9V19A5 5 0 0 1 24 24H15V31L8 24A5 5 0 0 1 3 19V7A5 5 0 0 1 8 2Z"/><path fill="#D9F23E" d="M11 11A2 2 0 0 1 13 13A2 2 0 0 1 11 15A2 2 0 0 1 9 13A2 2 0 0 1 11 11ZM21 11A2 2 0 0 1 23 13A2 2 0 0 1 21 15A2 2 0 0 1 19 13A2 2 0 0 1 21 11Z"/></svg><figcaption>256</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 32 32" role="img" aria-label="Offcut"><path fill="#1D43D8" d="M8 2H22L29 9V19A5 5 0 0 1 24 24H15V31L8 24A5 5 0 0 1 3 19V7A5 5 0 0 1 8 2Z"/><path fill="#D9F23E" d="M11 11A2 2 0 0 1 13 13A2 2 0 0 1 11 15A2 2 0 0 1 9 13A2 2 0 0 1 11 11ZM21 11A2 2 0 0 1 23 13A2 2 0 0 1 21 15A2 2 0 0 1 19 13A2 2 0 0 1 21 11Z"/></svg><figcaption>96</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 32 32" role="img" aria-label="Offcut"><path fill="#1D43D8" d="M8 2H22L29 9V19A5 5 0 0 1 24 24H15V31L8 24A5 5 0 0 1 3 19V7A5 5 0 0 1 8 2Z"/><path fill="#D9F23E" d="M11 11A2 2 0 0 1 13 13A2 2 0 0 1 11 15A2 2 0 0 1 9 13A2 2 0 0 1 11 11ZM21 11A2 2 0 0 1 23 13A2 2 0 0 1 21 15A2 2 0 0 1 19 13A2 2 0 0 1 21 11Z"/></svg><figcaption>48</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" role="img" aria-label="Offcut"><path fill="#1D43D8" d="M8 2H22L29 9V19A5 5 0 0 1 24 24H15V31L8 24A5 5 0 0 1 3 19V7A5 5 0 0 1 8 2Z"/><path fill="#D9F23E" d="M11 11A2 2 0 0 1 13 13A2 2 0 0 1 11 15A2 2 0 0 1 9 13A2 2 0 0 1 11 11ZM21 11A2 2 0 0 1 23 13A2 2 0 0 1 21 15A2 2 0 0 1 19 13A2 2 0 0 1 21 11Z"/></svg><figcaption>32</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 16 16" role="img" aria-label="Offcut"><path fill="#1D43D8" d="M4 1H11L15 5V9A3 3 0 0 1 12 12H8V16L4 12A3 3 0 0 1 1 9V4A3 3 0 0 1 4 1Z"/><path fill="#D9F23E" d="M6 5A1 1 0 0 1 7 6A1 1 0 0 1 6 7A1 1 0 0 1 5 6A1 1 0 0 1 6 5ZM10 5A1 1 0 0 1 11 6A1 1 0 0 1 10 7A1 1 0 0 1 9 6A1 1 0 0 1 10 5Z"/></svg><figcaption>24<i> small</i></figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" role="img" aria-label="Offcut"><path fill="#1D43D8" d="M4 1H11L15 5V9A3 3 0 0 1 12 12H8V16L4 12A3 3 0 0 1 1 9V4A3 3 0 0 1 4 1Z"/><path fill="#D9F23E" d="M6 5A1 1 0 0 1 7 6A1 1 0 0 1 6 7A1 1 0 0 1 5 6A1 1 0 0 1 6 5ZM10 5A1 1 0 0 1 11 6A1 1 0 0 1 10 7A1 1 0 0 1 9 6A1 1 0 0 1 10 5Z"/></svg><figcaption>16<i> small</i></figcaption></figure>
+        </div>
+      </div>
+      <div class="panel navy"><span class="tag">Dark · midnight navy</span>
+        <div class="strip">
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 32 32" role="img" aria-label="Offcut"><path fill="#F2F4FA" d="M8 2H22L29 9V19A5 5 0 0 1 24 24H15V31L8 24A5 5 0 0 1 3 19V7A5 5 0 0 1 8 2Z"/><path fill="#1D43D8" d="M11 11A2 2 0 0 1 13 13A2 2 0 0 1 11 15A2 2 0 0 1 9 13A2 2 0 0 1 11 11ZM21 11A2 2 0 0 1 23 13A2 2 0 0 1 21 15A2 2 0 0 1 19 13A2 2 0 0 1 21 11Z"/></svg><figcaption>256</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 32 32" role="img" aria-label="Offcut"><path fill="#F2F4FA" d="M8 2H22L29 9V19A5 5 0 0 1 24 24H15V31L8 24A5 5 0 0 1 3 19V7A5 5 0 0 1 8 2Z"/><path fill="#1D43D8" d="M11 11A2 2 0 0 1 13 13A2 2 0 0 1 11 15A2 2 0 0 1 9 13A2 2 0 0 1 11 11ZM21 11A2 2 0 0 1 23 13A2 2 0 0 1 21 15A2 2 0 0 1 19 13A2 2 0 0 1 21 11Z"/></svg><figcaption>96</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 32 32" role="img" aria-label="Offcut"><path fill="#F2F4FA" d="M8 2H22L29 9V19A5 5 0 0 1 24 24H15V31L8 24A5 5 0 0 1 3 19V7A5 5 0 0 1 8 2Z"/><path fill="#1D43D8" d="M11 11A2 2 0 0 1 13 13A2 2 0 0 1 11 15A2 2 0 0 1 9 13A2 2 0 0 1 11 11ZM21 11A2 2 0 0 1 23 13A2 2 0 0 1 21 15A2 2 0 0 1 19 13A2 2 0 0 1 21 11Z"/></svg><figcaption>48</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" role="img" aria-label="Offcut"><path fill="#F2F4FA" d="M8 2H22L29 9V19A5 5 0 0 1 24 24H15V31L8 24A5 5 0 0 1 3 19V7A5 5 0 0 1 8 2Z"/><path fill="#1D43D8" d="M11 11A2 2 0 0 1 13 13A2 2 0 0 1 11 15A2 2 0 0 1 9 13A2 2 0 0 1 11 11ZM21 11A2 2 0 0 1 23 13A2 2 0 0 1 21 15A2 2 0 0 1 19 13A2 2 0 0 1 21 11Z"/></svg><figcaption>32</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 16 16" role="img" aria-label="Offcut"><path fill="#F2F4FA" d="M4 1H11L15 5V9A3 3 0 0 1 12 12H8V16L4 12A3 3 0 0 1 1 9V4A3 3 0 0 1 4 1Z"/><path fill="#1D43D8" d="M6 5A1 1 0 0 1 7 6A1 1 0 0 1 6 7A1 1 0 0 1 5 6A1 1 0 0 1 6 5ZM10 5A1 1 0 0 1 11 6A1 1 0 0 1 10 7A1 1 0 0 1 9 6A1 1 0 0 1 10 5Z"/></svg><figcaption>24<i> small</i></figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" role="img" aria-label="Offcut"><path fill="#F2F4FA" d="M4 1H11L15 5V9A3 3 0 0 1 12 12H8V16L4 12A3 3 0 0 1 1 9V4A3 3 0 0 1 4 1Z"/><path fill="#1D43D8" d="M6 5A1 1 0 0 1 7 6A1 1 0 0 1 6 7A1 1 0 0 1 5 6A1 1 0 0 1 6 5ZM10 5A1 1 0 0 1 11 6A1 1 0 0 1 10 7A1 1 0 0 1 9 6A1 1 0 0 1 10 5Z"/></svg><figcaption>16<i> small</i></figcaption></figure>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="cell">
+        <h3>Silhouette</h3>
+        <div class="pair white">
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 32 32" role="img" aria-label="Offcut"><path fill="#000000" fill-rule="evenodd" d="M8 2H22L29 9V19A5 5 0 0 1 24 24H15V31L8 24A5 5 0 0 1 3 19V7A5 5 0 0 1 8 2ZM11 11A2 2 0 0 1 13 13A2 2 0 0 1 11 15A2 2 0 0 1 9 13A2 2 0 0 1 11 11ZM21 11A2 2 0 0 1 23 13A2 2 0 0 1 21 15A2 2 0 0 1 19 13A2 2 0 0 1 21 11Z"/></svg><figcaption>solid black, 96</figcaption></figure>
+          <figure><svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 32 32" role="img" aria-label="Offcut"><path fill="#000000" d="M8 2H22L29 9V19A5 5 0 0 1 24 24H15V31L8 24A5 5 0 0 1 3 19V7A5 5 0 0 1 8 2Z"/></svg><figcaption>contour only</figcaption></figure>
+        </div>
+      </div>
+      <div class="cell">
+        <h3>Single colour</h3>
+        <div class="pair split">
+          <figure class="paper"><svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 32 32" role="img" aria-label="Offcut"><path fill="#0F1833" fill-rule="evenodd" d="M8 2H22L29 9V19A5 5 0 0 1 24 24H15V31L8 24A5 5 0 0 1 3 19V7A5 5 0 0 1 8 2ZM11 11A2 2 0 0 1 13 13A2 2 0 0 1 11 15A2 2 0 0 1 9 13A2 2 0 0 1 11 11ZM21 11A2 2 0 0 1 23 13A2 2 0 0 1 21 15A2 2 0 0 1 19 13A2 2 0 0 1 21 11Z"/></svg><figcaption>ink on paper</figcaption></figure>
+          <figure class="cobalt"><svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 32 32" role="img" aria-label="Offcut"><path fill="#FFFFFF" fill-rule="evenodd" d="M8 2H22L29 9V19A5 5 0 0 1 24 24H15V31L8 24A5 5 0 0 1 3 19V7A5 5 0 0 1 8 2ZM11 11A2 2 0 0 1 13 13A2 2 0 0 1 11 15A2 2 0 0 1 9 13A2 2 0 0 1 11 11ZM21 11A2 2 0 0 1 23 13A2 2 0 0 1 21 15A2 2 0 0 1 19 13A2 2 0 0 1 21 11Z"/></svg><figcaption>white on cobalt</figcaption></figure>
+        </div>
+      </div>
+      <div class="cell">
+        <h3>App icon</h3>
+        <div class="pair paper"><figure><div class="tile"><svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 32 32" role="img" aria-label="Offcut"><path fill="#FFFFFF" fill-rule="evenodd" d="M8 2H22L29 9V19A5 5 0 0 1 24 24H15V31L8 24A5 5 0 0 1 3 19V7A5 5 0 0 1 8 2ZM11 11A2 2 0 0 1 13 13A2 2 0 0 1 11 15A2 2 0 0 1 9 13A2 2 0 0 1 11 11ZM21 11A2 2 0 0 1 23 13A2 2 0 0 1 21 15A2 2 0 0 1 19 13A2 2 0 0 1 21 11Z"/></svg></div><figcaption>96 tile</figcaption></figure></div>
+      </div>
+      <div class="cell">
+        <h3>Small drawing, enlarged</h3>
+        <div class="pair paper">
+          <figure><svg class="grid32" xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 32 32" role="img" aria-label="Offcut"><path fill="#1D43D8" d="M8 2H22L29 9V19A5 5 0 0 1 24 24H15V31L8 24A5 5 0 0 1 3 19V7A5 5 0 0 1 8 2Z"/><path fill="#D9F23E" d="M11 11A2 2 0 0 1 13 13A2 2 0 0 1 11 15A2 2 0 0 1 9 13A2 2 0 0 1 11 11ZM21 11A2 2 0 0 1 23 13A2 2 0 0 1 21 15A2 2 0 0 1 19 13A2 2 0 0 1 21 11Z"/></svg><figcaption>full drawing, 32-unit grid</figcaption></figure>
+          <figure><svg class="grid16" xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 16 16" role="img" aria-label="Offcut"><path fill="#1D43D8" d="M4 1H11L15 5V9A3 3 0 0 1 12 12H8V16L4 12A3 3 0 0 1 1 9V4A3 3 0 0 1 4 1Z"/><path fill="#D9F23E" d="M6 5A1 1 0 0 1 7 6A1 1 0 0 1 6 7A1 1 0 0 1 5 6A1 1 0 0 1 6 5ZM10 5A1 1 0 0 1 11 6A1 1 0 0 1 10 7A1 1 0 0 1 9 6A1 1 0 0 1 10 5Z"/></svg><figcaption>small drawing, 16-unit grid</figcaption></figure>
+        </div>
+      </div>
+      <div class="cell wide">
+        <h3>Top-bar lockup, mark at 28</h3>
+        <div class="bars">
+          <div class="bar paper"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 32 32" role="img" aria-label="Offcut"><path fill="#1D43D8" d="M8 2H22L29 9V19A5 5 0 0 1 24 24H15V31L8 24A5 5 0 0 1 3 19V7A5 5 0 0 1 8 2Z"/><path fill="#D9F23E" d="M11 11A2 2 0 0 1 13 13A2 2 0 0 1 11 15A2 2 0 0 1 9 13A2 2 0 0 1 11 11ZM21 11A2 2 0 0 1 23 13A2 2 0 0 1 21 15A2 2 0 0 1 19 13A2 2 0 0 1 21 11Z"/></svg><b>Frontline Copilot</b></div>
+          <div class="bar navy"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 32 32" role="img" aria-label="Offcut"><path fill="#F2F4FA" d="M8 2H22L29 9V19A5 5 0 0 1 24 24H15V31L8 24A5 5 0 0 1 3 19V7A5 5 0 0 1 8 2Z"/><path fill="#1D43D8" d="M11 11A2 2 0 0 1 13 13A2 2 0 0 1 11 15A2 2 0 0 1 9 13A2 2 0 0 1 11 11ZM21 11A2 2 0 0 1 23 13A2 2 0 0 1 21 15A2 2 0 0 1 19 13A2 2 0 0 1 21 11Z"/></svg><b>Frontline Copilot</b></div>
+        </div>
+      </div>
+    </div>
+    <dl>
+      <div><dt>Construction</dt><dd>32-unit grid, solid shapes only. Body 26 × 22, corner radius 5, top-right corner cut at 45° with legs of 7. The triangle that was cut off is moved, without turning, to hang from the bottom edge, so the two diagonals are parallel. Eyes are dots of diameter 4, 10 apart, on the body’s centre line.</dd></div>
+      <div><dt>The aha</dt><dd>The corner cut from the card is the tail of the speech bubble. Card, bubble and head are one shape, and the tail is exactly the piece that was missing.</dd></div>
+    </dl>
+  </section>
+  
+  <section class="rank">
+    <h2>Ranking</h2>
+    <ol>
+      <li><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 32 32" role="img" aria-label="Aside"><path fill="#1D43D8" d="M11 3H23L29 9H13A4 4 0 0 0 9 13V19A4 4 0 0 0 13 23H29A6 6 0 0 1 23 29H11A8 8 0 0 1 3 21V11A8 8 0 0 1 11 3Z"/><path fill="#0F1833" d="M15.5 13A1.5 1.5 0 0 1 17 14.5V17.5A1.5 1.5 0 0 1 15.5 19A1.5 1.5 0 0 1 14 17.5V14.5A1.5 1.5 0 0 1 15.5 13ZM22.5 13A1.5 1.5 0 0 1 24 14.5V17.5A1.5 1.5 0 0 1 22.5 19A1.5 1.5 0 0 1 21 17.5V14.5A1.5 1.5 0 0 1 22.5 13Z"/></svg><p><b>Aside.</b> Holds its shape from 256 to 16, is a character without a mouth or a smile, carries the SIM cut, and survives a rename to Cue.</p></li>
+      <li><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 32 32" role="img" aria-label="Cue card"><path fill="#1D43D8" fill-rule="evenodd" d="M8 3H21L28 10V25A4 4 0 0 1 24 29H8A4 4 0 0 1 4 25V7A4 4 0 0 1 8 3ZM7 23H17V25H7Z"/><path fill="#D9F23E" d="M8 12H24A1 1 0 0 1 25 13V19A1 1 0 0 1 24 20H8A1 1 0 0 1 7 19V13A1 1 0 0 1 8 12Z"/><path fill="#0F1833" d="M12 13.5A1.5 1.5 0 0 1 13.5 15V17A1.5 1.5 0 0 1 12 18.5A1.5 1.5 0 0 1 10.5 17V15A1.5 1.5 0 0 1 12 13.5ZM20 13.5A1.5 1.5 0 0 1 21.5 15V17A1.5 1.5 0 0 1 20 18.5A1.5 1.5 0 0 1 18.5 17V15A1.5 1.5 0 0 1 20 13.5Z"/></svg><p><b>Cue card.</b> The most on-identity of the four, because the highlighter is the face. Below 32 it starts to read as a file or memory-card icon, and it needs all three colours to tell its story.</p></li>
+      <li><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 32 32" role="img" aria-label="One line"><path fill="none" stroke="#1D43D8" stroke-width="4" stroke-linecap="round" d="M5 19V14A11 11 0 0 1 27 14V19A9 9 0 0 1 18 28H16"/><circle cx="12" cy="17" r="2" fill="#0F1833"/><circle cx="20" cy="17" r="2" fill="#0F1833"/></svg><p><b>One line.</b> The warmest, and the only one that draws the voice in the ear. It is a line, so it is light at small sizes, it has no SIM cut, and it can read as the human agent, not the robot.</p></li>
+      <li><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 32 32" role="img" aria-label="Offcut"><path fill="#1D43D8" d="M8 2H22L29 9V19A5 5 0 0 1 24 24H15V31L8 24A5 5 0 0 1 3 19V7A5 5 0 0 1 8 2Z"/><path fill="#D9F23E" d="M11 11A2 2 0 0 1 13 13A2 2 0 0 1 11 15A2 2 0 0 1 9 13A2 2 0 0 1 11 11ZM21 11A2 2 0 0 1 23 13A2 2 0 0 1 21 15A2 2 0 0 1 19 13A2 2 0 0 1 21 11Z"/></svg><p><b>Offcut.</b> The tidiest idea and the weakest presence. A speech bubble with two eyes is the chatbot category’s default, and the cut corner alone does not lift it clear. Its eyes are dots, not bars, to keep it away from Twitch’s glyph.</p></li>
+    </ol>
+    <p class="verdict">Aside wins because it is the only one that is a robot face, the SIM-card outline and a letter-ready form at once, in two flat shapes that hold at 16 pixels. Its weakness is that a blocky C is not ours alone (Coda’s mark is the nearest neighbour), so it must never appear without its eyes and its cut terminal, and on paper those eyes are ink: the highlighter only shows on cobalt and navy.</p>
+  </section>
+</main>
+</body>
+</html>

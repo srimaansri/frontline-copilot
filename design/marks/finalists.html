@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mark finalists in use</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap">
+<style>
+  :root { --cobalt:#1d43d8; --hi:#d9f23e; --ink:#0f1833; --paper:#f2f4fa; --navy:#111b3d; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:40px 32px 80px; background:#fff; color:var(--ink);
+    font: 16px/1.5 "Atkinson Hyperlegible Next", "Segoe UI", system-ui, sans-serif; }
+  h1 { font: 700 30px/1.15 "Bricolage Grotesque", "Segoe UI", sans-serif; letter-spacing:-0.02em; margin:0 0 8px; }
+  h2 { font: 700 22px/1.2 "Bricolage Grotesque", "Segoe UI", sans-serif; letter-spacing:-0.015em; margin:0; }
+  p.lede { max-width: 68ch; color:#38425f; margin:0 0 32px; }
+  section { border-top:2px solid var(--ink); padding:24px 0 40px; }
+  .head { display:flex; align-items:baseline; gap:12px; margin-bottom:16px; }
+  .head span { color:#586384; }
+  .pair { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .theme { padding:20px; display:grid; gap:16px; }
+  .theme.light { background:#f2f4fa; color:#0f1833; --surface:#fff; --line:#c9d1e3; --ink2:#38425f; --ink3:#586384; --sunken:#e8ecf6; --brandtext:#1d43d8; --edge:#0f1833; }
+  .theme.dark { background:#111b3d; color:#edf1fc; --surface:#1a2650; --line:#2f3e6c; --ink2:#c2cae4; --ink3:#98a4c8; --sunken:#0c1330; --brandtext:#9db1ff; --edge:#8e9ccb; }
+  .label { font-size:12px; letter-spacing:0.08em; text-transform:uppercase; font-weight:600; color:var(--ink3); margin-bottom:6px; }
+
+  /* browser tab */
+  .tabstrip { background:var(--sunken); padding:8px 8px 0; display:flex; }
+  .tab { background:var(--surface); border-radius:8px 8px 0 0; padding:8px 12px; display:flex; align-items:center; gap:8px; font-size:12px; min-width:200px; }
+  .tab svg { flex:none; }
+
+  /* top bar */
+  .bar { background:var(--surface); border-bottom:1px solid var(--line); height:56px; display:flex; align-items:center; gap:10px; padding:0 20px; }
+  .bar b { font: 700 18px/1 "Bricolage Grotesque", "Segoe UI", sans-serif; letter-spacing:-0.015em; }
+  .bar nav { margin-left:28px; display:flex; gap:4px; font-size:15px; font-weight:600; }
+  .bar nav span { padding:6px 12px; color:var(--ink2); }
+  .bar nav span.on { background:var(--edge); color:var(--surface); }
+  .theme.dark .bar nav span.on { background:#edf1fc; color:#111b3d; }
+
+  /* answer */
+  .answer { background:var(--surface); border:1.5px solid var(--edge); padding:16px 18px;
+    clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%); }
+  .who { display:flex; align-items:center; gap:8px; font-weight:700; font-size:14px; margin-bottom:8px; }
+  .answer p { margin:0; font-size:18px; line-height:1.55; }
+  mark { background:var(--hi); color:#0f1833; padding:0 3px; font-weight:700; }
+
+  /* empty state */
+  .empty { display:flex; align-items:center; gap:20px; padding:12px 4px; }
+  .empty h3 { font: 700 28px/1.1 "Bricolage Grotesque", "Segoe UI", sans-serif; letter-spacing:-0.02em; margin:0 0 4px; }
+  .empty p { margin:0; color:var(--ink2); }
+
+  .sizes { display:flex; align-items:flex-end; gap:18px; }
+  .sizes figure { margin:0; display:grid; justify-items:center; gap:4px; font-size:11px; color:var(--ink3); }
+  .mono { display:flex; gap:12px; align-items:center; }
+  .mono div { width:64px; height:64px; display:grid; place-items:center; }
+</style>
+</head>
+<body>
+<h1>Mark finalists, in the places the mark is used</h1>
+<p class="lede">The sheets for each family show a mark alone. This one puts the finalists where the product puts them: a browser tab at 16, the top bar at 28, beside an answer at 22 (the app itself now uses 32 and 16), and the empty screen at 72. A mark that only works large does not work.</p>
+<div id="out"></div>
+
+<script>
+const C = { cobalt:'#1D43D8', cobaltDark:'#4868F5', hi:'#D9F23E', ink:'#0F1833', paper:'#F2F4FA', white:'#FFFFFF' };
+
+// Each finalist: draw(size class, colours) -> inner SVG, for the 32 grid and the 16 grid.
+const F = [
+  {
+    id:'aside', name:'Aside (chosen, shown as refined)', note:'A helmet whose visor opens sideways. Also a SIM card, and a C.',
+    light:{ head:C.cobalt, eye:C.ink }, dark:{ head:'#6480FF', eye:'#EDF1FC' },
+    g32:(c)=>`<path fill="${c.head}" d="M9 3H23L29 9H12A3 3 0 0 0 9 12V20A3 3 0 0 0 12 23H29A6 6 0 0 1 23 29H9A6 6 0 0 1 3 23V9A6 6 0 0 1 9 3Z"/><rect x="13" y="12" width="4" height="8" rx="1" fill="${c.eye}"/><rect x="21" y="12" width="4" height="8" rx="1" fill="${c.eye}"/>`,
+    g16:(c)=>`<path fill="${c.head}" d="M4 1H12L15 4H5.5A1.5 1.5 0 0 0 4 5.5V10.5A1.5 1.5 0 0 0 5.5 12H15A3 3 0 0 1 12 15H4A3 3 0 0 1 1 12V4A3 3 0 0 1 4 1Z"/><rect x="7" y="6" width="2" height="4" rx="0.5" fill="${c.eye}"/><rect x="11" y="6" width="2" height="4" rx="0.5" fill="${c.eye}"/>`,
+  },
+  {
+    id:'dualsim', name:'Dual SIM', note:'A SIM-shaped head. Each eye is a small SIM.',
+    light:{ head:C.cobalt, eye:C.hi }, dark:{ head:C.cobaltDark, eye:C.hi },
+    g32:(c)=>`<path fill="${c.head}" d="M6 4H22L30 12V24A4 4 0 0 1 26 28H6A4 4 0 0 1 2 24V8A4 4 0 0 1 6 4Z"/><path fill="${c.eye}" d="M10 12H11.5L13 13.5V19A1 1 0 0 1 12 20H10A1 1 0 0 1 9 19V13A1 1 0 0 1 10 12ZM19 12H20.5L22 13.5V19A1 1 0 0 1 21 20H19A1 1 0 0 1 18 19V13A1 1 0 0 1 19 12Z"/>`,
+    g16:(c)=>`<path fill="${c.head}" d="M3 2H11L15 6V12A2 2 0 0 1 13 14H3A2 2 0 0 1 1 12V4A2 2 0 0 1 3 2Z"/><path fill="${c.eye}" d="M4 6H6V10H4ZM9 6H11V10H9Z"/>`,
+  },
+  {
+    id:'cuecard', name:'Cue card', note:'A page of script. The highlighted line is where the eyes are.',
+    light:{ head:C.cobalt, band:C.hi, eye:C.ink }, dark:{ head:C.paper, band:C.cobalt, eye:C.hi },
+    g32:(c)=>`<path fill="${c.head}" fill-rule="evenodd" d="M8 3H21L28 10V25A4 4 0 0 1 24 29H8A4 4 0 0 1 4 25V7A4 4 0 0 1 8 3ZM7 23H17V25H7Z"/><path fill="${c.band}" d="M8 12H24A1 1 0 0 1 25 13V19A1 1 0 0 1 24 20H8A1 1 0 0 1 7 19V13A1 1 0 0 1 8 12Z"/><path fill="${c.eye}" d="M12 13.5A1.5 1.5 0 0 1 13.5 15V17A1.5 1.5 0 0 1 12 18.5A1.5 1.5 0 0 1 10.5 17V15A1.5 1.5 0 0 1 12 13.5ZM20 13.5A1.5 1.5 0 0 1 21.5 15V17A1.5 1.5 0 0 1 20 18.5A1.5 1.5 0 0 1 18.5 17V15A1.5 1.5 0 0 1 20 13.5Z"/>`,
+    g16:(c)=>`<path fill="${c.head}" fill-rule="evenodd" d="M4 1H10L14 5V13A2 2 0 0 1 12 15H4A2 2 0 0 1 2 13V3A2 2 0 0 1 4 1ZM3 12H8V13H3Z"/><path fill="${c.band}" d="M3 6H13V10H3Z"/><path fill="${c.eye}" d="M5 7H7V9H5ZM9 7H11V9H9Z"/>`,
+  },
+  {
+    id:'fullbars', name:'Full Bars', note:'Four signal bars at full strength. The fourth bar is the copilot.',
+    light:{ head:C.cobalt, bar:C.ink }, dark:{ head:C.paper, bar:C.hi },
+    g32:(c)=>`<rect x="1.5" y="22" width="3" height="6" rx="1" fill="${c.bar}"/><rect x="6" y="16.5" width="3" height="11.5" rx="1" fill="${c.bar}"/><rect x="10.5" y="11" width="3" height="17" rx="1" fill="${c.bar}"/><path fill="${c.head}" fill-rule="evenodd" d="M19 4H26L31 9V24A4 4 0 0 1 27 28H19A4 4 0 0 1 15 24V8A4 4 0 0 1 19 4ZM18 13A2 2 0 1 0 22 13A2 2 0 1 0 18 13ZM24 13A2 2 0 1 0 28 13A2 2 0 1 0 24 13Z"/>`,
+    g16:(c)=>`<rect x="0" y="10" width="2" height="4" rx="0.5" fill="${c.bar}"/><rect x="3" y="6" width="2" height="8" rx="0.5" fill="${c.bar}"/><path fill="${c.head}" fill-rule="evenodd" d="M8 2H13L16 5V12A2 2 0 0 1 14 14H8A2 2 0 0 1 6 12V4A2 2 0 0 1 8 2ZM8 7A1 1 0 1 0 10 7A1 1 0 1 0 8 7ZM12 7A1 1 0 1 0 14 7A1 1 0 1 0 12 7Z"/>`,
+  },
+  {
+    id:'onair', name:'On Air', note:'A face held between two pairs of signal arcs. The head is never drawn.',
+    light:{ head:C.cobalt, eye:C.ink }, dark:{ head:C.paper, eye:C.hi },
+    g32:(c)=>`<path fill="none" stroke="${c.head}" stroke-width="3" stroke-linecap="round" d="M10.88 8A9.5 9.5 0 0 0 10.88 24M21.12 8A9.5 9.5 0 0 1 21.12 24M4.51 8A14 14 0 0 0 4.51 24M27.49 8A14 14 0 0 1 27.49 24"/><circle cx="12" cy="16" r="2.25" fill="${c.eye}"/><circle cx="20" cy="16" r="2.25" fill="${c.eye}"/>`,
+    g16:(c)=>`<path fill="none" stroke="${c.head}" stroke-width="2" stroke-linecap="round" d="M4 3A6.4 6.4 0 0 0 4 13M12 3A6.4 6.4 0 0 1 12 13"/><circle cx="6" cy="8" r="1" fill="${c.eye}"/><circle cx="10" cy="8" r="1" fill="${c.eye}"/>`,
+  },
+];
+
+const NAME = new URLSearchParams(location.search).get('name') || 'Frontline Copilot';
+
+function svg(f, theme, px, colours) {
+  const c = colours || f[theme];
+  const small = px <= 20;
+  const box = small ? 16 : 32;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${px}" height="${px}" viewBox="0 0 ${box} ${box}" aria-hidden="true">${(small ? f.g16 : f.g32)(c)}</svg>`;
+}
+
+function themeBlock(f, theme) {
+  // One colour: `on` is the mark, `off` is the ground showing through.
+  const on = theme === 'light' ? C.ink : C.paper;
+  const off = theme === 'light' ? C.paper : '#111B3D';
+  const mono = { head:on, bar:on, band:off, eye: f.id === 'dualsim' ? off : on };
+  return `
+  <div class="theme ${theme}">
+    <div><div class="label">Browser tab, 16</div>
+      <div class="tabstrip"><div class="tab">${svg(f, theme, 16)}<span>${NAME}</span></div></div></div>
+    <div><div class="label">Top bar, 28</div>
+      <div class="bar">${svg(f, theme, 28)}<b>${NAME}</b><nav><span class="on">Ask</span><span>Calls</span></nav></div></div>
+    <div><div class="label">Beside an answer, 22</div>
+      <div class="answer"><div class="who">${svg(f, theme, 22)}<span>Copilot</span></div>
+        <p>The late fee is <mark>$7</mark>. It is added <mark>10 days</mark> after the due date.</p></div></div>
+    <div><div class="label">Empty screen, 72</div>
+      <div class="empty">${svg(f, theme, 72)}<div><h3>What does the customer need?</h3><p>Type the question the way they asked it.</p></div></div></div>
+    <div><div class="label">Sizes, and one colour</div>
+      <div class="sizes">
+        ${[48,32,24,20,16].map(px => `<figure>${svg(f, theme, px)}<span>${px}</span></figure>`).join('')}
+        <figure style="margin-left:24px">${svg(f, theme, 48, mono)}<span>one colour</span></figure>
+      </div></div>
+  </div>`;
+}
+
+const only = new URLSearchParams(location.search).get('only');
+document.getElementById('out').innerHTML = F
+  .filter(f => !only || only.split(',').includes(f.id))
+  .map(f => `<section id="${f.id}">
+    <div class="head"><h2>${f.name}</h2><span>${f.note}</span></div>
+    <div class="pair">${themeBlock(f, 'light')}${themeBlock(f, 'dark')}</div>
+  </section>`).join('');
+</script>
+</body>
+</html>

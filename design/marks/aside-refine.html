@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aside refinement</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap">
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; padding:32px; background:#fff; color:#0f1833;
+    font: 15px/1.5 "Atkinson Hyperlegible Next", "Segoe UI", system-ui, sans-serif; }
+  h1 { font: 700 28px/1.15 "Bricolage Grotesque", "Segoe UI", sans-serif; letter-spacing:-0.02em; margin:0 0 6px; }
+  h2 { font: 700 18px/1.2 "Bricolage Grotesque", "Segoe UI", sans-serif; margin:28px 0 10px; }
+  p { max-width:72ch; margin:0 0 12px; color:#38425f; }
+  .grid { display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; }
+  .cell { padding:16px; display:grid; gap:12px; justify-items:start; }
+  .cell.light { background:#f2f4fa; color:#0f1833; }
+  .cell.dark { background:#111b3d; color:#edf1fc; }
+  .cell small { font-size:12px; opacity:.8; }
+  .row { display:flex; align-items:center; gap:14px; }
+  .bar { display:flex; align-items:center; gap:10px; height:52px; padding:0 16px; width:100%; }
+  .light .bar { background:#fff; border-bottom:1px solid #c9d1e3; }
+  .dark .bar { background:#1a2650; border-bottom:1px solid #2f3e6c; }
+  .bar b { font: 700 18px/1 "Bricolage Grotesque", "Segoe UI", sans-serif; letter-spacing:-0.015em; }
+</style>
+</head>
+<body>
+<h1>Aside, refined</h1>
+<p>Aside was the mark chosen from the three families. It was then tuned in three passes, each changing one thing: the eyes, the corners, and the colour on the dark theme. Every cell shows the master drawing at 96, 64 and 32, and at 32 in a top bar.</p>
+<div id="out"></div>
+<script>
+// The head is generated from a few numbers, so each variant differs by exactly one of them.
+// Grid 32. Outer square from 3 to 29, outer radius R, wall 6, cut legs 6, inner radius r.
+function head({ R = 6, r = 3 }) {
+  const a = 3, b = 29, W = 6, K = 6, it = a + W, ib = b - W, il = a + W;
+  return `M${a + R} ${a}H${b - K}L${b} ${a + K}H${il + r}A${r} ${r} 0 0 0 ${il} ${it + r}V${ib - r}A${r} ${r} 0 0 0 ${il + r} ${ib}H${b}A${W} ${W} 0 0 1 ${b - W} ${b}H${a + R}A${R} ${R} 0 0 1 ${a} ${b - R}V${a + R}A${R} ${R} 0 0 1 ${a + R} ${a}Z`;
+}
+// Two eyes, w wide and h high, g apart, centred in the visor (x 9 to 29, y 9 to 23), corner radius rx.
+function eyes({ w = 4, h = 8, g = 4, rx = 1 }, fill) {
+  const y = 16 - h / 2;
+  return [19 - g / 2 - w, 19 + g / 2].map(x => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="${fill}"/>`).join('');
+}
+function svg(v, px, col) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${px}" height="${px}" viewBox="0 0 32 32"><path fill="${col.head}" d="${head(v)}"/>${eyes(v, col.eye)}</svg>`;
+}
+function cell(theme, label, v, col, chosen) {
+  return `<div class="cell ${theme}"><small>${chosen ? '<b>Chosen.</b> ' : ''}${label}</small>
+    <div class="row">${svg(v, 96, col)}${svg(v, 64, col)}${svg(v, 32, col)}</div>
+    <div class="bar">${svg(v, 32, col)}<b>Frontline Copilot</b></div></div>`;
+}
+const LIGHT = { head:'#1D43D8', eye:'#0F1833' };
+const CHOSEN = {};
+const eyeRows = [
+  ['Eyes 3 × 6, 4 apart, round ends (as first drawn)', { w:3, h:6, rx:1.5, R:8, r:4 }],
+  ['Eyes 3.5 × 7, 3.5 apart: half-pixel edges at 32', { w:3.5, h:7, g:3.5, rx:1.75, R:8, r:4 }],
+  ['Eyes 3 × 8, 4 apart', { w:3, h:8, rx:1.5, R:8, r:4 }],
+  ['Eyes 4 × 8, 4 apart: an even 4-4-4-4-4 across the visor', { rx:2, R:8, r:4 }],
+];
+const cornerRows = [
+  ['Outer 8, inner 4, round eyes: soft beside square controls', { rx:2, R:8, r:4 }],
+  ['Outer 6, inner 3, round eyes', { rx:2 }],
+  ['Outer 6, inner 3, eyes with a radius of 1', CHOSEN, true],
+  ['Outer 4, inner 2, eyes with a radius of 1: a plain block', { R:4, r:2 }],
+];
+const darks = [
+  ['Paper head, highlighter eyes: spends the highlighter', { head:'#F2F4FA', eye:'#D9F23E' }],
+  ['Fill cobalt #4868F5, ink eyes: 3.2:1 on the bar', { head:'#4868F5', eye:'#EDF1FC' }],
+  ['Mark cobalt #6480FF, ink eyes: 4.2:1 on the bar', { head:'#6480FF', eye:'#EDF1FC' }, true],
+  ['#4868F5, highlighter eyes', { head:'#4868F5', eye:'#D9F23E' }],
+];
+document.getElementById('out').innerHTML =
+  `<h2>1. Eyes</h2><div class="grid">${eyeRows.map(([l, v]) => cell('light', l, v, LIGHT)).join('')}</div>` +
+  `<h2>2. Corners</h2><div class="grid">${cornerRows.map(([l, v, c]) => cell('light', l, v, LIGHT, c)).join('')}</div>` +
+  `<h2>3. Colour on navy</h2><div class="grid">${darks.map(([l, c, ch]) => cell('dark', l, CHOSEN, c, ch)).join('')}</div>`;
+</script>
+</body>
+</html>
