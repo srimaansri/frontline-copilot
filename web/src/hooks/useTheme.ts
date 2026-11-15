@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useLayoutEffect, useState } from "react";
+import { flushSync } from "react-dom";
 
 import { themeFromUrl } from "@/lib/devHooks";
 
@@ -22,6 +23,28 @@ function systemTheme(): Theme {
 }
 
 /**
+ * Change the theme as one event. Some controls ease their colours and most of
+ * the page does not, so a plain switch shows the controls arriving a moment
+ * after everything else. Here every transition is held off while the colours
+ * change, and where the browser can, the old page cross-fades into the new one.
+ */
+function changeTogether(change: () => void): void {
+  const root = document.documentElement;
+  const settle = () => {
+    root.classList.remove("theme-switch");
+  };
+  root.classList.add("theme-switch");
+  const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!still && "startViewTransition" in document) {
+    document.startViewTransition(change).finished.then(settle, settle);
+  } else {
+    change();
+    // Two frames: the new colours have to be painted before transitions come back.
+    requestAnimationFrame(() => requestAnimationFrame(settle));
+  }
+}
+
+/**
  * The colour theme. The first visit follows the system setting. A choice made
  * with the toggle is remembered.
  *
@@ -34,7 +57,8 @@ export function useTheme(): { theme: Theme; toggleTheme: () => void } {
     () => themeFromUrl() ?? storedTheme() ?? systemTheme(),
   );
 
-  useEffect(() => {
+  // A layout effect, so the class has changed by the time `flushSync` returns below.
+  useLayoutEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
   }, [theme]);
 
@@ -47,7 +71,11 @@ export function useTheme(): { theme: Theme; toggleTheme: () => void } {
         // The choice still applies to this visit.
       }
     }
-    setTheme(next);
+    changeTogether(() => {
+      flushSync(() => {
+        setTheme(next);
+      });
+    });
   }, [theme]);
 
   return { theme, toggleTheme };

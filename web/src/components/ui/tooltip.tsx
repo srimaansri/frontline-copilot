@@ -20,6 +20,7 @@ export function Tooltip({ label, children }: TooltipProps) {
         <TooltipPrimitive.Content
           sideOffset={8}
           collisionPadding={8}
+          hideWhenDetached
           className="z-50 animate-fade rounded-box bg-ink px-2 py-1 text-label font-semibold text-surface shadow-pop"
         >
           {label}

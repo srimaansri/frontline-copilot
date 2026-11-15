@@ -27,7 +27,7 @@ function describeRun(steps: readonly Step[]): string {
 /** A row of status shapes, one per step: the whole run at a glance, before its detail. */
 function Tally({ steps }: { steps: readonly Step[] }) {
   return (
-    <span role="img" aria-label={describeRun(steps)} className="inline-flex items-center gap-0.5">
+    <span role="img" aria-label={describeRun(steps)} className="inline-flex items-center gap-1">
       {steps.map((step, index) => (
         // Steps arrive in a fixed order and are never reordered.
         <StatusStamp key={index} status={step.status} />

@@ -124,7 +124,8 @@ export function StatusLabel({ status, children, className }: StatusLabelProps) {
       )}
     >
       <StatusStamp status={status} />
-      {children}
+      {/* The words give the label its baseline. Otherwise it is the bottom of the shape. */}
+      <span className="self-baseline">{children}</span>
     </span>
   );
 }

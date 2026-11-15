@@ -12,10 +12,10 @@ function Waiting() {
       <div className="mt-6 grid gap-6">
         {[0, 1, 2, 3].map((row) => (
           <div key={row} className="flex gap-3">
-            <Skeleton className="size-6 shrink-0" />
+            <Skeleton still className="size-6 shrink-0" />
             <div className="grid flex-1 gap-2 pt-0.5">
-              <Skeleton className="h-3 w-20" />
-              <Skeleton className="h-4 w-3/4" />
+              <Skeleton still className="h-3 w-20" />
+              <Skeleton still className="h-4 w-3/4" />
             </div>
           </div>
         ))}

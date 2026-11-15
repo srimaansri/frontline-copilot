@@ -109,7 +109,7 @@ export interface EmptyStateProps {
 export function EmptyState({ meta, onRetryMeta, onPick }: EmptyStateProps) {
   return (
     <div className="flex min-h-full flex-col">
-      <div aria-hidden="true" className="max-h-32 min-h-10 flex-1" />
+      <div aria-hidden="true" className="max-h-44 min-h-10 flex-1" />
       <div className="mx-auto grid w-full max-w-7xl items-start gap-x-18 gap-y-10 px-4 sm:px-6 lg:px-12 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] xl:px-18">
         <div>
           {/* The drawing has 3 units of air on its left; pulled back so the head lines up with the headline. */}

@@ -8,6 +8,7 @@ import { AskView } from "@/features/ask/AskView";
 import { CallsView } from "@/features/calls/CallsView";
 import { useLoad } from "@/hooks/useLoad";
 import { useTheme } from "@/hooks/useTheme";
+import { cn } from "@/lib/cn";
 import { DEMO_CALL, DEMO_QUESTION } from "@/lib/devHooks";
 
 const loadMeta = (signal: AbortSignal) => api.getMeta(signal);
@@ -56,8 +57,21 @@ export function App() {
           onToggleTheme={toggleTheme}
           onNewConversation={startNewConversation}
         />
-        <main id="main" tabIndex={-1} className="min-h-0 flex-1 focus-visible:outline-none">
-          <div hidden={view !== "ask"} className="h-full">
+        {/*
+          The view that is not on show is made invisible and inert, not removed
+          from layout. An element that comes back from `display: none` starts
+          its CSS animations again, so a hidden conversation would arrive a
+          second time on every return.
+        */}
+        <main
+          id="main"
+          tabIndex={-1}
+          className="relative min-h-0 flex-1 focus-visible:outline-none"
+        >
+          <div
+            inert={view !== "ask"}
+            className={cn("absolute inset-0", view !== "ask" && "invisible")}
+          >
             <AskView
               key={conversation}
               meta={meta}
@@ -67,7 +81,10 @@ export function App() {
             />
           </div>
           {callsOpened && (
-            <div hidden={view !== "calls"} className="h-full">
+            <div
+              inert={view !== "calls"}
+              className={cn("absolute inset-0", view !== "calls" && "invisible")}
+            >
               <CallsView />
             </div>
           )}

@@ -73,11 +73,14 @@ function Station({ step, tools, index }: StationProps) {
         </span>
         {/* On the branch, the space under the text is where the dashed leg runs down to the tag. */}
         <div className={cn("min-w-0", branch && "pb-3")}>
-          <StageCue step={step} tools={tools} />
+          {/* The status word shares the cue's line, so the title and detail keep the full width. */}
+          <div className="flex items-start justify-between gap-3">
+            <StageCue step={step} tools={tools} />
+            <StatusWord status={step.status} className="leading-6" />
+          </div>
           <p className="mt-0.5 font-bold text-ink">{step.title}</p>
           {step.detail !== "" && <p className="mt-0.5 text-meta text-ink-2">{step.detail}</p>}
         </div>
-        <StatusWord status={step.status} className="leading-6" />
       </div>
       {branch && (
         <p className="stn-tag">

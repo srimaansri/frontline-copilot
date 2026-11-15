@@ -292,6 +292,13 @@
     text-wrap: balance;
   }
 
+  /* Running text never leaves one short word alone on its last line, where the browser can help. */
+  p,
+  li,
+  dd {
+    text-wrap: pretty;
+  }
+
   /* One focus ring everywhere: cobalt, 2px, set off by 2px. Keyboard focus only. */
   :focus-visible,
   [data-force~="focus"]:not(.field) {
@@ -312,6 +319,24 @@
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]) {
     cursor: pointer;
+  }
+
+  /*
+   * A change of theme is one event (see hooks/useTheme.ts): nothing eases its
+   * own colours while it happens, and the whole page cross-fades at the pace
+   * of something arriving.
+   */
+  .theme-switch,
+  .theme-switch *,
+  .theme-switch ::before,
+  .theme-switch ::after {
+    transition: none !important;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: var(--speed-enter);
+    animation-timing-function: var(--ease);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -851,7 +876,7 @@
   .stn-row {
     position: relative;
     display: grid;
-    grid-template-columns: var(--stamp) minmax(0, 1fr) auto;
+    grid-template-columns: var(--stamp) minmax(0, 1fr);
     column-gap: --spacing(3);
   }
 

@@ -108,6 +108,8 @@ Spacing is one scale on a 4px base (`--spacing`): `p-4` is 16px, `gap-6` is 24px
 - Widths of text columns come from Tailwind's container scale (`max-w-md`, `max-w-2xl`, `max-w-3xl`, `max-w-5xl`, `max-w-7xl`). Rails are `w-88`, `w-96`, `w-100` and `w-110`.
 - Two things are sized in em, so that they follow the text they sit in: the padding of the highlighter and of the redaction bar.
 - A drawn glyph keeps its own geometry: the widths of the signal bars, the 6px list bullet, the 28px sidestep of the hand-off branch.
+- Running text is set with `text-wrap: pretty`, and headings with `balance`, so a paragraph does not end on one short word.
+- On a touch screen the hint under the question box drops its keyboard sentence. A phone has no Shift+Enter, and the fixed parts of the screen should leave the answer as much room as they can.
 
 Shape and elevation:
 
@@ -121,6 +123,10 @@ Motion:
 - One duration and one easing for every change of state: 120ms, `cubic-bezier(0.2, 0.7, 0.2, 1)` (`--speed`, `--ease`). Every `transition-*` class uses them; no component names a duration.
 - Something arriving on the page takes 200ms (`--speed-enter`). The steps of a route arrive 50ms apart (`--stagger`).
 - While the copilot works, the eyes of the mark glance out through the visor and back, once every 2.4 seconds.
+- Something arrives once. The two views are both kept laid out, and the one not on show is made invisible and inert, because an element that returns from `display: none` plays its entrance again.
+- A change of theme is one event: no control eases its own colours while it happens, and where the browser supports view transitions the whole page cross-fades in 200ms.
+- One thing on a screen says "working": the signal bars. A placeholder that sits beside the working card holds still (`<Skeleton still>`); a placeholder that is the only sign of loading pulses.
+- Nothing moves for decoration. The highlighter is not drawn in when an answer arrives: an agent sees hundreds of answers a day, and the facts have to be readable the moment the card is.
 - `prefers-reduced-motion` stops every animation and transition, and the seeking bar holds still, half filled. The eyes of the mark hold still.
 
 ## States

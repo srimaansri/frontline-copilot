@@ -84,8 +84,9 @@ export function Composer({ inputRef, onSend, waiting, initialValue = "" }: Compo
         </button>
       </div>
       <p id={hintId} className="mt-2 text-meta text-ink-3">
-        Enter to send, Shift+Enter for a new line. Personal details are replaced before a question
-        is processed or logged.
+        {/* A touch screen has no Shift+Enter, and the line costs a row of a small screen. */}
+        <span className="pointer-coarse:hidden">Enter to send, Shift+Enter for a new line. </span>
+        Personal details are replaced before a question is processed or logged.
       </p>
     </form>
   );
