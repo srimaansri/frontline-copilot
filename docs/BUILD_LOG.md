@@ -378,6 +378,7 @@ These changes mean the saved results are not comparable with the draft pass. The
 - `app/app.py` and `app.yaml`: the Streamlit interface.
 - `docs/MODEL_CARD.md`, `docs/DATA_CARD.md`, `docs/RESPONSIBLE_AI.md`.
 - The table `frontline.ops.escalations`, created in the workspace.
+- The Databricks App `frontline-copilot`, created with its access declared as app resources: use of the SQL warehouse, query on the chat and embedding endpoints, edit on the MLflow experiment, `SELECT` on `gold.plans`, `silver.transcripts_redacted` and the index, `MODIFY` on `ops.escalations`. Nothing on `bronze`.
 
 **Result on all 40 rows** (run finished 2026-11-15 00:58 UTC, commit `8624268`, setting A with vector search, prompt v3)
 
@@ -415,6 +416,7 @@ The evaluation refuses to start from a dirty folder and stamps its result with t
 - A file written by a local test run (`mlflow.db`) was staged by mistake and removed before anything was pushed.
 - **The MCP server hung on its first real call over stdio.** The Databricks SDK signs in by running the Databricks CLI, which inherited the server's standard input, and over stdio that is the MCP channel. Unit tests could not see it; a live call from an MCP client did. The server now gives the transport its own copy of standard input.
 - GitHub did not start CI jobs for about two hours ("account is locked due to a billing issue"). It cleared without a change to the repository.
+- **CI failed on Python 3.11 only, once it ran.** One test failed with "pyarrow requires NumPy 2.0 or newer, found 1.26.4". On 3.11 pip resolves `databricks-connect` to 16.x, which requires NumPy below 2, next to the newest pyarrow, which needs NumPy 2 and does not declare it. pyarrow is now capped below 20 on Python 3.11. A local Python 3.11 container was no help: its pip spent 42 minutes resolving and never finished. CI now writes the resolved versions as a notice on each run, which is how the cause was confirmed.
 
 **Worth knowing**
 
@@ -424,7 +426,7 @@ The evaluation refuses to start from a dirty folder and stamps its result with t
 
 **Not done**
 
-- The app runs locally. It is not deployed to Databricks Apps.
+- The app is deployed on Databricks Apps and starts there. Nobody has yet opened the deployed page signed in and asked it a question, so its sign-in as a service principal and its access to the index are unconfirmed in use.
 - The MCP server was called by an MCP client over stdio against the live workspace, and its Docker image was built and answered over HTTP. It has not been registered with Claude Code itself, and its tools were not called inside the container.
 - No demo video. No `eval.yml` gate. No hand check of the judge.
 
@@ -436,4 +438,4 @@ The evaluation refuses to start from a dirty folder and stamps its result with t
 
 **M4 acceptance** (PLAN.md §12): all four tools working, the hand-off path, input and output guards, routing tests passing, the default setting evaluated on all 40 rows. All met.
 
-**M5 acceptance** (PLAN.md §12): Streamlit app deployed as a Databricks App; MCP server working from Claude Code over stdio and in Docker. Partly met: the app runs locally and is not deployed, and the MCP server works over stdio from a client and starts in Docker. See "Not done".
+**M5 acceptance** (PLAN.md §12): Streamlit app deployed as a Databricks App; MCP server working from Claude Code over stdio and in Docker. Mostly met: the app is deployed and starts, the MCP server works over stdio from a client and starts in Docker. Still open: a signed-in check of the deployed app, and registering the server with Claude Code itself. See "Not done".

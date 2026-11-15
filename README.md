@@ -17,7 +17,7 @@ This repo is being built milestone by milestone. Every number here comes from a 
 | M2 | Databricks pipelines: bronze, silver, gold, quality checks | Done |
 | M3 | Retrieval-augmented answers and the first evaluation | Done |
 | M4 | Agent with tools, guardrails, escalation | Done |
-| M5 | Streamlit app, MCP server | Both run locally against the live workspace, and the MCP Docker image builds and starts. The app is not yet deployed to Databricks Apps |
+| M5 | Streamlit app, MCP server | Both run locally against the live workspace. The MCP Docker image builds and starts. The app is deployed on Databricks Apps, where it builds and starts; a signed-in check of the deployed page is still to do |
 | M6 | Results, model and data cards, responsible-AI notes | Done: [model card](docs/MODEL_CARD.md), [data card](docs/DATA_CARD.md), [responsible-AI notes](docs/RESPONSIBLE_AI.md) |
 
 The full specification is in [PLAN.md](PLAN.md).
@@ -150,7 +150,9 @@ pip install -e ".[dev,models,app]"
 streamlit run app/app.py
 ```
 
-It needs a Databricks workspace set up as in [PLAN.md](PLAN.md) section 3. `app.yaml` is at the repository root for Databricks Apps; the app has been run locally and has not been deployed there yet.
+It needs a Databricks workspace set up as in [PLAN.md](PLAN.md) section 3.
+
+On Databricks Apps the same page runs from `app.yaml` at the repository root, as the app's own service principal. Its access is declared as app resources and is the minimum it needs: use of the SQL warehouse, query on the chat and embedding endpoints, edit on the MLflow experiment, read on the plan table, the redacted transcripts and the search index, and write on the hand-off table. It has no access to the unredacted tables. It was deployed on 2026-11-14 and builds and starts there. Free Edition stops an app 24 hours after each start, so there is no permanent public link.
 
 **The MCP server.** The same four tools, for another assistant to call. See [mcp_server/README.md](mcp_server/README.md).
 
