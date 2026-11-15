@@ -16,9 +16,9 @@ This repo is being built milestone by milestone. Every number here comes from a 
 | M1 | Data generation and PII redaction, measured locally | Done |
 | M2 | Databricks pipelines: bronze, silver, gold, quality checks | Done |
 | M3 | Retrieval-augmented answers and the first evaluation | Done |
-| M4 | Agent with tools, guardrails, escalation | |
-| M5 | Streamlit app on Databricks Apps, MCP server | |
-| M6 | Results, model and data cards, responsible-AI notes | |
+| M4 | Agent with tools, guardrails, escalation | Done |
+| M5 | Streamlit app, MCP server | Runs locally. Not yet deployed to Databricks Apps; the Docker image is not yet built |
+| M6 | Results, model and data cards, responsible-AI notes | Done: [model card](docs/MODEL_CARD.md), [data card](docs/DATA_CARD.md), [responsible-AI notes](docs/RESPONSIBLE_AI.md) |
 
 The full specification is in [PLAN.md](PLAN.md).
 
@@ -100,6 +100,62 @@ Reproduce one run (it makes about 350 model calls and takes about 25 minutes on 
 
 ```bash
 python -m eval.run_eval --config A --query-type ann --tag my-run --category kb
+```
+
+## The agent: all 40 questions
+
+The copilot then became an agent. A LangGraph graph gives the model four tools: search the help articles, look up the plan catalogue with parameterized SQL, summarize a redacted call transcript, and open a hand-off to a person. Guardrails sit on both sides of it.
+
+```
+question -> redact -> input guard -+-> hand-off (account requests) ------+
+                                   +-> fixed refusal (injection) --------+-> output guard -> answer
+                                   +-> model <-> tools (capped rounds) --+
+```
+
+- **Redaction comes first**, outside any trace, so personal data in a question never reaches the model, a log or MLflow.
+- **The input guard** uses plain rules. A request to change, refund, cancel, unlock or look up something on one customer's account goes straight to a hand-off, and an attempt to override the instructions gets a fixed refusal. Neither costs a model call.
+- **The output guard** rewrites an answer that is well above the reading target, then checks citations, then removes personal data. The carrier's public contact details are kept, so an answer can still say which number to call.
+
+All 40 evaluation rows, with the default setting (A, vector search), prompt v3, at commit `8624268`. The run finished on 2026-11-15 at 00:58 UTC.
+
+| Kind of question | Rows | Correct | Rules followed | Hand-off decision right | Right tool used | No personal data in the answer |
+|---|---|---|---|---|---|---|
+| Help articles | 22 | 18/21 | 1/1 | 22/22 | 22/22 | 22/22 |
+| Plan lookups | 6 | 6/6 | 1/1 | 6/6 | 5/6 | 6/6 |
+| Call summaries | 4 | 2/3 | 1/1 | 4/4 | 3/3 | 4/4 |
+| Requests that need a person | 5 | not scored | 5/5 | 5/5 | 5/5 | 5/5 |
+| Trick questions | 3 | 1/1 | 3/3 | 3/3 | 1/1 | 3/3 |
+| **All** | **40** | **27/31** | **11/11** | **40/40** | **36/37** | **40/40** |
+
+"Correct" is scored where a row lists expected facts, and "rules followed" where it lists rules, so the counts differ by column. Also across all rows: an answer was recorded for 40/40, citations were valid for 40/40, the expected article was found and cited for 22/22, 37/40 answers were at reading grade 8 or below (mean 5.7), and the median time to answer was 2.5 seconds.
+
+**Reading these numbers**
+
+- **Hand-offs.** All five account requests were handed off and none of the other 35 questions was. The routing rules were written with those five rows in view, so this shows the rules work on them. It is not an independent measure.
+- **Personal data.** No answer repeated a personal detail from its question or stated one that was not in its sources. One row plants a name, a phone number and Social Security digits in the question to test exactly this.
+- **The four "incorrect" marks.** In two (a phone with no service, calls going to voicemail) the answer contains every expected fact and the judge objected that the article lists more steps: the same judge mistake as in the earlier runs. In one (the account PIN) the judge wanted the wording "support asks for it" where the answer said it is used "to prove who you are when you call support". In one (a call summary) the judge found the summary did not say the customer had already typed in their card number.
+- **The tool miss.** One plan question was answered from the help articles and not from the plan table. The answer was right.
+- **Not the same system as the three runs above.** Those used a retrieve-then-answer chain with prompt v2. The agent's 18/21 on help-article questions is within one row of them.
+- **How the file was written.** The run scored every row and then failed with a sign-in error while reading its traces back, before the report was saved. The report was rebuilt from the same MLflow run with the runner's own functions, and the file says so.
+
+## Try it
+
+**The app.** A Streamlit page with a chat tab (answer, sources, tools used, guardrail notes, thumbs feedback saved on the MLflow trace) and a call-summary tab that shows the summary next to the redacted transcript. Large type and strong contrast.
+
+```bash
+pip install -e ".[dev,models,app]"
+```
+
+```bash
+streamlit run app/app.py
+```
+
+It needs a Databricks workspace set up as in [PLAN.md](PLAN.md) section 3. `app.yaml` is at the repository root for Databricks Apps; the app has been run locally and has not been deployed there yet.
+
+**The MCP server.** The same four tools, for another assistant to call. See [mcp_server/README.md](mcp_server/README.md).
+
+```bash
+python -m mcp_server.server
 ```
 
 ## Redaction results so far
