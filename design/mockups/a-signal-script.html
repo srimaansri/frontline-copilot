@@ -1,0 +1,1088 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Frontline Copilot: Direction A, Signal and Script</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@200..800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ------------------------------------------------------------------
+   TOKENS. Decided first; everything below is built from these.
+   Neutrals lean toward cobalt (hue ~225). No pure grey anywhere.
+   ------------------------------------------------------------------ */
+:root,
+[data-theme="light"] {
+  --board: #D9DFEE;        /* design-board backdrop, not part of the product */
+  --paper: #F2F4FA;        /* app background */
+  --surface: #FFFFFF;      /* cards, bars, inputs */
+  --sunken: #E8ECF6;       /* the copilot's side rail, an agent's question */
+  --line: #C9D1E3;         /* hairlines */
+  --line-strong: #7482A8;  /* control borders, 3:1 on every background */
+  --edge: #0F1833;         /* outline of anything the copilot wrote */
+  --ink: #0F1833;
+  --ink-2: #38425F;
+  --ink-3: #586384;
+  --brand: #1D43D8;        /* cobalt: fills */
+  --brand-text: #1D43D8;   /* cobalt: links, chips, icons on a surface */
+  --brand-tint: #E1E8FC;
+  --on-brand: #FFFFFF;
+  --hi: #D9F23E;           /* the highlighter. One job only. */
+  --hi-ink: #0F1833;
+  --redact: #0F1833;       /* redaction bar */
+  --on-redact: #F2F4FA;
+  --ok: #0B6B47;       --ok-tint: #DDF2E6;
+  --notice: #8A2F7B;   --notice-tint: #F6E4F1;
+  --warn: #8A5300;     --warn-tint: #FBEFD3;
+  --block: #B3261E;    --block-tint: #FBE4E1;
+  --knock: #FFFFFF;        /* glyph knocked out of a status shape */
+}
+[data-theme="dark"] {
+  --board: #0A1028;
+  --paper: #111B3D;        /* midnight navy, not near-black */
+  --surface: #1A2650;
+  --sunken: #0C1330;
+  --line: #2F3E6C;
+  --line-strong: #6878AA;
+  --edge: #8E9CCB;
+  --ink: #EDF1FC;
+  --ink-2: #C2CAE4;
+  --ink-3: #98A4C8;
+  --brand: #4868F5;
+  --brand-text: #9DB1FF;
+  --brand-tint: #24346E;
+  --on-brand: #FFFFFF;
+  --hi: #D9F23E;
+  --hi-ink: #0F1833;
+  --redact: #C2CAE4;
+  --on-redact: #111B3D;
+  --ok: #5FD3A0;       --ok-tint: #10382E;
+  --notice: #E79AD8;   --notice-tint: #3A1C3D;
+  --warn: #F2B950;     --warn-tint: #3D2E0E;
+  --block: #FF8F85;    --block-tint: #46191B;
+  --knock: #111B3D;
+}
+:root {
+  --f-display: "Bricolage Grotesque", "Atkinson Hyperlegible Next", sans-serif;
+  --f-text: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", Verdana, sans-serif;
+  --f-mono: "Atkinson Hyperlegible Mono", ui-monospace, Consolas, monospace;
+  /* One scale. Nothing is set outside it. */
+  --t-label: 12.5px;
+  --t-meta: 14px;
+  --t-ui: 15.5px;
+  --t-read: 18px;
+  --t-title: 22px;
+  --t-view: 30px;
+  --t-head: 46px;
+  --t-poster: 84px;
+  --r: 3px;           /* the only radius. Humans get soft-square corners. */
+  --cut: 26px;        /* the SIM chamfer */
+}
+
+* { box-sizing: border-box; margin: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--board);
+  color: var(--ink);
+  font-family: var(--f-text);
+  font-size: var(--t-ui);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+[data-theme] { color: var(--ink); }
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+a { color: var(--brand-text); }
+:focus-visible { outline: 2px solid var(--brand-text); outline-offset: 2px; }
+ol, ul { padding: 0; list-style: none; }
+
+/* ---------- icons: one hand. 24 grid, 1.75 stroke, butt caps, mitred 45-degree corners ---------- */
+.ic { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: butt; stroke-linejoin: miter; }
+.ic.s16 { width: 16px; height: 16px; stroke-width: 2; }
+.ic.s24 { width: 24px; height: 24px; }
+.ic.s32 { width: 32px; height: 32px; stroke-width: 1.6; }
+.st { width: 16px; height: 16px; flex: none; }
+.st.s22 { width: 22px; height: 22px; }
+.st.s32 { width: 32px; height: 32px; }
+.mark { width: 30px; height: 30px; flex: none; }
+
+/* ---------- the board (not the product) ---------- */
+.board { width: 1496px; margin: 0 auto; padding: 0 48px 96px; }
+.board-head {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 0; background: var(--board); border-bottom: 1px solid var(--line-strong);
+}
+.board-head .bh-title { font-family: var(--f-display); font-size: var(--t-title); font-weight: 700; letter-spacing: -0.01em; }
+.board-head .bh-sub { font-size: var(--t-label); color: var(--ink-2); margin-top: 2px; }
+.ab-label { display: flex; align-items: baseline; gap: 14px; margin: 56px 0 14px; }
+.ab-label .n { font-family: var(--f-mono); font-size: var(--t-meta); font-weight: 600; color: var(--ink-2); }
+.ab-label h2 { font-family: var(--f-display); font-size: var(--t-title); font-weight: 700; letter-spacing: -0.01em; }
+.ab-label .w { margin-left: auto; font-size: var(--t-label); color: var(--ink-2); }
+.frame-scroll { overflow-x: auto; }
+.board-note {
+  display: inline-block; align-self: flex-start;
+  font-size: var(--t-label); color: var(--ink-2);
+  border: 1px dashed var(--line-strong); padding: 3px 8px;
+}
+
+/* ---------- app frame ---------- */
+.app { width: 1400px; background: var(--paper); border: 1px solid var(--line-strong); display: flex; flex-direction: column; }
+.topbar {
+  height: 64px; flex: none; display: flex; align-items: center; gap: 16px;
+  padding: 0 24px; background: var(--surface); border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--f-display); font-size: var(--t-title); font-weight: 700; letter-spacing: -0.015em; white-space: nowrap; }
+.tag-demo { font-size: var(--t-label); font-weight: 600; color: var(--ink-2); border: 1px dashed var(--line-strong); padding: 3px 8px; white-space: nowrap; }
+.views { display: flex; margin-left: 20px; border: 1.5px solid var(--ink); border-radius: var(--r); overflow: hidden; }
+.views button {
+  display: flex; align-items: center; gap: 8px; height: 37px; padding: 0 16px 0 12px;
+  background: var(--surface); border: 0; font-weight: 600; color: var(--ink);
+}
+.views button + button { border-left: 1.5px solid var(--ink); }
+.views button[aria-current="page"] { background: var(--ink); color: var(--surface); }
+.topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px 0 12px;
+  background: var(--surface); color: var(--ink); border: 1.5px solid var(--line-strong); border-radius: var(--r);
+  font-weight: 600; white-space: nowrap;
+}
+.btn:hover { border-color: var(--ink); }
+.btn.quiet { border-color: transparent; background: none; }
+.btn.quiet:hover { border-color: var(--line-strong); }
+.iconbtn {
+  width: 36px; height: 36px; display: grid; place-items: center; padding: 0;
+  background: var(--surface); color: var(--ink-2); border: 1.5px solid var(--line-strong); border-radius: var(--r);
+}
+.iconbtn:hover { color: var(--ink); border-color: var(--ink); }
+.tt { display: inline-flex; height: 40px; padding: 0; background: var(--surface); border: 1.5px solid var(--line-strong); border-radius: var(--r); overflow: hidden; }
+.tt span { width: 38px; display: grid; place-items: center; color: var(--ink-3); }
+html[data-theme="light"] .tt .tt-sun,
+html[data-theme="dark"] .tt .tt-moon { background: var(--ink); color: var(--surface); }
+.tt.wide span { width: auto; padding: 0 12px; display: flex; gap: 8px; align-items: center; font-weight: 600; }
+
+/* signal bars: four bars, four stages */
+.bars { display: inline-flex; align-items: flex-end; gap: 3px; height: 24px; flex: none; }
+.bars i { display: block; width: 6px; background: var(--line-strong); }
+.bars i:nth-child(1) { height: 9px; } .bars i:nth-child(2) { height: 14px; }
+.bars i:nth-child(3) { height: 19px; } .bars i:nth-child(4) { height: 24px; }
+.bars i.on { background: var(--brand-text); }
+.bars i.now { animation: seek 1s ease-in-out infinite alternate; }
+@keyframes seek { from { background: var(--line-strong); } to { background: var(--brand-text); } }
+@media (prefers-reduced-motion: reduce) { .bars i.now { animation: none; background: linear-gradient(to top, var(--brand-text) 50%, var(--line-strong) 50%); } }
+.bars.sm { height: 16px; gap: 2px; }
+.bars.sm i { width: 4px; }
+.bars.sm i:nth-child(1) { height: 6px; } .bars.sm i:nth-child(2) { height: 9.5px; }
+.bars.sm i:nth-child(3) { height: 13px; } .bars.sm i:nth-child(4) { height: 16px; }
+
+.foot { flex: none; padding: 10px 24px; border-top: 1px solid var(--line); font-size: var(--t-label); color: var(--ink-3); background: var(--paper); }
+
+/* ---------- the two pen marks ---------- */
+mark.hi {
+  color: var(--hi-ink); font-weight: 700;
+  padding: .1em .3em .06em; margin: 0 -.04em;
+  background: linear-gradient(179.3deg, transparent 5%, var(--hi) 6%, var(--hi) 94%, transparent 95%);
+  border-radius: 2px 7px 3px 6px / 7px 3px 6px 2px;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+}
+.ph {
+  font-family: var(--f-mono); font-size: .8em; font-weight: 600; letter-spacing: .02em;
+  background: var(--redact); color: var(--on-redact);
+  padding: .16em .5em .12em; border-radius: 1px; white-space: nowrap;
+}
+.pii { text-decoration: underline; text-decoration-color: var(--notice); text-decoration-thickness: 2px; text-underline-offset: 5px; }
+
+/* ---------- the SIM chamfer: only for what the copilot writes ---------- */
+.sim {
+  --bw: 1.5px;
+  padding: var(--bw); background: var(--edge);
+  clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, 0 100%);
+}
+.sim > .sim-body {
+  --in: calc(var(--cut) - 0.88px);
+  background: var(--surface);
+  clip-path: polygon(0 0, calc(100% - var(--in)) 0, 100% var(--in), 100% 100%, 0 100%);
+}
+.byline { display: flex; align-items: center; gap: 8px; font-size: var(--t-label); font-weight: 700; letter-spacing: .01em; color: var(--ink-2); }
+.byline .mark { width: 18px; height: 18px; }
+
+/* ---------- status: shape first, colour second, word third ---------- */
+.status { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-meta); font-weight: 600; white-space: nowrap; }
+.s-ok { color: var(--ok); } .s-notice { color: var(--notice); } .s-warn { color: var(--warn); } .s-block { color: var(--block); }
+.status.word { font-size: var(--t-label); font-weight: 700; letter-spacing: .07em; }
+
+/* ---------- Ask view ---------- */
+.ask { display: grid; grid-template-columns: 1fr 440px; flex: 1; }
+.convo { display: flex; flex-direction: column; padding: 32px 48px 20px; min-width: 0; }
+.thread { display: flex; flex-direction: column; flex: 1; padding-bottom: 28px; }
+.cue { font-size: var(--t-label); font-weight: 700; letter-spacing: .01em; color: var(--ink-2); }
+.turn-agent { align-self: flex-end; max-width: 640px; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.q { background: var(--sunken); border-radius: var(--r); padding: 14px 18px; font-size: var(--t-read); line-height: 1.55; }
+.processed { display: grid; grid-template-columns: 20px 1fr; gap: 8px; padding: 2px 18px 0; font-size: var(--t-ui); line-height: 1.7; color: var(--ink-2); }
+.processed .ic { margin-top: 3px; color: var(--notice); }
+.turn-copilot { align-self: flex-start; width: 728px; margin-top: 22px; }
+.answer { padding: 20px 30px 28px; font-size: var(--t-read); line-height: 1.62; }
+.answer .byline { margin-bottom: 12px; }
+.answer p + p, .answer ol + p { margin-top: 12px; }
+.answer ol { counter-reset: s; margin: 12px 0 0; display: grid; gap: 8px; }
+.answer ol li { counter-increment: s; display: grid; grid-template-columns: 30px 1fr; }
+.answer ol li::before { content: counter(s) "."; font-family: var(--f-mono); font-weight: 600; color: var(--ink-3); }
+.cite {
+  display: inline-grid; place-items: center; width: 22px; height: 22px; vertical-align: 2px;
+  font-family: var(--f-mono); font-size: var(--t-label); font-weight: 700; line-height: 1; text-decoration: none;
+  color: var(--brand-text); border: 1.5px solid var(--brand-text); border-radius: 2px; background: var(--surface);
+}
+a.cite:hover { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
+.script-label { margin-top: 18px; font-size: var(--t-ui); font-weight: 700; color: var(--ink-2); }
+.script-line { margin-top: 6px; padding: 2px 0 2px 18px; border-left: 3px solid var(--edge); }
+.script-line .ref { font-family: var(--f-mono); font-size: .92em; }
+.handoff {
+  display: flex; align-items: center; gap: 10px; margin-top: 8px; padding: 11px 16px;
+  background: var(--warn-tint); border: 1px solid var(--warn); border-radius: var(--r);
+  font-weight: 600; color: var(--ink);
+}
+.handoff .ic { color: var(--warn); }
+.meta { display: flex; align-items: center; gap: 14px; margin-top: 10px; }
+.tool { display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 10px 0 8px; border: 1px solid var(--line-strong); border-radius: var(--r); font-size: var(--t-meta); font-weight: 600; color: var(--ink-2); background: var(--surface); }
+.time { font-family: var(--f-mono); font-size: var(--t-meta); color: var(--ink-2); }
+.thumbs { margin-left: auto; display: flex; gap: 6px; }
+.pending-wrap { align-self: flex-start; margin-top: 30px; display: flex; flex-direction: column; gap: 8px; }
+.pending { --cut: 16px; align-self: flex-start; }
+.pending .sim-body { display: flex; align-items: center; gap: 14px; padding: 14px 34px 14px 18px; font-size: var(--t-read); }
+.pending .mark { width: 18px; height: 18px; }
+
+.composer { margin-top: auto; }
+.cbox { display: flex; align-items: flex-end; gap: 12px; padding: 12px 12px 12px 20px; background: var(--surface); border: 1.5px solid var(--line-strong); border-radius: var(--r); }
+.cbox:focus-within { border-color: var(--ink); }
+.cbox textarea { flex: 1; min-height: 44px; padding: 8px 0; border: 0; outline: 0; resize: none; background: none; font-size: var(--t-read); line-height: 1.55; }
+.cbox textarea::placeholder, .search input::placeholder { color: var(--ink-3); opacity: 1; }
+.send { width: 44px; height: 44px; flex: none; display: grid; place-items: center; padding: 0; background: var(--brand); color: var(--on-brand); border: 0; border-radius: var(--r); }
+.send:hover { filter: brightness(1.1); }
+.cnote { display: flex; gap: 8px; margin-top: 8px; font-size: var(--t-meta); color: var(--ink-3); }
+
+/* empty state */
+.empty { display: grid; grid-template-columns: 480px 1fr; column-gap: 72px; padding: 72px 72px 0; align-items: start; }
+.empty h1 { font-family: var(--f-display); font-size: var(--t-head); font-weight: 700; line-height: 1.04; letter-spacing: -0.025em; }
+.empty .lede { margin-top: 20px; font-size: var(--t-read); line-height: 1.55; color: var(--ink-2); max-width: 430px; }
+.egs { display: grid; gap: 10px; }
+.eg {
+  display: grid; grid-template-columns: 204px 1fr 20px; align-items: stretch; column-gap: 0;
+  width: 100%; padding: 0 18px 0 0; text-align: left;
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r);
+}
+.eg:hover { border-color: var(--ink); box-shadow: inset 0 0 0 0.5px var(--ink); }
+.eg-cue { display: flex; align-items: center; gap: 10px; padding: 0 12px 0 16px; border-right: 1px solid var(--line); font-size: var(--t-label); font-weight: 700; letter-spacing: .01em; color: var(--ink-2); }
+.eg-cue .ic { color: var(--ink); }
+.eg-line { padding: 14px 16px 14px 18px; }
+.eg-q { display: block; font-size: var(--t-read); font-weight: 600; line-height: 1.35; }
+.eg-hint { display: block; margin-top: 3px; font-size: var(--t-meta); color: var(--ink-3); }
+.eg-go { align-self: center; color: var(--brand-text); }
+.empty-compose { padding: 44px 72px 28px; }
+
+/* ---------- inspector: the copilot's side ---------- */
+.insp { background: var(--sunken); border-left: 1px solid var(--line); padding: 28px 24px 32px; }
+.insp section + section { margin-top: 32px; padding-top: 26px; border-top: 1px solid var(--line-strong); }
+.insp-h { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; white-space: nowrap; }
+.insp-h h3 { font-family: var(--f-display); font-size: var(--t-title); font-weight: 700; letter-spacing: -0.01em; }
+.count { font-family: var(--f-mono); font-size: var(--t-meta); color: var(--ink-2); margin-left: auto; }
+.tally { display: inline-flex; gap: 3px; align-items: center; }
+.tally .st { width: 14px; height: 14px; }
+.src { display: grid; grid-template-columns: 22px 1fr 20px; align-items: center; column-gap: 12px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r); text-decoration: none; color: var(--ink); }
+.src:hover { border-color: var(--ink); }
+.src:target { outline: 2px solid var(--brand-text); outline-offset: 2px; }
+.src b { display: block; font-weight: 700; }
+.src small { display: block; font-family: var(--f-mono); font-size: var(--t-meta); color: var(--ink-2); }
+.src > .ic { color: var(--brand-text); }
+.nosrc { color: var(--ink-2); }
+.steps { display: grid; }
+.step { position: relative; display: grid; grid-template-columns: 22px 1fr auto; column-gap: 14px; padding-bottom: 20px; }
+.step:last-child { padding-bottom: 0; }
+.step::before { content: ""; position: absolute; left: 10.25px; top: 26px; bottom: 4px; width: 1.5px; background: var(--line-strong); }
+.step:last-child::before { display: none; }
+.step-cue { display: flex; align-items: center; gap: 6px; height: 22px; font-size: var(--t-label); font-weight: 700; letter-spacing: .01em; color: var(--ink-2); }
+.step-title { margin-top: 3px; font-weight: 700; }
+.step-detail { margin-top: 2px; font-size: var(--t-meta); color: var(--ink-2); }
+.step .status.word { height: 22px; }
+
+/* ---------- Calls view ---------- */
+.calls { display: grid; grid-template-columns: 388px 1fr 404px; flex: 1; }
+.clist { background: var(--surface); border-right: 1px solid var(--line); }
+.clist-head { padding: 24px 20px 16px; }
+.clist-title { display: flex; align-items: baseline; gap: 12px; }
+.clist-title h2, .call-head h2 { font-family: var(--f-display); font-size: var(--t-view); font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
+.clist-title span { font-family: var(--f-mono); font-size: var(--t-meta); color: var(--ink-2); }
+.search { display: flex; align-items: center; gap: 10px; height: 44px; margin-top: 16px; padding: 0 12px; border: 1.5px solid var(--line-strong); border-radius: var(--r); background: var(--surface); color: var(--ink-3); }
+.search:focus-within { border-color: var(--ink); }
+.search input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; color: var(--ink); }
+.filters { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 12px; border: 1.5px solid var(--ink); border-radius: var(--r); overflow: hidden; }
+.filters button { display: grid; gap: 1px; justify-items: start; padding: 7px 8px 7px 9px; background: var(--surface); border: 0; text-align: left; }
+.filters button + button { border-left: 1.5px solid var(--ink); }
+.filters .fc { display: flex; align-items: center; gap: 5px; font-family: var(--f-mono); font-size: var(--t-ui); font-weight: 700; }
+.filters .fl { font-size: var(--t-label); color: var(--ink-2); }
+.filters button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.filters button[aria-pressed="true"] .fl { color: var(--surface); }
+.crow { display: grid; grid-template-columns: 58px 1fr auto; align-items: center; column-gap: 12px; width: 100%; height: 50px; padding: 0 20px; background: none; border: 0; border-top: 1px solid var(--line); text-align: left; }
+.crow:hover { background: var(--paper); }
+.crow .id { font-family: var(--f-mono); font-size: var(--t-meta); font-weight: 600; color: var(--ink-2); }
+.crow[aria-current="true"] { background: var(--brand-tint); outline: 1.5px solid var(--edge); outline-offset: -1.5px; }
+.crow[aria-current="true"] .id { color: var(--ink); }
+.crow[aria-current="true"] .cat { font-weight: 700; }
+
+.call { min-width: 0; display: flex; flex-direction: column; }
+.call-head { padding: 24px 32px 18px; border-bottom: 1px solid var(--line); }
+.call-head .row { display: flex; align-items: baseline; gap: 14px; }
+.call-head .id { font-family: var(--f-mono); font-size: var(--t-title); font-weight: 600; color: var(--ink-2); }
+.call-head .status { margin-left: auto; align-self: center; }
+.call-cap { display: flex; gap: 8px; margin-top: 10px; font-size: var(--t-meta); color: var(--ink-2); }
+.call-cap .ic { margin-top: 1px; }
+.script { display: flex; flex-direction: column; gap: 8px; padding: 22px 32px 32px; }
+.say { max-width: 430px; padding: 10px 16px; border-radius: var(--r); font-size: var(--t-read); line-height: 1.5; }
+.say.a { align-self: flex-start; background: var(--surface); border: 1px solid var(--line-strong); }
+.say.c { align-self: flex-end; background: var(--sunken); border: 1px solid transparent; }
+.who { font-size: var(--t-label); font-weight: 700; letter-spacing: .01em; color: var(--ink-2); margin-top: 8px; }
+.who:first-child { margin-top: 0; }
+.who.c { align-self: flex-end; }
+
+.sumrail { background: var(--sunken); border-left: 1px solid var(--line); padding: 24px; }
+.summary { padding: 20px 24px 24px; }
+.summary dl { display: grid; gap: 18px; margin-top: 16px; }
+.summary dt { font-size: var(--t-label); font-weight: 700; letter-spacing: .01em; color: var(--ink-2); margin-bottom: 4px; }
+.summary dd { font-size: var(--t-ui); line-height: 1.5; }
+.summary .intent { font-family: var(--f-display); font-size: var(--t-title); font-weight: 700; line-height: 1.2; letter-spacing: -0.01em; }
+.summary .mood { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; }
+.summary ol { counter-reset: h; display: grid; gap: 8px; }
+.summary ol li { counter-increment: h; display: grid; grid-template-columns: 24px 1fr; }
+.summary ol li::before { content: counter(h) "."; font-family: var(--f-mono); font-weight: 600; color: var(--ink-3); }
+.rel { display: grid; margin-top: 2px; }
+.rel a { display: grid; grid-template-columns: 20px 1fr; gap: 10px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); font-weight: 600; text-underline-offset: 3px; }
+.rel a:first-child { border-top: 0; padding-top: 2px; }
+
+/* ---------- identity sheet ---------- */
+.sheet { padding: 64px 64px 72px; display: grid; gap: 64px; background: var(--paper); }
+.sheet h3 { font-family: var(--f-display); font-size: var(--t-view); font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
+.sheet .sec-note { margin-top: 6px; color: var(--ink-2); max-width: 760px; }
+.poster { display: grid; grid-template-columns: 1fr 520px; column-gap: 64px; align-items: end; }
+.poster .kicker { font-size: var(--t-meta); font-weight: 700; color: var(--ink-2); }
+.poster h2 { margin-top: 10px; font-family: var(--f-display); font-size: var(--t-poster); font-weight: 800; line-height: .92; letter-spacing: -0.04em; }
+.poster p { margin-top: 28px; font-size: var(--t-read); line-height: 1.6; max-width: 640px; }
+.poster .demo { --cut: 44px; }
+.poster .demo .sim-body { padding: 28px 32px 32px; }
+.poster .demo .big { margin-top: 16px; font-size: var(--t-view); line-height: 1.45; }
+.poster .demo .row { display: flex; align-items: center; gap: 14px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); font-size: var(--t-ui); color: var(--ink-2); }
+.bold-one { display: grid; grid-template-columns: 220px 1fr; column-gap: 32px; align-items: center; padding: 22px 0; border-top: 1.5px solid var(--edge); border-bottom: 1.5px solid var(--edge); }
+.bold-one .k { font-size: var(--t-meta); font-weight: 700; color: var(--ink-2); }
+.bold-one .v { font-family: var(--f-display); font-size: var(--t-title); font-weight: 600; line-height: 1.35; }
+.pals { display: grid; gap: 16px; margin-top: 20px; }
+.pal { background: var(--paper); border: 1px solid var(--line-strong); padding: 20px 24px 24px; }
+.pal h4 { font-size: var(--t-meta); font-weight: 700; margin-bottom: 14px; }
+.sws { display: grid; grid-template-columns: repeat(9, 1fr); gap: 20px 12px; }
+.sw .chip { display: flex; height: 52px; border: 1px solid var(--line-strong); }
+.sw .chip i { flex: 1; }
+.sw b { display: block; margin-top: 8px; font-size: var(--t-meta); font-weight: 700; }
+.sw code { display: block; font-family: var(--f-mono); font-size: var(--t-label); color: var(--ink-2); }
+.sw small { display: block; margin-top: 3px; font-size: var(--t-label); line-height: 1.35; color: var(--ink-2); }
+.types { display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 16px; margin-top: 20px; }
+.type { background: var(--surface); border: 1px solid var(--line-strong); padding: 24px; display: flex; flex-direction: column; }
+.type .face { font-size: var(--t-label); font-weight: 700; color: var(--ink-2); }
+.type .spec { margin: 14px 0 18px; min-height: 150px; }
+.type dl { margin-top: auto; display: grid; gap: 10px; padding-top: 16px; border-top: 1px solid var(--line); }
+.type dt { font-size: var(--t-label); font-weight: 700; color: var(--ink-2); }
+.type dd { font-size: var(--t-meta); line-height: 1.5; }
+.scale { display: flex; align-items: baseline; gap: 28px; margin-top: 16px; padding: 18px 24px; background: var(--surface); border: 1px solid var(--line-strong); white-space: nowrap; overflow: hidden; }
+.scale span { display: grid; gap: 4px; }
+.scale small { font-size: var(--t-label); font-weight: 600; color: var(--ink-2); }
+.icons { display: grid; grid-template-columns: repeat(9, 1fr); margin-top: 20px; border-top: 1px solid var(--line-strong); border-left: 1px solid var(--line-strong); background: var(--surface); }
+.icons > div { display: grid; justify-items: center; align-content: center; gap: 12px; height: 118px; padding: 8px; border-right: 1px solid var(--line-strong); border-bottom: 1px solid var(--line-strong); font-size: var(--t-label); color: var(--ink-2); text-align: center; line-height: 1.25; }
+.icons > div > svg, .icons > div > .bars { color: var(--ink); }
+.rules { display: grid; grid-template-columns: 1fr 1fr; gap: 0 48px; margin-top: 20px; }
+.rule { display: grid; grid-template-columns: 100px 1fr; column-gap: 20px; align-items: start; padding: 18px 0; border-top: 1px solid var(--line-strong); }
+.rule .dev { display: grid; place-items: center; height: 56px; }
+.rule b { display: block; font-size: var(--t-read); font-weight: 700; }
+.rule p { margin-top: 3px; font-size: var(--t-meta); line-height: 1.5; color: var(--ink-2); }
+.rule p strong { color: var(--ink); font-weight: 700; }
+.dev-sim { --cut: 14px; width: 52px; }
+.dev-sim .sim-body { height: 38px; }
+</style>
+</head>
+<body>
+
+<!-- ============ icon set: drawn for this product, one hand ============ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <!-- brand mark: a SIM with three lines of script that climb like signal bars; one is highlighted -->
+    <symbol id="i-mark" viewBox="0 0 32 32">
+      <path d="M2 2h19l9 9v19H2z" style="fill:var(--brand)"/>
+      <rect x="7.5" y="9" width="7" height="2.6" style="fill:var(--on-brand)"/>
+      <rect x="7.5" y="14.3" width="12" height="5.2" style="fill:var(--hi)"/>
+      <rect x="7.5" y="22.2" width="17" height="2.6" style="fill:var(--on-brand)"/>
+    </symbol>
+    <symbol id="i-ask" viewBox="0 0 24 24"><path d="M4 4.5h16V16h-8l-4.5 4v-4H4z"/><path d="M8 8.8h8M8 12.2h5"/></symbol>
+    <symbol id="i-calls" viewBox="0 0 24 24"><path d="M3 9l3-3h12l3 3v4.5h-5.5v-3h-7v3H3z"/><path d="M6 17.5h12M6 20.6h7"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><path d="M6 3h8.5L19 7.5V21H6z"/><path d="M9.5 8h2.5M9.5 12h6M9.5 16h6"/></symbol>
+    <symbol id="i-plan" viewBox="0 0 24 24"><path d="M3.5 3.5H12l8.5 8.5-8.5 8.5L3.5 12z"/><path d="M7.3 7.3h2v2h-2z"/></symbol>
+    <symbol id="i-summary" viewBox="0 0 24 24"><path d="M3.5 6h7M3.5 10h7M3.5 14h7M3.5 18h7"/><path d="M13.5 5h3v14h-3M16.5 12h4.5"/></symbol>
+    <symbol id="i-handoff" viewBox="0 0 24 24"><path d="M1.5 10H7M4.5 7l3 3-3 3"/><path d="M13 4h4.5v4.5H13z"/><path d="M9.5 20v-4l3-3H18l3 3v4"/></symbol>
+    <symbol id="i-privacy" viewBox="0 0 24 24"><path d="M4 6.5h16M4 12h3.5M4 17.5h11"/><rect x="9.5" y="9.8" width="10.5" height="4.4" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-request" viewBox="0 0 24 24"><path d="M12 3l7.5 3v6.5L12 21l-7.5-8.5V6z"/><path d="M10.4 8.6h3.2v3.2h-3.2z"/></symbol>
+    <symbol id="i-answer" viewBox="0 0 24 24"><path d="M4 6h16M4 11h8.5"/><path d="M10.5 16.5l3.5 3.5 7-7.5"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="M19 5v8.5H6.5"/><path d="M10.5 9.5l-4 4 4 4"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><path d="M12 7.5l4.5 4.5-4.5 4.5L7.5 12z"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M14.5 3.5l-6 2L5 10.5v5l3.5 4 6 1.5 5-2.5-5-1.5-3-3.5v-5z"/></symbol>
+    <symbol id="i-new" viewBox="0 0 24 24"><path d="M4 4.5h16V16h-8l-4.5 4v-4H4z"/><path d="M12 7.2v6M9 10.2h6"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24"><path d="M7.5 20.5v-10l4-7h1.8l1.2 1.5v4H20l1 1.5-1.5 8.5-1.5 1.5z"/><path d="M7.5 10.5h-4v10h4"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><g transform="rotate(180 12 12)"><path d="M7.5 20.5v-10l4-7h1.8l1.2 1.5v4H20l1 1.5-1.5 8.5-1.5 1.5z"/><path d="M7.5 10.5h-4v10h4"/></g></symbol>
+    <symbol id="i-ext" viewBox="0 0 24 24"><path d="M10.5 5h-6v14.5H19v-6"/><path d="M13.5 4.5h6v6M19.5 4.5l-9 9"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><path d="M8 3.5h5.5l4 4V13l-4 4H8l-4-4V7.5z"/><path d="M15.5 15l5.5 5.5"/></symbol>
+    <symbol id="i-mood-pos" viewBox="0 0 24 24"><path d="M8.5 5.5v4M15.5 5.5v4"/><path d="M5.5 13.5l3.5 4h6l3.5-4"/></symbol>
+    <symbol id="i-mood-neu" viewBox="0 0 24 24"><path d="M8.5 5.5v4M15.5 5.5v4"/><path d="M6.5 16h11"/></symbol>
+    <symbol id="i-mood-neg" viewBox="0 0 24 24"><path d="M8.5 5.5v4M15.5 5.5v4"/><path d="M5.5 18l3.5-4h6l3.5 4"/></symbol>
+    <!-- status stamps: solid shape, knocked-out glyph. Shape alone carries the state. -->
+    <symbol id="s-ok" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7.2" fill="currentColor"/><path d="M4.5 8.3l2.4 2.4 4.6-5" fill="none" style="stroke:var(--knock)" stroke-width="1.9"/></symbol>
+    <symbol id="s-notice" viewBox="0 0 16 16"><path d="M1.3 1.3h13.4v13.4H1.3z" fill="currentColor"/><path d="M8 3.8v2M8 7.4v4.8" fill="none" style="stroke:var(--knock)" stroke-width="1.9"/></symbol>
+    <symbol id="s-warn" viewBox="0 0 16 16"><path d="M8 .8l7.6 14.2H.4z" fill="currentColor"/><path d="M8 5.8v4.4M8 11.6v1.9" fill="none" style="stroke:var(--knock)" stroke-width="1.9"/></symbol>
+    <symbol id="s-block" viewBox="0 0 16 16"><path d="M4.9.8h6.2l4.1 4.1v6.2l-4.1 4.1H4.9L.8 11.1V4.9z" fill="currentColor"/><path d="M4.2 8h7.6" fill="none" style="stroke:var(--knock)" stroke-width="1.9"/></symbol>
+  </defs>
+</svg>
+
+<div class="board">
+
+  <div class="board-head">
+    <div>
+      <div class="bh-title">Direction A: Signal and Script</div>
+      <div class="bh-sub">Frontline Copilot, visual identity mock-up. Five artboards, light and dark.</div>
+    </div>
+    <button type="button" class="tt wide" data-theme-toggle aria-label="Switch between light and dark theme">
+      <span class="tt-sun"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg>Light</span>
+      <span class="tt-moon"><svg class="ic" aria-hidden="true"><use href="#i-moon"/></svg>Dark</span>
+    </button>
+  </div>
+
+  <!-- ===================== ARTBOARD 1 ===================== -->
+  <div class="ab-label"><span class="n">01</span><h2>Ask view, empty state</h2><span class="w">1400 wide</span></div>
+  <div class="frame-scroll">
+  <div class="app">
+    <header class="topbar">
+      <div class="brand"><svg class="mark" aria-hidden="true"><use href="#i-mark"/></svg>Frontline Copilot</div>
+      <span class="tag-demo">Demo, synthetic data</span>
+      <nav class="views" aria-label="View">
+        <button type="button" aria-current="page"><svg class="ic" aria-hidden="true"><use href="#i-ask"/></svg>Ask</button>
+        <button type="button"><svg class="ic" aria-hidden="true"><use href="#i-calls"/></svg>Calls</button>
+      </nav>
+      <div class="topbar-right">
+        <button type="button" class="btn quiet"><span class="bars sm" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>What's running</button>
+        <button type="button" class="tt" data-theme-toggle aria-label="Switch between light and dark theme"><span class="tt-sun"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg></span><span class="tt-moon"><svg class="ic" aria-hidden="true"><use href="#i-moon"/></svg></span></button>
+        <button type="button" class="btn"><svg class="ic" aria-hidden="true"><use href="#i-new"/></svg>New conversation</button>
+      </div>
+    </header>
+
+    <main>
+      <div class="empty">
+        <div>
+          <h1>What does the customer need?</h1>
+          <p class="lede">Ask a support question, look up a plan, or summarize a call. Every answer shows its sources and the steps behind it.</p>
+        </div>
+        <div class="egs">
+          <button type="button" class="eg">
+            <span class="eg-cue"><svg class="ic s24" aria-hidden="true"><use href="#i-help"/></svg>Help articles</span>
+            <span class="eg-line"><span class="eg-q">How much is the late payment fee, and can it be waived?</span><span class="eg-hint">An answer from the help articles, with its source</span></span>
+            <svg class="ic eg-go" aria-hidden="true"><use href="#i-send"/></svg>
+          </button>
+          <button type="button" class="eg">
+            <span class="eg-cue"><svg class="ic s24" aria-hidden="true"><use href="#i-plan"/></svg>Plan catalogue</span>
+            <span class="eg-line"><span class="eg-q">Which plans cost $25 a month or less?</span><span class="eg-hint">A lookup in the plan catalogue</span></span>
+            <svg class="ic eg-go" aria-hidden="true"><use href="#i-send"/></svg>
+          </button>
+          <button type="button" class="eg">
+            <span class="eg-cue"><svg class="ic s24" aria-hidden="true"><use href="#i-summary"/></svg>Call summary</span>
+            <span class="eg-line"><span class="eg-q">Summarize call T0002.</span><span class="eg-hint">A summary of a redacted call</span></span>
+            <svg class="ic eg-go" aria-hidden="true"><use href="#i-send"/></svg>
+          </button>
+          <button type="button" class="eg">
+            <span class="eg-cue"><svg class="ic s24" aria-hidden="true"><use href="#i-handoff"/></svg>Hand-off to a person</span>
+            <span class="eg-line"><span class="eg-q">Refund the $5 late fee on this customer's account.</span><span class="eg-hint">A request that needs a person</span></span>
+            <svg class="ic eg-go" aria-hidden="true"><use href="#i-send"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="empty-compose">
+        <div class="cbox">
+          <textarea rows="1" placeholder="Ask a question" aria-label="Ask a question"></textarea>
+          <button type="button" class="send" aria-label="Send"><svg class="ic s24" aria-hidden="true"><use href="#i-send"/></svg></button>
+        </div>
+        <p class="cnote">Enter to send, Shift+Enter for a new line. Personal details are replaced before a question is processed or logged.</p>
+      </div>
+    </main>
+    <footer class="foot">Unofficial demo. Not affiliated with or endorsed by any carrier. Northline Wireless is fictional and all data is synthetic.</footer>
+  </div>
+  </div>
+
+  <!-- ===================== ARTBOARD 2 ===================== -->
+  <div class="ab-label"><span class="n">02</span><h2>Ask view, a cited answer</h2><span class="w">inspector open</span></div>
+  <div class="frame-scroll">
+  <div class="app">
+    <header class="topbar">
+      <div class="brand"><svg class="mark" aria-hidden="true"><use href="#i-mark"/></svg>Frontline Copilot</div>
+      <span class="tag-demo">Demo, synthetic data</span>
+      <nav class="views" aria-label="View">
+        <button type="button" aria-current="page"><svg class="ic" aria-hidden="true"><use href="#i-ask"/></svg>Ask</button>
+        <button type="button"><svg class="ic" aria-hidden="true"><use href="#i-calls"/></svg>Calls</button>
+      </nav>
+      <div class="topbar-right">
+        <button type="button" class="btn quiet"><span class="bars sm" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>What's running</button>
+        <button type="button" class="tt" data-theme-toggle aria-label="Switch between light and dark theme"><span class="tt-sun"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg></span><span class="tt-moon"><svg class="ic" aria-hidden="true"><use href="#i-moon"/></svg></span></button>
+        <button type="button" class="btn"><svg class="ic" aria-hidden="true"><use href="#i-new"/></svg>New conversation</button>
+      </div>
+    </header>
+
+    <div class="ask">
+      <main class="convo">
+        <div class="thread">
+          <div class="turn-agent">
+            <span class="cue">Agent</span>
+            <p class="q">How much is the late payment fee, and can it be waived?</p>
+          </div>
+
+          <div class="turn-copilot">
+            <div class="sim"><div class="sim-body answer">
+              <div class="byline"><svg class="mark" aria-hidden="true"><use href="#i-mark"/></svg>Copilot</div>
+              <p>The late-payment fee is <mark class="hi">$5</mark> <a class="cite" href="#a2-src-1" aria-label="Source 1">1</a>.</p>
+              <p>You can ask for a one-time waiver of that fee. To do so:</p>
+              <ol>
+                <li><span>Have your account number and the bill with the fee handy.</span></li>
+                <li><span>Call support - dial <mark class="hi">611</mark> from your Northline phone or <mark class="hi">1-800-555-0199</mark> from any phone.</span></li>
+                <li><span>Tell the representative you want a <mark class="hi">one-time waiver</mark> of the $5 late-payment fee.</span></li>
+              </ol>
+              <p>The billing team will review your request and, if approved, remove the fee from your bill.</p>
+            </div></div>
+            <div class="meta">
+              <span class="tool"><svg class="ic s16" aria-hidden="true"><use href="#i-help"/></svg>Help articles</span>
+              <span class="time">2.4 seconds</span>
+              <span class="thumbs">
+                <button type="button" class="iconbtn" aria-label="Good answer"><svg class="ic" aria-hidden="true"><use href="#i-up"/></svg></button>
+                <button type="button" class="iconbtn" aria-label="Bad answer"><svg class="ic" aria-hidden="true"><use href="#i-down"/></svg></button>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="composer">
+          <div class="cbox">
+            <textarea rows="1" placeholder="Ask a question" aria-label="Ask a question"></textarea>
+            <button type="button" class="send" aria-label="Send"><svg class="ic s24" aria-hidden="true"><use href="#i-send"/></svg></button>
+          </div>
+          <p class="cnote">Enter to send, Shift+Enter for a new line. Personal details are replaced before a question is processed or logged.</p>
+        </div>
+      </main>
+
+      <aside class="insp" aria-label="Sources and steps for this answer">
+        <section>
+          <div class="insp-h"><h3>Sources</h3><span class="count">1 source</span></div>
+          <a class="src" id="a2-src-1" href="https://help.northline.example" target="_blank" rel="noopener" aria-label="Source 1, Late payment fee, help.northline.example, opens in a new tab">
+            <span class="cite">1</span>
+            <span><b>Late payment fee</b><small>help.northline.example</small></span>
+            <svg class="ic" aria-hidden="true"><use href="#i-ext"/></svg>
+          </a>
+        </section>
+        <section>
+          <div class="insp-h">
+            <h3>What the copilot did</h3>
+            <span class="count">5 steps</span>
+            <span class="tally s-ok" aria-label="All five steps OK">
+              <svg class="st"><use href="#s-ok"/></svg><svg class="st"><use href="#s-ok"/></svg><svg class="st"><use href="#s-ok"/></svg><svg class="st"><use href="#s-ok"/></svg><svg class="st"><use href="#s-ok"/></svg>
+            </span>
+          </div>
+          <ol class="steps">
+            <li class="step">
+              <svg class="st s22 s-ok" aria-hidden="true"><use href="#s-ok"/></svg>
+              <div>
+                <div class="step-cue"><svg class="ic s16" aria-hidden="true"><use href="#i-privacy"/></svg>Privacy</div>
+                <div class="step-title">No personal details found</div>
+                <div class="step-detail">The question was checked before anything was logged.</div>
+              </div>
+              <span class="status word s-ok">OK</span>
+            </li>
+            <li class="step">
+              <svg class="st s22 s-ok" aria-hidden="true"><use href="#s-ok"/></svg>
+              <div>
+                <div class="step-cue"><svg class="ic s16" aria-hidden="true"><use href="#i-request"/></svg>Request check</div>
+                <div class="step-title">Request allowed</div>
+                <div class="step-detail">Not an account change and not an attempt to override the instructions.</div>
+              </div>
+              <span class="status word s-ok">OK</span>
+            </li>
+            <li class="step">
+              <svg class="st s22 s-ok" aria-hidden="true"><use href="#s-ok"/></svg>
+              <div>
+                <div class="step-cue"><svg class="ic s16" aria-hidden="true"><use href="#i-help"/></svg>Help articles</div>
+                <div class="step-title">Searched the help articles</div>
+                <div class="step-detail">1 source cited.</div>
+              </div>
+              <span class="status word s-ok">OK</span>
+            </li>
+            <li class="step">
+              <svg class="st s22 s-ok" aria-hidden="true"><use href="#s-ok"/></svg>
+              <div>
+                <div class="step-cue"><svg class="ic s16" aria-hidden="true"><use href="#i-answer"/></svg>Answer check</div>
+                <div class="step-title">Citations checked</div>
+                <div class="step-detail">Every citation points to a retrieved source.</div>
+              </div>
+              <span class="status word s-ok">OK</span>
+            </li>
+            <li class="step">
+              <svg class="st s22 s-ok" aria-hidden="true"><use href="#s-ok"/></svg>
+              <div>
+                <div class="step-cue"><svg class="ic s16" aria-hidden="true"><use href="#i-answer"/></svg>Answer check</div>
+                <div class="step-title">No personal details in the answer</div>
+                <div class="step-detail">Checked against the sources the answer was written from.</div>
+              </div>
+              <span class="status word s-ok">OK</span>
+            </li>
+          </ol>
+        </section>
+      </aside>
+    </div>
+    <footer class="foot">Unofficial demo. Not affiliated with or endorsed by any carrier. Northline Wireless is fictional and all data is synthetic.</footer>
+  </div>
+  </div>
+
+  <!-- ===================== ARTBOARD 3 ===================== -->
+  <div class="ab-label"><span class="n">03</span><h2>Ask view, a hand-off with personal details removed</h2><span class="w">inspector open</span></div>
+  <div class="frame-scroll">
+  <div class="app">
+    <header class="topbar">
+      <div class="brand"><svg class="mark" aria-hidden="true"><use href="#i-mark"/></svg>Frontline Copilot</div>
+      <span class="tag-demo">Demo, synthetic data</span>
+      <nav class="views" aria-label="View">
+        <button type="button" aria-current="page"><svg class="ic" aria-hidden="true"><use href="#i-ask"/></svg>Ask</button>
+        <button type="button"><svg class="ic" aria-hidden="true"><use href="#i-calls"/></svg>Calls</button>
+      </nav>
+      <div class="topbar-right">
+        <button type="button" class="btn quiet"><span class="bars sm" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>What's running</button>
+        <button type="button" class="tt" data-theme-toggle aria-label="Switch between light and dark theme"><span class="tt-sun"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg></span><span class="tt-moon"><svg class="ic" aria-hidden="true"><use href="#i-moon"/></svg></span></button>
+        <button type="button" class="btn"><svg class="ic" aria-hidden="true"><use href="#i-new"/></svg>New conversation</button>
+      </div>
+    </header>
+
+    <div class="ask">
+      <main class="convo">
+        <div class="thread">
+          <div class="turn-agent">
+            <span class="cue">Agent</span>
+            <p class="q">Refund the late fee on this customer's account. Her name is <span class="pii">Linda Garcia</span> and her number is <span class="pii">480-555-0132</span>.</p>
+            <p class="processed"><svg class="ic s16" aria-hidden="true"><use href="#i-privacy"/></svg><span>As processed: Refund the late fee on this customer's account. Her name is <span class="ph">PERSON_1</span> and her number is <span class="ph">PHONE_NUMBER_1</span>.</span></p>
+          </div>
+
+          <div class="turn-copilot">
+            <div class="sim"><div class="sim-body answer">
+              <div class="byline"><svg class="mark" aria-hidden="true"><use href="#i-mark"/></svg>Copilot</div>
+              <p>I can't refund, credit or waive a charge myself. This needs a human specialist: the billing team has to handle it.</p>
+              <p class="script-label">What to tell the customer:</p>
+              <p class="script-line">"I can't do this myself, so I'm passing you to the billing team. Your reference is <mark class="hi"><span class="ref">ESC-B695DE84</span></mark>. They will take it from here."</p>
+            </div></div>
+            <div class="handoff" role="status"><svg class="ic" aria-hidden="true"><use href="#i-handoff"/></svg>This needs a person. A hand-off was opened.</div>
+            <div class="meta">
+              <span class="tool"><svg class="ic s16" aria-hidden="true"><use href="#i-handoff"/></svg>Hand-off to a person</span>
+              <span class="time">3.3 seconds</span>
+              <span class="thumbs">
+                <button type="button" class="iconbtn" aria-label="Good answer"><svg class="ic" aria-hidden="true"><use href="#i-up"/></svg></button>
+                <button type="button" class="iconbtn" aria-label="Bad answer"><svg class="ic" aria-hidden="true"><use href="#i-down"/></svg></button>
+              </span>
+            </div>
+          </div>
+
+          <div class="pending-wrap">
+            <span class="board-note">Board note: the waiting state, shown here out of sequence. Bars fill as each of the four stages finishes.</span>
+            <div class="sim pending" role="status"><div class="sim-body">
+              <svg class="mark" aria-hidden="true"><use href="#i-mark"/></svg>
+              <span class="bars" aria-hidden="true"><i class="on"></i><i class="now"></i><i></i><i></i></span>
+              <span>Checking the request</span>
+            </div></div>
+          </div>
+        </div>
+
+        <div class="composer">
+          <div class="cbox">
+            <textarea rows="1" placeholder="Ask a question" aria-label="Ask a question"></textarea>
+            <button type="button" class="send" aria-label="Send"><svg class="ic s24" aria-hidden="true"><use href="#i-send"/></svg></button>
+          </div>
+          <p class="cnote">Enter to send, Shift+Enter for a new line. Personal details are replaced before a question is processed or logged.</p>
+        </div>
+      </main>
+
+      <aside class="insp" aria-label="Sources and steps for this answer">
+        <section>
+          <div class="insp-h"><h3>Sources</h3></div>
+          <p class="nosrc">This answer cites no sources.</p>
+        </section>
+        <section>
+          <div class="insp-h">
+            <h3>What the copilot did</h3>
+            <span class="count">4 steps</span>
+            <span class="tally" aria-label="One notice, one warning, two OK">
+              <svg class="st s-notice"><use href="#s-notice"/></svg><svg class="st s-warn"><use href="#s-warn"/></svg><svg class="st s-ok"><use href="#s-ok"/></svg><svg class="st s-ok"><use href="#s-ok"/></svg>
+            </span>
+          </div>
+          <ol class="steps">
+            <li class="step">
+              <svg class="st s22 s-notice" aria-hidden="true"><use href="#s-notice"/></svg>
+              <div>
+                <div class="step-cue"><svg class="ic s16" aria-hidden="true"><use href="#i-privacy"/></svg>Privacy</div>
+                <div class="step-title">Personal details removed</div>
+                <div class="step-detail">A name and a phone number were replaced before the question was processed or logged.</div>
+              </div>
+              <span class="status word s-notice">NOTICE</span>
+            </li>
+            <li class="step">
+              <svg class="st s22 s-warn" aria-hidden="true"><use href="#s-warn"/></svg>
+              <div>
+                <div class="step-cue"><svg class="ic s16" aria-hidden="true"><use href="#i-request"/></svg>Request check</div>
+                <div class="step-title">Account request: handed to a person</div>
+                <div class="step-detail">The copilot cannot change or look up a customer's account.</div>
+              </div>
+              <span class="status word s-warn">WARNING</span>
+            </li>
+            <li class="step">
+              <svg class="st s22 s-ok" aria-hidden="true"><use href="#s-ok"/></svg>
+              <div>
+                <div class="step-cue"><svg class="ic s16" aria-hidden="true"><use href="#i-handoff"/></svg>Hand-off to a person</div>
+                <div class="step-title">Opened a hand-off</div>
+                <div class="step-detail">A ticket was written for a human specialist, with the reason redacted.</div>
+              </div>
+              <span class="status word s-ok">OK</span>
+            </li>
+            <li class="step">
+              <svg class="st s22 s-ok" aria-hidden="true"><use href="#s-ok"/></svg>
+              <div>
+                <div class="step-cue"><svg class="ic s16" aria-hidden="true"><use href="#i-answer"/></svg>Answer check</div>
+                <div class="step-title">No personal details in the answer</div>
+                <div class="step-detail">Checked against the sources the answer was written from.</div>
+              </div>
+              <span class="status word s-ok">OK</span>
+            </li>
+          </ol>
+        </section>
+      </aside>
+    </div>
+    <footer class="foot">Unofficial demo. Not affiliated with or endorsed by any carrier. Northline Wireless is fictional and all data is synthetic.</footer>
+  </div>
+  </div>
+
+  <!-- ===================== ARTBOARD 4 ===================== -->
+  <div class="ab-label"><span class="n">04</span><h2>Calls view</h2><span class="w">T0002 selected</span></div>
+  <div class="frame-scroll">
+  <div class="app">
+    <header class="topbar">
+      <div class="brand"><svg class="mark" aria-hidden="true"><use href="#i-mark"/></svg>Frontline Copilot</div>
+      <span class="tag-demo">Demo, synthetic data</span>
+      <nav class="views" aria-label="View">
+        <button type="button"><svg class="ic" aria-hidden="true"><use href="#i-ask"/></svg>Ask</button>
+        <button type="button" aria-current="page"><svg class="ic" aria-hidden="true"><use href="#i-calls"/></svg>Calls</button>
+      </nav>
+      <div class="topbar-right">
+        <button type="button" class="btn quiet"><span class="bars sm" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>What's running</button>
+        <button type="button" class="tt" data-theme-toggle aria-label="Switch between light and dark theme"><span class="tt-sun"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg></span><span class="tt-moon"><svg class="ic" aria-hidden="true"><use href="#i-moon"/></svg></span></button>
+        <button type="button" class="btn"><svg class="ic" aria-hidden="true"><use href="#i-new"/></svg>New conversation</button>
+      </div>
+    </header>
+
+    <div class="calls">
+      <nav class="clist" aria-label="Calls">
+        <div class="clist-head">
+          <div class="clist-title"><h2>Calls</h2><span>200 calls</span></div>
+          <label class="search"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg><input type="search" placeholder="Search by id or category" aria-label="Search by id or category"></label>
+          <div class="filters" role="group" aria-label="Filter by status">
+            <button type="button" aria-pressed="true"><span class="fc">200</span><span class="fl">All</span></button>
+            <button type="button" aria-pressed="false"><span class="fc"><svg class="st s-ok" aria-hidden="true"><use href="#s-ok"/></svg>119</span><span class="fl">Resolved</span></button>
+            <button type="button" aria-pressed="false"><span class="fc"><svg class="st s-notice" aria-hidden="true"><use href="#s-notice"/></svg>57</span><span class="fl">Escalated</span></button>
+            <button type="button" aria-pressed="false"><span class="fc"><svg class="st s-warn" aria-hidden="true"><use href="#s-warn"/></svg>24</span><span class="fl">Unresolved</span></button>
+          </div>
+        </div>
+        <button type="button" class="crow"><span class="id">T0001</span><span class="cat">Billing</span><span class="status s-notice"><svg class="st" aria-hidden="true"><use href="#s-notice"/></svg>Escalated</span></button>
+        <button type="button" class="crow" aria-current="true"><span class="id">T0002</span><span class="cat">Troubleshooting</span><span class="status s-ok"><svg class="st" aria-hidden="true"><use href="#s-ok"/></svg>Resolved</span></button>
+        <button type="button" class="crow"><span class="id">T0003</span><span class="cat">Device setup</span><span class="status s-ok"><svg class="st" aria-hidden="true"><use href="#s-ok"/></svg>Resolved</span></button>
+        <button type="button" class="crow"><span class="id">T0004</span><span class="cat">Plan change</span><span class="status s-notice"><svg class="st" aria-hidden="true"><use href="#s-notice"/></svg>Escalated</span></button>
+        <button type="button" class="crow"><span class="id">T0005</span><span class="cat">Add line</span><span class="status s-ok"><svg class="st" aria-hidden="true"><use href="#s-ok"/></svg>Resolved</span></button>
+        <button type="button" class="crow"><span class="id">T0006</span><span class="cat">International</span><span class="status s-ok"><svg class="st" aria-hidden="true"><use href="#s-ok"/></svg>Resolved</span></button>
+        <button type="button" class="crow"><span class="id">T0007</span><span class="cat">Lost stolen</span><span class="status s-notice"><svg class="st" aria-hidden="true"><use href="#s-notice"/></svg>Escalated</span></button>
+        <button type="button" class="crow"><span class="id">T0008</span><span class="cat">Cancel port</span><span class="status s-notice"><svg class="st" aria-hidden="true"><use href="#s-notice"/></svg>Escalated</span></button>
+        <button type="button" class="crow"><span class="id">T0009</span><span class="cat">Accessibility</span><span class="status s-ok"><svg class="st" aria-hidden="true"><use href="#s-ok"/></svg>Resolved</span></button>
+        <button type="button" class="crow"><span class="id">T0010</span><span class="cat">Scam</span><span class="status s-warn"><svg class="st" aria-hidden="true"><use href="#s-warn"/></svg>Unresolved</span></button>
+      </nav>
+
+      <main class="call">
+        <div class="call-head">
+          <div class="row">
+            <span class="id">T0002</span><h2>Troubleshooting</h2>
+            <span class="status s-ok"><svg class="st" aria-hidden="true"><use href="#s-ok"/></svg>Resolved</span>
+          </div>
+          <p class="call-cap"><svg class="ic s16" aria-hidden="true"><use href="#i-privacy"/></svg>Personal details were replaced with placeholders before this was saved.</p>
+        </div>
+        <div class="script">
+          <span class="who a">Agent</span>
+          <p class="say a">Hi there, thanks for contacting Northline. Who am I chatting with?</p>
+          <span class="who c">Customer</span>
+          <p class="say c"><span class="ph">PERSON_1</span></p>
+          <span class="who a">Agent</span>
+          <p class="say a">Nice to meet you. I'm <span class="ph">PERSON_2</span>. How can I help?</p>
+          <span class="who c">Customer</span>
+          <p class="say c">My phone has said no service since yesterday.</p>
+          <span class="who a">Agent</span>
+          <p class="say a">I can help with that. For your security, I have a couple of questions.</p>
+          <p class="say a">Can I get an email for the confirmation?</p>
+          <span class="who c">Customer</span>
+          <p class="say c">Yes, send it to <span class="ph">EMAIL_ADDRESS_1</span>.</p>
+          <span class="who a">Agent</span>
+          <p class="say a">I've refreshed the SIM on our side. Please restart the phone.</p>
+          <span class="who c">Customer</span>
+          <p class="say c">It's working now! I see bars.</p>
+        </div>
+      </main>
+
+      <aside class="sumrail" aria-label="Call summary">
+        <div class="sim"><div class="sim-body summary">
+          <div class="byline"><svg class="mark" aria-hidden="true"><use href="#i-mark"/></svg>Copilot</div>
+          <dl>
+            <div><dt>Intent</dt><dd class="intent">Restore phone service</dd></div>
+            <div><dt>Mood</dt><dd><span class="mood s-ok"><svg class="ic s24" aria-hidden="true"><use href="#i-mood-pos"/></svg>Positive</span></dd></div>
+            <div><dt>What happened</dt><dd>
+              <ol>
+                <li><span>Customer reported no service on a Galaxy A15.</span></li>
+                <li><span>Agent verified account details, had the customer restart the phone, and refreshed the SIM.</span></li>
+                <li><span>After a second restart, service was restored.</span></li>
+              </ol>
+            </dd></div>
+            <div><dt>Next step</dt><dd>None, the issue was resolved.</dd></div>
+            <div><dt>Related articles</dt><dd class="rel">
+              <a href="#"><svg class="ic" aria-hidden="true"><use href="#i-help"/></svg>Phone shows no service</a>
+              <a href="#"><svg class="ic" aria-hidden="true"><use href="#i-help"/></svg>Phone will not turn on</a>
+              <a href="#"><svg class="ic" aria-hidden="true"><use href="#i-help"/></svg>Pause your service</a>
+            </dd></div>
+          </dl>
+        </div></div>
+      </aside>
+    </div>
+    <footer class="foot">Unofficial demo. Not affiliated with or endorsed by any carrier. Northline Wireless is fictional and all data is synthetic.</footer>
+  </div>
+  </div>
+
+  <!-- ===================== ARTBOARD 5 ===================== -->
+  <div class="ab-label"><span class="n">05</span><h2>Identity sheet</h2><span class="w">tokens, type, icons, rules</span></div>
+  <div class="frame-scroll">
+  <div class="app sheet">
+
+    <section class="poster">
+      <div>
+        <div class="kicker">Direction A</div>
+        <h2>Signal and Script</h2>
+        <p>A support agent works from a script, so the copilot's answer is set like one: the facts to read aloud are run over with a highlighter, and anything private is struck out with a redaction bar. Whatever the copilot wrote sits on a card with one corner cut like a SIM, so shape alone says who is speaking. Four signal bars fill through its four checks while it works, the way a phone finds its network.</p>
+      </div>
+      <div class="sim demo"><div class="sim-body">
+        <div class="byline"><svg class="mark" aria-hidden="true"><use href="#i-mark"/></svg>Copilot</div>
+        <p class="big">The late-payment fee is <mark class="hi">$5</mark>. Dial <mark class="hi">611</mark> from your Northline phone.</p>
+        <div class="row"><span class="bars" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span><span>Her name is <span class="ph">PERSON_1</span></span></div>
+      </div></div>
+    </section>
+
+    <div class="bold-one">
+      <span class="k">The one bold element</span>
+      <span class="v">The highlighter. It is the only yellow-green in the product, and it only ever sits on words the agent says out loud.</span>
+    </div>
+
+    <section>
+      <h3>Colour</h3>
+      <p class="sec-note">Cobalt is for things you can press and for the mark. The four status colours never stand in for it, and it never stands in for them. Every neutral leans toward cobalt; there is no pure grey.</p>
+      <div class="pals">
+        <div class="pal" data-theme="light">
+          <h4>Light</h4>
+          <div class="sws">
+            <div class="sw"><span class="chip" style="background:var(--paper)"></span><b>paper</b><code>#F2F4FA</code><small>App background</small></div>
+            <div class="sw"><span class="chip" style="background:var(--surface)"></span><b>surface</b><code>#FFFFFF</code><small>Cards, bars, inputs</small></div>
+            <div class="sw"><span class="chip" style="background:var(--sunken)"></span><b>sunken</b><code>#E8ECF6</code><small>The copilot's side rail; an agent's question</small></div>
+            <div class="sw"><span class="chip" style="background:var(--line)"></span><b>line</b><code>#C9D1E3</code><small>Hairlines between regions</small></div>
+            <div class="sw"><span class="chip" style="background:var(--line-strong)"></span><b>line-strong</b><code>#7482A8</code><small>Control borders, 3:1 everywhere</small></div>
+            <div class="sw"><span class="chip" style="background:var(--edge)"></span><b>edge</b><code>#0F1833</code><small>Outline of what the copilot wrote</small></div>
+            <div class="sw"><span class="chip" style="background:var(--ink)"></span><b>ink</b><code>#0F1833</code><small>Text; fill of the selected view</small></div>
+            <div class="sw"><span class="chip" style="background:var(--ink-2)"></span><b>ink-2</b><code>#38425F</code><small>Secondary text, labels</small></div>
+            <div class="sw"><span class="chip" style="background:var(--ink-3)"></span><b>ink-3</b><code>#586384</code><small>Hints and placeholders</small></div>
+            <div class="sw"><span class="chip" style="background:var(--brand)"></span><b>cobalt</b><code>#1D43D8</code><small>Send button, the mark</small></div>
+            <div class="sw"><span class="chip" style="background:var(--brand-text)"></span><b>cobalt-text</b><code>#1D43D8</code><small>Links, citation chips, live bars</small></div>
+            <div class="sw"><span class="chip" style="background:var(--brand-tint)"></span><b>cobalt-tint</b><code>#E1E8FC</code><small>Selected row</small></div>
+            <div class="sw"><span class="chip" style="background:var(--hi)"></span><b>highlighter</b><code>#D9F23E</code><small>Facts read aloud. Nothing else.</small></div>
+            <div class="sw"><span class="chip" style="background:var(--redact)"></span><b>redact</b><code>#0F1833</code><small>Redaction bar behind a placeholder</small></div>
+            <div class="sw"><span class="chip"><i style="background:var(--ok)"></i><i style="background:var(--ok-tint)"></i></span><b>ok</b><code>#0B6B47 / #DDF2E6</code><small>Passed, resolved</small></div>
+            <div class="sw"><span class="chip"><i style="background:var(--notice)"></i><i style="background:var(--notice-tint)"></i></span><b>notice</b><code>#8A2F7B / #F6E4F1</code><small>Something was changed for you</small></div>
+            <div class="sw"><span class="chip"><i style="background:var(--warn)"></i><i style="background:var(--warn-tint)"></i></span><b>warning</b><code>#8A5300 / #FBEFD3</code><small>Needs a person</small></div>
+            <div class="sw"><span class="chip"><i style="background:var(--block)"></i><i style="background:var(--block-tint)"></i></span><b>blocked</b><code>#B3261E / #FBE4E1</code><small>Refused</small></div>
+          </div>
+        </div>
+        <div class="pal" data-theme="dark">
+          <h4>Dark, midnight navy</h4>
+          <div class="sws">
+            <div class="sw"><span class="chip" style="background:var(--paper)"></span><b>paper</b><code>#111B3D</code><small>App background</small></div>
+            <div class="sw"><span class="chip" style="background:var(--surface)"></span><b>surface</b><code>#1A2650</code><small>Cards, bars, inputs</small></div>
+            <div class="sw"><span class="chip" style="background:var(--sunken)"></span><b>sunken</b><code>#0C1330</code><small>The copilot's side rail; an agent's question</small></div>
+            <div class="sw"><span class="chip" style="background:var(--line)"></span><b>line</b><code>#2F3E6C</code><small>Hairlines between regions</small></div>
+            <div class="sw"><span class="chip" style="background:var(--line-strong)"></span><b>line-strong</b><code>#6878AA</code><small>Control borders, 3:1 everywhere</small></div>
+            <div class="sw"><span class="chip" style="background:var(--edge)"></span><b>edge</b><code>#8E9CCB</code><small>Outline of what the copilot wrote</small></div>
+            <div class="sw"><span class="chip" style="background:var(--ink)"></span><b>ink</b><code>#EDF1FC</code><small>Text; fill of the selected view</small></div>
+            <div class="sw"><span class="chip" style="background:var(--ink-2)"></span><b>ink-2</b><code>#C2CAE4</code><small>Secondary text, labels</small></div>
+            <div class="sw"><span class="chip" style="background:var(--ink-3)"></span><b>ink-3</b><code>#98A4C8</code><small>Hints and placeholders</small></div>
+            <div class="sw"><span class="chip" style="background:var(--brand)"></span><b>cobalt</b><code>#4868F5</code><small>Send button, the mark</small></div>
+            <div class="sw"><span class="chip" style="background:var(--brand-text)"></span><b>cobalt-text</b><code>#9DB1FF</code><small>Links, citation chips, live bars</small></div>
+            <div class="sw"><span class="chip" style="background:var(--brand-tint)"></span><b>cobalt-tint</b><code>#24346E</code><small>Selected row</small></div>
+            <div class="sw"><span class="chip" style="background:var(--hi)"></span><b>highlighter</b><code>#D9F23E</code><small>Facts read aloud. Nothing else.</small></div>
+            <div class="sw"><span class="chip" style="background:var(--redact)"></span><b>redact</b><code>#C2CAE4</code><small>Redaction bar behind a placeholder</small></div>
+            <div class="sw"><span class="chip"><i style="background:var(--ok)"></i><i style="background:var(--ok-tint)"></i></span><b>ok</b><code>#5FD3A0 / #10382E</code><small>Passed, resolved</small></div>
+            <div class="sw"><span class="chip"><i style="background:var(--notice)"></i><i style="background:var(--notice-tint)"></i></span><b>notice</b><code>#E79AD8 / #3A1C3D</code><small>Something was changed for you</small></div>
+            <div class="sw"><span class="chip"><i style="background:var(--warn)"></i><i style="background:var(--warn-tint)"></i></span><b>warning</b><code>#F2B950 / #3D2E0E</code><small>Needs a person</small></div>
+            <div class="sw"><span class="chip"><i style="background:var(--block)"></i><i style="background:var(--block-tint)"></i></span><b>blocked</b><code>#FF8F85 / #46191B</code><small>Refused</small></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h3>Type</h3>
+      <div class="types">
+        <div class="type">
+          <span class="face">Bricolage Grotesque, 600 to 800</span>
+          <div class="spec" style="font-family:var(--f-display);font-size:var(--t-head);font-weight:700;line-height:1.04;letter-spacing:-0.025em">What does the customer need?</div>
+          <dl>
+            <div><dt>Role</dt><dd>Display. Headlines, view titles, section titles, the product name. Never below 22px, never for anything read aloud.</dd></div>
+            <div><dt>Why</dt><dd>A grotesque with ink traps and slightly uneven curves, drawn from printed matter rather than screens. It gives a console a voice with some grain in it, like the header on a printed call script.</dd></div>
+          </dl>
+        </div>
+        <div class="type">
+          <span class="face">Atkinson Hyperlegible Next, 400 / 600 / 700</span>
+          <div class="spec">
+            <div style="font-size:var(--t-read);line-height:1.55">Call support - dial 611 from your Northline phone or 1-800-555-0199 from any phone.</div>
+            <div style="font-size:var(--t-view);margin-top:10px;letter-spacing:.02em">Il1 O0 B8 5S rn m</div>
+          </div>
+          <dl>
+            <div><dt>Role</dt><dd>Text. Everything read or operated: answers and transcripts at 18px, controls at 15.5px.</dd></div>
+            <div><dt>Why</dt><dd>Drawn by the Braille Institute for low-vision readers, with look-alike characters pulled apart. Agents read fees and phone numbers aloud from it; a 1 mistaken for an l is a wrong number given to a customer.</dd></div>
+          </dl>
+        </div>
+        <div class="type">
+          <span class="face">Atkinson Hyperlegible Mono, 400 / 600</span>
+          <div class="spec" style="font-family:var(--f-mono)">
+            <div style="font-size:var(--t-title);font-weight:600;line-height:1.5">ESC-B695DE84<br>T0002<br>PHONE_NUMBER_1</div>
+            <div style="font-size:var(--t-meta);margin-top:8px;color:var(--ink-2)">2.4 seconds / 200 calls</div>
+          </div>
+          <dl>
+            <div><dt>Role</dt><dd>Codes and readouts, never words: placeholders, call ids, references, citation numerals, timings, counts.</dd></div>
+            <div><dt>Why</dt><dd>The same skeleton as the text face at a fixed width, so a reference can be read out character by character without losing your place.</dd></div>
+          </dl>
+        </div>
+      </div>
+      <div class="scale" aria-label="Type scale">
+        <span><small>12.5 label</small><span style="font-size:var(--t-label);font-weight:700">Privacy</span></span>
+        <span><small>14 meta</small><span style="font-size:var(--t-meta)">1 source cited.</span></span>
+        <span><small>15.5 control</small><span style="font-size:var(--t-ui);font-weight:600">New conversation</span></span>
+        <span><small>18 reading</small><span style="font-size:var(--t-read)">I see bars.</span></span>
+        <span><small>22 title</small><span style="font-family:var(--f-display);font-size:var(--t-title);font-weight:700">Sources</span></span>
+        <span><small>30 view</small><span style="font-family:var(--f-display);font-size:var(--t-view);font-weight:700;letter-spacing:-0.02em">Calls</span></span>
+        <span><small>46 headline</small><span style="font-family:var(--f-display);font-size:var(--t-head);font-weight:700;letter-spacing:-0.025em;line-height:1">Ask</span></span>
+        <span><small>84 poster</small><span style="font-family:var(--f-display);font-size:var(--t-poster);font-weight:800;letter-spacing:-0.04em;line-height:.9">611</span></span>
+      </div>
+    </section>
+
+    <section>
+      <h3>Icons</h3>
+      <p class="sec-note">Drawn for this product on a 24 grid: 1.75 stroke, flat line ends, mitred joins, and corners cut at 45 degrees where another set would round them. Status stamps are solid so that shape survives at 16px.</p>
+      <div class="icons">
+        <div><svg class="mark" style="width:34px;height:34px" aria-hidden="true"><use href="#i-mark"/></svg>Brand mark</div>
+        <div><svg class="ic s32" aria-hidden="true"><use href="#i-ask"/></svg>Ask</div>
+        <div><svg class="ic s32" aria-hidden="true"><use href="#i-calls"/></svg>Calls</div>
+        <div><svg class="ic s32" aria-hidden="true"><use href="#i-help"/></svg>Help articles</div>
+        <div><svg class="ic s32" aria-hidden="true"><use href="#i-plan"/></svg>Plan catalogue</div>
+        <div><svg class="ic s32" aria-hidden="true"><use href="#i-summary"/></svg>Call summary</div>
+        <div><svg class="ic s32" aria-hidden="true"><use href="#i-handoff"/></svg>Hand-off</div>
+        <div><svg class="ic s32" aria-hidden="true"><use href="#i-privacy"/></svg>Privacy</div>
+        <div><svg class="ic s32" aria-hidden="true"><use href="#i-request"/></svg>Request check</div>
+        <div><svg class="ic s32" aria-hidden="true"><use href="#i-answer"/></svg>Answer check</div>
+        <div><svg class="st s32 s-ok" aria-hidden="true"><use href="#s-ok"/></svg>Status: OK</div>
+        <div><svg class="st s32 s-notice" aria-hidden="true"><use href="#s-notice"/></svg>Status: Notice</div>
+        <div><svg class="st s32 s-warn" aria-hidden="true"><use href="#s-warn"/></svg>Status: Warning</div>
+        <div><svg class="st s32 s-block" aria-hidden="true"><use href="#s-block"/></svg>Status: Blocked</div>
+        <div><svg class="ic s32" aria-hidden="true"><use href="#i-mood-pos"/></svg>Mood: positive</div>
+        <div><svg class="ic s32" aria-hidden="true"><use href="#i-mood-neu"/></svg>Mood: neutral</div>
+        <div><svg class="ic s32" aria-hidden="true"><use href="#i-mood-neg"/></svg>Mood: negative</div>
+        <div><svg class="ic s32" aria-hidden="true"><use href="#i-send"/></svg>Send</div>
+        <div><svg class="ic s32" aria-hidden="true"><use href="#i-sun"/></svg>Sun</div>
+        <div><svg class="ic s32" aria-hidden="true"><use href="#i-moon"/></svg>Moon</div>
+        <div><svg class="ic s32" aria-hidden="true"><use href="#i-new"/></svg>New conversation</div>
+        <div><svg class="ic s32" aria-hidden="true"><use href="#i-up"/></svg>Thumb up</div>
+        <div><svg class="ic s32" aria-hidden="true"><use href="#i-down"/></svg>Thumb down</div>
+        <div><svg class="ic s32" aria-hidden="true"><use href="#i-ext"/></svg>External link</div>
+        <div><svg class="ic s32" aria-hidden="true"><use href="#i-search"/></svg>Search</div>
+        <div><span class="bars" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>Signal bars (What's running, waiting)</div>
+        <div><span class="bars" aria-hidden="true"><i class="on"></i><i class="now"></i><i></i><i></i></span>Bars, stage 2 of 4</div>
+      </div>
+    </section>
+
+    <section>
+      <h3>Shape and motif rules</h3>
+      <div class="rules">
+        <div class="rule">
+          <div class="dev"><mark class="hi" style="font-size:var(--t-title)">$5</mark></div>
+          <div><b>Highlighter</b><p><strong>Means:</strong> say this out loud. Bold facts in an answer (a price, a number to dial, the hand-off reference). <strong>Only</strong> inside text the copilot wrote. Never on buttons, headings, status or selection.</p></div>
+        </div>
+        <div class="rule">
+          <div class="dev"><span class="ph" style="font-size:var(--t-meta)">PERSON_1</span></div>
+          <div><b>Redaction bar</b><p><strong>Means:</strong> a personal detail was here and was removed. A solid bar with the placeholder in mono. <strong>Only</strong> on placeholders; no other running text is set light on ink.</p></div>
+        </div>
+        <div class="rule">
+          <div class="dev"><div class="sim dev-sim"><div class="sim-body"></div></div></div>
+          <div><b>SIM chamfer</b><p><strong>Means:</strong> the copilot wrote this. One corner, top right, cut at 45 degrees, outlined in the edge colour. <strong>Only</strong> on the answer card, the summary card, the pending answer and the mark. People's words, buttons and inputs keep square 3px corners.</p></div>
+        </div>
+        <div class="rule">
+          <div class="dev"><span class="bars" aria-hidden="true"><i class="on"></i><i class="on"></i><i></i><i></i></span></div>
+          <div><b>Signal bars</b><p><strong>Means:</strong> the copilot's own state. One bar per stage every request passes: privacy, request check, tool, answer check. They fill as stages finish; all four steady in What's running. Never a rating, never decoration.</p></div>
+        </div>
+        <div class="rule">
+          <div class="dev" style="display:flex;gap:5px;align-items:center;justify-content:center"><svg class="st s-ok"><use href="#s-ok"/></svg><svg class="st s-notice"><use href="#s-notice"/></svg><svg class="st s-warn"><use href="#s-warn"/></svg><svg class="st s-block"><use href="#s-block"/></svg></div>
+          <div><b>Status shapes</b><p><strong>Means:</strong> circle OK, square notice, triangle warning, octagon blocked. Colour and the word repeat what the shape already says. Used on steps, on call status and in the row of stamps that sums up a run before its detail.</p></div>
+        </div>
+        <div class="rule">
+          <div class="dev"><span class="cite">1</span></div>
+          <div><b>Citation chip</b><p><strong>Means:</strong> this claim has a source. The same outlined square numeral sits after the claim and in front of the source, so the eye can match them. Numbers follow citation order.</p></div>
+        </div>
+        <div class="rule">
+          <div class="dev"><span style="display:block;width:52px;height:26px;background:var(--ink);border-radius:var(--r)"></span></div>
+          <div><b>Ink fill</b><p><strong>Means:</strong> you are here. The current view and the active filter are filled with ink. A selected list row takes the cobalt tint with an ink outline, so status colours inside it stay legible.</p></div>
+        </div>
+        <div class="rule">
+          <div class="dev"><span style="display:block;width:52px;height:26px;background:var(--brand);border-radius:var(--r)"></span></div>
+          <div><b>Cobalt</b><p><strong>Means:</strong> you can press this. Send, links, citation chips, and the bars while live. Never used for status, and never as a background wash.</p></div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+  </div>
+
+</div>
+
+<script>
+/* theme toggle only */
+(function () {
+  var root = document.documentElement;
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-theme-toggle]');
+    if (!b) return;
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    document.querySelectorAll('[data-theme-toggle]').forEach(function (t) {
+      t.setAttribute('aria-pressed', String(next === 'dark'));
+    });
+  });
+})();
+</script>
+</body>
+</html>

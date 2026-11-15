@@ -1,0 +1,1035 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Northline Atlas: Frontline Copilot, design direction C</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=B612+Mono:wght@400;700&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@1,8..60,400;1,8..60,500&display=swap" rel="stylesheet">
+<style>
+/* ------------------------------------------------------------------
+   Tokens. Day chart (light) on :root, night chart under [data-theme="dark"].
+   The identity sheet nests data-theme panels, so both sets are scoped.
+------------------------------------------------------------------- */
+:root,
+[data-theme="light"] {
+  --desk: #E2DDE4;
+  --paper: #F5F3F6;
+  --sheet: #FEFDFE;
+  --sunk: #ECE8EE;
+  --line: #DAD4DD;
+  --line-strong: #8F8496;
+  --ink: #1F1823;
+  --ink-2: #4B4251;
+  --ink-3: #6A6071;
+  --brand: #9C1F6E;
+  --brand-tint: #F4DFEC;
+  --on-brand: #FFFFFF;
+  --ok: #1D6A43;
+  --ok-tint: #DDEEE4;
+  --notice: #1E5A96;
+  --notice-tint: #DDE9F5;
+  --warning: #8A5800;
+  --warning-mark: #B87400;
+  --warning-tint: #F7EACB;
+  --blocked: #B3261E;
+  --blocked-tint: #F7DEDA;
+  --contour: #CBC2D0;
+  --knock: #FEFDFE;
+  --btn-bg: #1F1823;
+  --btn-fg: #FEFDFE;
+  --q-bg: #ECE8EE;
+  --q-line: #ECE8EE;
+  --bold: 700;
+  --contour-opacity: .55;
+}
+[data-theme="dark"] {
+  --desk: #0B080C;
+  --paper: #161218;
+  --sheet: #1D1820;
+  --sunk: #120E14;
+  --line: #342C38;
+  --line-strong: #75697B;
+  --ink: #EFEAF1;
+  --ink-2: #C5BCCA;
+  --ink-3: #9C92A2;
+  --brand: #F08CCB;
+  --brand-tint: #3B1D31;
+  --on-brand: #2A0A1E;
+  --ok: #74CC9B;
+  --ok-tint: #17301F;
+  --notice: #86B9EF;
+  --notice-tint: #162A40;
+  --warning: #EDB54A;
+  --warning-mark: #EDB54A;
+  --warning-tint: #33270F;
+  --blocked: #F49088;
+  --blocked-tint: #3A1916;
+  --contour: #40364A;
+  --knock: #1D1820;
+  --btn-bg: #EFEAF1;
+  --btn-fg: #1F1823;
+  --q-bg: #251E29;
+  --q-line: #3D3342;
+  --bold: 600;
+  --contour-opacity: .7;
+}
+
+* { box-sizing: border-box; }
+html { background: var(--desk); }
+body {
+  margin: 0;
+  min-width: 1480px;
+  padding: 0 0 96px;
+  background: var(--desk);
+  color: var(--ink);
+  font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+h1, h2, h3, p, ul, ol { margin: 0; padding: 0; }
+ul, ol { list-style: none; }
+
+.mono {
+  font-family: "B612 Mono", ui-monospace, Consolas, monospace;
+  font-size: 11.5px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.place {
+  font-family: "Source Serif 4", Georgia, serif;
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: .005em;
+}
+
+/* Icons: one hand. 1.5px line, square-cut ends, mitred corners, one solid station dot. */
+.ic {
+  width: 20px; height: 20px; flex: none;
+  fill: none; stroke: currentColor; stroke-width: 1.5;
+  stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 3;
+}
+.ic.sm { width: 16px; height: 16px; }
+.ic.lg { width: 28px; height: 28px; }
+.wp { width: 24px; height: 24px; flex: none; }
+.wp.sm { width: 16px; height: 16px; }
+.st-ok { color: var(--ok); }
+.st-notice { color: var(--notice); }
+.st-warning { color: var(--warning-mark); }
+.st-blocked { color: var(--blocked); }
+.lb-ok { color: var(--ok); }
+.lb-notice { color: var(--notice); }
+.lb-warning { color: var(--warning); }
+.lb-blocked { color: var(--blocked); }
+
+/* ------------------------------------------------------------------ Desk */
+.desk-head {
+  width: 1400px; margin: 0 auto; padding: 40px 0 8px;
+  display: flex; align-items: center; gap: 16px;
+}
+.desk-head .brandmark { color: var(--brand); width: 34px; height: 34px; }
+.desk-head h1 { font-size: 30px; line-height: 1.1; }
+.desk-head .sub { font-size: 16px; color: var(--ink-2); }
+.desk-head .spacer { flex: 1; }
+
+.board { width: 1400px; margin: 48px auto 0; }
+.board-label {
+  display: flex; align-items: baseline; gap: 18px;
+  padding: 0 2px 12px;
+}
+.board-label h2 { font-size: 24px; line-height: 1.2; }
+.board-label .right { margin-left: auto; }
+
+/* ------------------------------------------------------------------ Buttons */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 36px; padding: 0 14px;
+  border: 1px solid var(--line-strong); border-radius: 4px;
+  background: transparent; color: var(--ink);
+  font-size: 15px; font-weight: 600; white-space: nowrap;
+}
+.btn-primary { background: var(--btn-bg); border-color: var(--btn-bg); color: var(--btn-fg); }
+.btn-quiet { border-color: transparent; color: var(--ink-2); padding: 0 10px; }
+.iconbtn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; padding: 0;
+  border: 1px solid var(--line-strong); border-radius: 4px;
+  background: transparent; color: var(--ink);
+}
+.iconbtn.bare { border-color: transparent; color: var(--ink-2); width: 34px; height: 34px; }
+html[data-theme="light"] .t-sun, html[data-theme="dark"] .t-moon { display: none; }
+
+/* ------------------------------------------------------------------ App frame */
+.app {
+  display: grid; grid-template-rows: 60px 1fr;
+  background: var(--sheet);
+  border: 1px solid var(--line-strong); border-radius: 6px;
+  overflow: hidden;
+}
+.topbar {
+  display: flex; align-items: center; gap: 14px;
+  padding: 0 18px 0 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--sheet);
+}
+.lockup { display: flex; align-items: center; gap: 10px; }
+.lockup .brandmark { color: var(--brand); width: 28px; height: 28px; }
+.lockup .name { font-size: 18px; font-weight: 700; letter-spacing: -.005em; }
+.tag-demo {
+  font-family: "B612 Mono", ui-monospace, monospace; font-size: 11.5px; letter-spacing: .02em;
+  color: var(--ink-2);
+  padding: 3px 8px; border: 1px dashed var(--line-strong); border-radius: 3px;
+}
+.tabs { display: flex; align-self: stretch; margin-left: 22px; }
+.tab {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 0 16px; border: 0; background: none;
+  font-size: 16px; font-weight: 600; color: var(--ink-3);
+}
+.tab[aria-selected="true"] { color: var(--ink); box-shadow: inset 0 -3px 0 var(--brand); }
+.topbar .spacer { flex: 1; }
+
+.workspace { display: grid; grid-template-columns: minmax(0, 1fr) 432px; }
+
+/* ------------------------------------------------------------------ Conversation */
+.conv {
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column;
+  padding: 36px 48px 28px;
+  min-height: 800px;
+}
+.conv > * { position: relative; }
+.conv > .contours {
+  position: absolute; top: -255px; right: -265px; width: 560px; height: 560px;
+  color: var(--contour); opacity: var(--contour-opacity);
+  -webkit-mask-image: radial-gradient(closest-side, #000 30%, transparent 96%);
+          mask-image: radial-gradient(closest-side, #000 30%, transparent 96%);
+  pointer-events: none;
+}
+.turn { display: grid; grid-template-columns: 104px minmax(0, 700px); }
+.turn + .turn { margin-top: 30px; }
+.ref { padding-top: 16px; display: flex; flex-direction: column; gap: 2px; }
+.ref b { font-weight: 700; color: var(--ink); letter-spacing: .04em; }
+.turn.answer .ref { padding-top: 5px; }
+
+.q {
+  font-size: 18px; line-height: 1.55; font-weight: 600;
+  padding: 14px 18px;
+  background: var(--q-bg); border: 1px solid var(--q-line); border-radius: 4px;
+}
+.processed {
+  margin-top: 10px; padding-left: 18px;
+  font-size: 15.5px; line-height: 1.7; color: var(--ink-3);
+}
+.chip {
+  font-family: "B612 Mono", ui-monospace, monospace; font-size: 12px; letter-spacing: .01em;
+  color: var(--ink-2);
+  padding: 2px 6px; border: 1px dashed var(--line-strong); border-radius: 3px;
+  white-space: nowrap;
+}
+
+.a { font-size: 18px; line-height: 1.65; }
+.a p { margin-bottom: 12px; }
+.a strong { font-weight: var(--bold); }
+.a ol { counter-reset: w; margin: 2px 0 14px; }
+.a ol li {
+  counter-increment: w;
+  display: grid; grid-template-columns: 34px 1fr;
+  padding: 3px 0;
+}
+.a ol li::before {
+  content: counter(w);
+  font-family: "B612 Mono", ui-monospace, monospace; font-size: 13px; font-weight: 700;
+  color: var(--ink-3); padding-top: 5px;
+}
+.cite {
+  display: inline-block;
+  font-family: "B612 Mono", ui-monospace, monospace; font-size: 12px; font-weight: 700; line-height: 1;
+  color: var(--on-brand); background: var(--brand);
+  padding: 4px 6px 3px; border-radius: 2px;
+  vertical-align: 2px; margin-left: 3px;
+}
+
+.script {
+  margin: 18px 0 6px; padding: 2px 0 2px 18px;
+  border-left: 3px solid var(--ink);
+}
+.script .lead { font-size: 15px; font-weight: 600; color: var(--ink-2); margin-bottom: 4px; }
+.script .say { font-size: 18px; line-height: 1.65; font-weight: 500; margin: 0; }
+.script .id {
+  font-family: "B612 Mono", ui-monospace, monospace; font-size: 15.5px; font-weight: 700; letter-spacing: .01em;
+  white-space: nowrap;
+}
+
+.handoff {
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 18px; padding: 12px 14px;
+  background: var(--warning-tint); border-radius: 4px;
+  font-size: 16.5px; color: var(--ink);
+}
+.handoff b { font-weight: 700; }
+.handoff .leader { flex: 1; min-width: 40px; border-top: 3px dashed var(--brand); }
+.handoff .to { display: inline-flex; align-items: center; gap: 8px; }
+.handoff .to .mono { color: var(--ink); font-size: 12.5px; font-weight: 700; text-transform: none; letter-spacing: .02em; }
+
+.meta {
+  display: flex; align-items: center; gap: 20px;
+  margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line);
+}
+.tool {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 11px 5px 9px;
+  border: 1px solid var(--line-strong); border-radius: 3px;
+  font-size: 14.5px; font-weight: 600;
+}
+.took { display: inline-flex; align-items: center; gap: 10px; }
+.took .mono { font-size: 12.5px; text-transform: none; letter-spacing: .02em; color: var(--ink-2); }
+.scale { display: block; height: 8px; color: var(--ink-2); }
+.meta .thumbs { margin-left: auto; display: flex; gap: 2px; }
+
+.turn.composer-row { margin-top: auto; padding-top: 44px; }
+.composer-row .ref { padding-top: 19px; }
+.composer {
+  display: flex; align-items: center; gap: 12px;
+  padding: 6px 6px 6px 18px;
+  background: var(--sheet);
+  border: 1.5px solid var(--ink); border-radius: 4px;
+}
+.composer .placeholder { flex: 1; font-size: 18px; color: var(--ink-3); }
+.send {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 46px; height: 46px; border: 0; border-radius: 3px;
+  background: var(--btn-bg); color: var(--btn-fg);
+}
+.send .ic { width: 22px; height: 22px; }
+
+/* ------------------------------------------------------------------ Inspector */
+.insp {
+  display: flex; flex-direction: column;
+  padding: 30px 28px 22px;
+  background: var(--paper); border-left: 1px solid var(--line);
+}
+.insp-h { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
+.insp-h h3 { font-size: 22px; line-height: 1.2; }
+.insp section + section { margin-top: 32px; }
+
+.source {
+  display: grid; grid-template-columns: 30px 1fr 20px; align-items: center;
+  padding: 12px 14px;
+  background: var(--sheet); border: 1px solid var(--line); border-radius: 4px;
+}
+.source .cite { margin: 0; justify-self: start; vertical-align: 0; }
+.source .t { font-size: 16.5px; font-weight: 600; line-height: 1.3; }
+.source .d { font-family: "B612 Mono", ui-monospace, monospace; font-size: 12px; color: var(--ink-3); margin-top: 3px; }
+.source .ic { color: var(--ink-3); width: 18px; height: 18px; }
+.nosource {
+  padding: 12px 14px; font-size: 16px; color: var(--ink-2);
+  border: 1px dashed var(--line-strong); border-radius: 4px;
+}
+
+/* The route: the one bold element. */
+.route { margin-top: 4px; }
+.step { position: relative; display: grid; grid-template-columns: 24px 1fr; column-gap: 16px; padding-bottom: 22px; }
+.step:last-child { padding-bottom: 0; }
+.step:not(:last-child)::before {
+  content: ""; position: absolute; left: 10.5px; top: 28px; bottom: 4px;
+  border-left: 3px solid var(--brand);
+}
+.step.diverted:not(:last-child)::before { border-left-style: dashed; }
+.step-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 24px; }
+.stage { display: inline-flex; align-items: center; gap: 7px; }
+.stage .ic { color: var(--ink-3); }
+.status { font-weight: 700; letter-spacing: .08em; }
+.step-title { font-size: 16.5px; font-weight: 600; line-height: 1.35; margin-top: 3px; }
+.step-detail { font-size: 15px; line-height: 1.45; color: var(--ink-2); margin-top: 2px; }
+
+.legend { margin-top: auto; padding-top: 26px; }
+.legend-in { border-top: 1px solid var(--line-strong); padding-top: 12px; }
+.legend-h { display: flex; justify-content: space-between; margin-bottom: 10px; }
+.key { display: grid; grid-template-columns: repeat(4, auto); justify-content: space-between; gap: 8px 10px; }
+.key li, .key2 li { display: flex; align-items: center; gap: 7px; font-size: 13.5px; color: var(--ink-2); }
+.key2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; margin-top: 10px; }
+.k-line { width: 26px; border-top: 3px solid var(--brand); flex: none; }
+.k-line.dashed { border-top-style: dashed; }
+.key2 .chip { font-size: 10.5px; padding: 1px 4px; }
+
+/* ------------------------------------------------------------------ Identity sheet */
+.sheet3 {
+  background: var(--sheet); border: 1px solid var(--line-strong); border-radius: 6px;
+  padding: 52px 56px 56px;
+  display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 44px 32px;
+}
+.sheet3 .blk-h { display: flex; align-items: baseline; gap: 14px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.sheet3 .blk-h h3 { font-size: 22px; }
+.concept { grid-column: 1 / span 7; }
+.concept h3 { font-size: 46px; line-height: 1.05; margin: 8px 0 18px; }
+.concept p { font-size: 20px; line-height: 1.55; max-width: 44em; }
+.concept p + p { margin-top: 10px; }
+.rules { grid-column: 8 / span 5; }
+.rules ol { counter-reset: r; }
+.rules li { counter-increment: r; display: grid; grid-template-columns: 34px 1fr; font-size: 15.5px; line-height: 1.45; padding: 5px 0; }
+.rules li::before { content: "0" counter(r); font-family: "B612 Mono", monospace; font-size: 11.5px; color: var(--ink-3); padding-top: 4px; }
+.boldline {
+  margin-top: 16px; padding: 12px 14px 12px 16px;
+  border-left: 3px solid var(--brand);
+  font-size: 16.5px; font-weight: 600; line-height: 1.45;
+}
+
+.colours { grid-column: 1 / -1; }
+.themes { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+.theme-panel { background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 22px 24px 24px; }
+.theme-panel .tp-h { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
+.theme-panel .tp-h h4 { margin: 0; font-size: 20px; }
+.swatches { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 18px 14px; }
+.sw .c { height: 56px; border: 1px solid var(--line-strong); border-radius: 3px; display: flex; overflow: hidden; }
+.sw .c i { flex: 1; }
+.sw .r { font-size: 13.5px; font-weight: 600; line-height: 1.25; margin-top: 7px; }
+.sw .h { font-family: "B612 Mono", monospace; font-size: 10.5px; line-height: 1.5; color: var(--ink-3); margin-top: 2px; }
+
+.type { grid-column: 1 / span 6; }
+.spec { padding: 14px 0 16px; border-bottom: 1px solid var(--line); }
+.spec:last-child { border-bottom: 0; }
+.spec .n { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.spec .why { font-size: 15px; line-height: 1.5; color: var(--ink-2); margin-top: 8px; max-width: 40em; }
+.spec .s-sans { font-size: 30px; line-height: 1.25; font-weight: 400; }
+.spec .s-sans b { font-weight: 700; }
+.spec .s-serif { font-size: 32px; line-height: 1.2; }
+.spec .s-mono { font-family: "B612 Mono", monospace; font-size: 20px; line-height: 1.4; }
+
+.icons { grid-column: 7 / span 6; }
+.icon-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 18px 8px; }
+.icon-grid li { display: flex; flex-direction: column; align-items: center; gap: 7px; text-align: center; font-size: 12.5px; line-height: 1.25; color: var(--ink-2); }
+.icon-grid .tile { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--line); border-radius: 3px; background: var(--paper); color: var(--ink); }
+.icon-grid .tile.brand { color: var(--brand); }
+.icon-grid .wp { width: 26px; height: 26px; }
+.hand { font-size: 15px; color: var(--ink-2); margin-top: 18px; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<!-- ================================================================ Icon sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <!-- Brand mark: a half-filled north arrow standing on a line, with a station dot -->
+    <symbol id="i-mark" viewBox="0 0 28 28">
+      <path d="M14 2 L7.5 19.5 L14 15.5 Z" fill="currentColor" stroke="none"/>
+      <path d="M14 2 L20.5 19.5 L14 15.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="miter" stroke-miterlimit="2"/>
+      <path d="M3 24.5 H25" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      <circle cx="14" cy="24.5" r="2.3" fill="currentColor" stroke="none"/>
+    </symbol>
+    <!-- Ask: a map callout, a label with a leader to a point -->
+    <symbol id="i-ask" viewBox="0 0 20 20">
+      <rect x="3.75" y="3.25" width="12.5" height="8"/>
+      <path d="M6.5 7.25 H13.5 M7.25 11.25 L4.75 14.75"/>
+      <circle cx="4.25" cy="16" r="1.6" fill="currentColor" stroke="none"/>
+    </symbol>
+    <!-- Calls: the mast symbol -->
+    <symbol id="i-calls" viewBox="0 0 20 20">
+      <path d="M10 8.5 V17.25 M6.5 17.25 H13.5"/>
+      <path d="M6.17 3.29 A5 5 0 0 0 6.17 9.71 M13.83 3.29 A5 5 0 0 1 13.83 9.71"/>
+      <path d="M3.45 1.91 A8 8 0 0 0 3.45 11.09 M16.55 1.91 A8 8 0 0 1 16.55 11.09"/>
+      <circle cx="10" cy="6.5" r="1.6" fill="currentColor" stroke="none"/>
+    </symbol>
+    <!-- Help articles: a folded sheet -->
+    <symbol id="i-help" viewBox="0 0 20 20">
+      <path d="M3 5.5 L7.75 3.5 L12.25 5.5 L17 3.5 V14.5 L12.25 16.5 L7.75 14.5 L3 16.5 Z"/>
+      <path d="M7.75 3.5 V14.5 M12.25 5.5 V16.5"/>
+      <circle cx="10" cy="10" r="1.4" fill="currentColor" stroke="none"/>
+    </symbol>
+    <!-- Plan catalogue: a sheet index with one sheet picked -->
+    <symbol id="i-plans" viewBox="0 0 20 20">
+      <rect x="3.25" y="4.25" width="13.5" height="11.5"/>
+      <path d="M7.75 4.25 V15.75 M12.25 4.25 V15.75 M3.25 10 H16.75"/>
+      <rect x="7.75" y="4.25" width="4.5" height="5.75" fill="currentColor" stroke="none"/>
+    </symbol>
+    <!-- Call summary: an elevation profile, the journey in one line -->
+    <symbol id="i-summary" viewBox="0 0 20 20">
+      <path d="M3 16.25 H17 M3 13 L6.5 8.5 L9 11.25 L12.5 5 L17 13"/>
+      <circle cx="12.5" cy="4.75" r="1.6" fill="currentColor" stroke="none"/>
+    </symbol>
+    <!-- Hand-off: a leg that ends at a person -->
+    <symbol id="i-handoff" viewBox="0 0 20 20">
+      <path d="M5 9 H9.75 M7.5 6.5 L10 9 L7.5 11.5"/>
+      <circle cx="14.5" cy="6" r="2.25"/>
+      <path d="M10.75 16.5 V15 A3.75 3.75 0 0 1 18.25 15 V16.5"/>
+      <circle cx="3.4" cy="9" r="1.6" fill="currentColor" stroke="none"/>
+    </symbol>
+    <!-- Privacy: a restricted area, dashed boundary, detail struck out -->
+    <symbol id="i-privacy" viewBox="0 0 20 20">
+      <rect x="3.25" y="5.25" width="13.5" height="9.5" stroke-dasharray="2.25 1.5"/>
+      <rect x="6" y="8.75" width="8" height="2.5" fill="currentColor" stroke="none"/>
+    </symbol>
+    <!-- Request check: a gate on the route -->
+    <symbol id="i-request" viewBox="0 0 20 20">
+      <path d="M11 2.75 V7 M11 13 V17.25 M5 10 H16 M13.5 7.5 L16 10 L13.5 12.5"/>
+      <circle cx="3.4" cy="10" r="1.6" fill="currentColor" stroke="none"/>
+    </symbol>
+    <!-- Answer check: answer against source, tied -->
+    <symbol id="i-answer" viewBox="0 0 20 20">
+      <path d="M3 4.25 H17 M3 15.75 H11.5 M5.5 9.75 L8.5 12.75 L14.5 6.75"/>
+      <circle cx="15.4" cy="15.75" r="1.6" fill="currentColor" stroke="none"/>
+    </symbol>
+    <!-- Status key: shape first, colour second -->
+    <symbol id="s-ok" viewBox="0 0 20 20">
+      <circle cx="10" cy="10" r="8.25" fill="currentColor"/>
+      <path d="M6 10.2 L8.9 13 L14.2 7.2" fill="none" stroke="var(--knock)" stroke-width="1.9"/>
+    </symbol>
+    <symbol id="s-notice" viewBox="0 0 20 20">
+      <path d="M10 1 L19 10 L10 19 L1 10 Z" fill="currentColor"/>
+      <circle cx="10" cy="6.4" r="1.25" fill="var(--knock)"/>
+      <path d="M10 9 V14.2" fill="none" stroke="var(--knock)" stroke-width="1.9"/>
+    </symbol>
+    <symbol id="s-warning" viewBox="0 0 20 20">
+      <path d="M10 1.5 L19.25 18 H0.75 Z" fill="currentColor"/>
+      <path d="M10 7.5 V12.4" fill="none" stroke="var(--knock)" stroke-width="1.9"/>
+      <circle cx="10" cy="15" r="1.2" fill="var(--knock)"/>
+    </symbol>
+    <symbol id="s-blocked" viewBox="0 0 20 20">
+      <rect x="2" y="2" width="16" height="16" fill="currentColor"/>
+      <path d="M5.5 10 H14.5" fill="none" stroke="var(--knock)" stroke-width="2.3"/>
+    </symbol>
+    <!-- Send: the mark's north arrow, setting off -->
+    <symbol id="i-send" viewBox="0 0 20 20">
+      <path d="M10 2.5 L5 16.5 L10 13.25 Z" fill="currentColor" stroke="none"/>
+      <path d="M10 2.5 L15 16.5 L10 13.25" stroke-miterlimit="2"/>
+    </symbol>
+    <symbol id="i-sun" viewBox="0 0 20 20">
+      <circle cx="10" cy="10" r="3.5"/>
+      <path d="M10 1.75 V4.5 M10 15.5 V18.25 M1.75 10 H4.5 M15.5 10 H18.25"/>
+      <path d="M4.7 4.7 L5.9 5.9 M14.1 14.1 L15.3 15.3 M4.7 15.3 L5.9 14.1 M14.1 5.9 L15.3 4.7"/>
+      <circle cx="10" cy="10" r="1.3" fill="currentColor" stroke="none"/>
+    </symbol>
+    <symbol id="i-moon" viewBox="0 0 20 20">
+      <path d="M15.75 12.2 A6.6 6.6 0 1 1 7.8 4.25 A5.3 5.3 0 0 0 15.75 12.2 Z"/>
+      <circle cx="14.75" cy="5" r="1.3" fill="currentColor" stroke="none"/>
+    </symbol>
+    <symbol id="i-up" viewBox="0 0 20 20">
+      <path d="M7.25 9 L10 3.25 C11.2 3.25 12 4.1 12 5.25 V8 H15.4 C16.4 8 17.1 8.9 16.9 9.9 L15.9 15 C15.7 15.9 15 16.5 14.1 16.5 H7.25 Z"/>
+      <path d="M3.25 9 H7.25 V16.5 H3.25 Z"/>
+    </symbol>
+    <symbol id="i-down" viewBox="0 0 20 20">
+      <g transform="translate(0 20) scale(1 -1)">
+        <path d="M7.25 9 L10 3.25 C11.2 3.25 12 4.1 12 5.25 V8 H15.4 C16.4 8 17.1 8.9 16.9 9.9 L15.9 15 C15.7 15.9 15 16.5 14.1 16.5 H7.25 Z"/>
+        <path d="M3.25 9 H7.25 V16.5 H3.25 Z"/>
+      </g>
+    </symbol>
+    <symbol id="i-ext" viewBox="0 0 20 20">
+      <path d="M8.5 4.25 H4.25 V15.75 H15.75 V11.5 M11.5 4.25 H15.75 V8.5 M15.75 4.25 L9.5 10.5"/>
+    </symbol>
+    <symbol id="i-search" viewBox="0 0 20 20">
+      <circle cx="8.75" cy="8.75" r="5.25"/>
+      <path d="M12.6 12.6 L17 17"/>
+      <circle cx="8.75" cy="8.75" r="1.4" fill="currentColor" stroke="none"/>
+    </symbol>
+    <!-- Contours: used once, on the empty ground of the conversation pane -->
+    <symbol id="contours" viewBox="-310 -310 620 620">
+      <g fill="none" stroke="currentColor">
+        <path stroke-width="3.6" transform="translate(20 -14) scale(.25)" d="M-104 6 C-108 -40 -78 -84 -30 -92 C4 -98 30 -78 58 -84 C92 -90 118 -52 108 -12 C100 20 112 48 88 74 C62 100 24 88 -8 96 C-52 106 -98 60 -104 6 Z"/>
+        <path stroke-width="2.1" transform="translate(16 -11) scale(.43)" d="M-104 6 C-108 -40 -78 -84 -30 -92 C4 -98 30 -78 58 -84 C92 -90 118 -52 108 -12 C100 20 112 48 88 74 C62 100 24 88 -8 96 C-52 106 -98 60 -104 6 Z"/>
+        <path stroke-width="1.45" transform="translate(12 -8) scale(.62)" d="M-104 6 C-108 -40 -78 -84 -30 -92 C4 -98 30 -78 58 -84 C92 -90 118 -52 108 -12 C100 20 112 48 88 74 C62 100 24 88 -8 96 C-52 106 -98 60 -104 6 Z"/>
+        <path stroke-width="1.1" transform="translate(8 -5) scale(.82)" d="M-104 6 C-108 -40 -78 -84 -30 -92 C4 -98 30 -78 58 -84 C92 -90 118 -52 108 -12 C100 20 112 48 88 74 C62 100 24 88 -8 96 C-52 106 -98 60 -104 6 Z"/>
+        <path stroke-width="1.6" transform="translate(4 -2) scale(1.04)" d="M-104 6 C-108 -40 -78 -84 -30 -92 C4 -98 30 -78 58 -84 C92 -90 118 -52 108 -12 C100 20 112 48 88 74 C62 100 24 88 -8 96 C-52 106 -98 60 -104 6 Z"/>
+        <path stroke-width=".7" transform="translate(0 1) scale(1.28)" d="M-104 6 C-108 -40 -78 -84 -30 -92 C4 -98 30 -78 58 -84 C92 -90 118 -52 108 -12 C100 20 112 48 88 74 C62 100 24 88 -8 96 C-52 106 -98 60 -104 6 Z"/>
+        <path stroke-width=".58" transform="translate(-5 5) scale(1.55)" d="M-104 6 C-108 -40 -78 -84 -30 -92 C4 -98 30 -78 58 -84 C92 -90 118 -52 108 -12 C100 20 112 48 88 74 C62 100 24 88 -8 96 C-52 106 -98 60 -104 6 Z"/>
+        <path stroke-width=".48" transform="translate(-10 9) scale(1.86)" d="M-104 6 C-108 -40 -78 -84 -30 -92 C4 -98 30 -78 58 -84 C92 -90 118 -52 108 -12 C100 20 112 48 88 74 C62 100 24 88 -8 96 C-52 106 -98 60 -104 6 Z"/>
+        <path stroke-width=".42" transform="translate(-15 13) scale(2.15)" d="M-104 6 C-108 -40 -78 -84 -30 -92 C4 -98 30 -78 58 -84 C92 -90 118 -52 108 -12 C100 20 112 48 88 74 C62 100 24 88 -8 96 C-52 106 -98 60 -104 6 Z"/>
+        <path stroke-width=".66" transform="translate(-20 17) scale(2.44)" d="M-104 6 C-108 -40 -78 -84 -30 -92 C4 -98 30 -78 58 -84 C92 -90 118 -52 108 -12 C100 20 112 48 88 74 C62 100 24 88 -8 96 C-52 106 -98 60 -104 6 Z"/>
+      </g>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- ================================================================ Desk header -->
+<header class="desk-head">
+  <svg class="brandmark"><use href="#i-mark"/></svg>
+  <div>
+    <h1 class="place">Northline Atlas</h1>
+    <div class="sub">Frontline Copilot, design direction C. Three sheets, each 1400 px wide.</div>
+  </div>
+  <span class="spacer"></span>
+  <button class="btn" type="button" data-theme-toggle aria-pressed="false">
+    <svg class="ic t-moon"><use href="#i-moon"/></svg>
+    <svg class="ic t-sun"><use href="#i-sun"/></svg>
+    <span data-label>Night chart</span>
+  </button>
+</header>
+
+<!-- ================================================================ SHEET 1 -->
+<section class="board" id="sheet-1">
+  <div class="board-label">
+    <span class="mono">Sheet 1 of 3</span>
+    <h2 class="place">Ask view, a cited answer</h2>
+    <span class="mono right">Inspector on the right</span>
+  </div>
+
+  <div class="app">
+    <div class="topbar">
+      <div class="lockup">
+        <svg class="brandmark"><use href="#i-mark"/></svg>
+        <span class="name">Frontline Copilot</span>
+      </div>
+      <span class="tag-demo">Demo, synthetic data</span>
+      <div class="tabs" role="tablist" aria-label="View">
+        <button class="tab" role="tab" aria-selected="true" type="button"><svg class="ic"><use href="#i-ask"/></svg>Ask</button>
+        <button class="tab" role="tab" aria-selected="false" type="button"><svg class="ic"><use href="#i-calls"/></svg>Calls</button>
+      </div>
+      <span class="spacer"></span>
+      <button class="btn btn-quiet" type="button"><svg class="wp sm st-ok"><use href="#s-ok"/></svg>What's running</button>
+      <button class="iconbtn" type="button" data-theme-toggle aria-pressed="false" aria-label="Switch theme">
+        <svg class="ic t-moon"><use href="#i-moon"/></svg>
+        <svg class="ic t-sun"><use href="#i-sun"/></svg>
+      </button>
+      <button class="btn btn-primary" type="button">New conversation</button>
+    </div>
+
+    <div class="workspace">
+      <main class="conv">
+        <svg class="contours" aria-hidden="true"><use href="#contours"/></svg>
+
+        <div class="turn question">
+          <div class="ref mono"><b>Q 01</b><span>Agent</span></div>
+          <div><p class="q">How much is the late payment fee, and can it be waived?</p></div>
+        </div>
+
+        <div class="turn answer">
+          <div class="ref mono"><b>A 01</b><span>Copilot</span></div>
+          <div>
+            <div class="a">
+              <p>The late-payment fee is <strong>$5</strong> <a class="cite" aria-label="Source 1">1</a>.</p>
+              <p>You can ask for a one-time waiver of that fee. To do so:</p>
+              <ol>
+                <li><span>Have your account number and the bill with the fee handy.</span></li>
+                <li><span>Call support - dial <strong>611</strong> from your Northline phone or <strong>1-800-555-0199</strong> from any phone.</span></li>
+                <li><span>Tell the representative you want a <strong>one-time waiver</strong> of the $5 late-payment fee.</span></li>
+              </ol>
+              <p>The billing team will review your request and, if approved, remove the fee from your bill.</p>
+            </div>
+            <div class="meta">
+              <span class="tool"><svg class="ic sm"><use href="#i-help"/></svg>Help articles</span>
+              <span class="took">
+                <!-- Scale bar: 22 px per second, one block per second, 2.4 s long -->
+                <svg class="scale" width="54" height="8" viewBox="0 0 54 8" aria-hidden="true">
+                  <rect x="0" y="1" width="22" height="6" fill="currentColor"/>
+                  <rect x="44" y="1" width="8.8" height="6" fill="currentColor"/>
+                  <rect x=".5" y="1.5" width="52.3" height="5" fill="none" stroke="currentColor"/>
+                </svg>
+                <span class="mono">2.4 seconds</span>
+              </span>
+              <span class="thumbs">
+                <button class="iconbtn bare" type="button" aria-label="Good answer"><svg class="ic"><use href="#i-up"/></svg></button>
+                <button class="iconbtn bare" type="button" aria-label="Bad answer"><svg class="ic"><use href="#i-down"/></svg></button>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="turn composer-row">
+          <div class="ref mono"><b>Q 02</b></div>
+          <div class="composer">
+            <span class="placeholder">Ask a question</span>
+            <button class="send" type="button" aria-label="Send"><svg class="ic"><use href="#i-send"/></svg></button>
+          </div>
+        </div>
+      </main>
+
+      <aside class="insp" aria-label="Inspector">
+        <section>
+          <div class="insp-h"><h3 class="place">Sources</h3><span class="mono">1 source</span></div>
+          <div class="source">
+            <span class="cite">1</span>
+            <div><div class="t">Late payment fee</div><div class="d">help.northline.example</div></div>
+            <svg class="ic"><use href="#i-ext"/></svg>
+          </div>
+        </section>
+
+        <section>
+          <div class="insp-h"><h3 class="place">What the copilot did</h3><span class="mono">5 steps</span></div>
+          <ol class="route">
+            <li class="step">
+              <svg class="wp st-ok"><use href="#s-ok"/></svg>
+              <div>
+                <div class="step-top"><span class="stage mono"><svg class="ic sm"><use href="#i-privacy"/></svg>01 · Privacy</span><span class="status mono lb-ok">OK</span></div>
+                <div class="step-title">No personal details found</div>
+                <div class="step-detail">The question was checked before anything was logged.</div>
+              </div>
+            </li>
+            <li class="step">
+              <svg class="wp st-ok"><use href="#s-ok"/></svg>
+              <div>
+                <div class="step-top"><span class="stage mono"><svg class="ic sm"><use href="#i-request"/></svg>02 · Request check</span><span class="status mono lb-ok">OK</span></div>
+                <div class="step-title">Request allowed</div>
+                <div class="step-detail">Not an account change and not an attempt to override the instructions.</div>
+              </div>
+            </li>
+            <li class="step">
+              <svg class="wp st-ok"><use href="#s-ok"/></svg>
+              <div>
+                <div class="step-top"><span class="stage mono"><svg class="ic sm"><use href="#i-help"/></svg>03 · Help articles</span><span class="status mono lb-ok">OK</span></div>
+                <div class="step-title">Searched the help articles</div>
+                <div class="step-detail">1 source cited.</div>
+              </div>
+            </li>
+            <li class="step">
+              <svg class="wp st-ok"><use href="#s-ok"/></svg>
+              <div>
+                <div class="step-top"><span class="stage mono"><svg class="ic sm"><use href="#i-answer"/></svg>04 · Answer check</span><span class="status mono lb-ok">OK</span></div>
+                <div class="step-title">Citations checked</div>
+                <div class="step-detail">Every citation points to a retrieved source.</div>
+              </div>
+            </li>
+            <li class="step">
+              <svg class="wp st-ok"><use href="#s-ok"/></svg>
+              <div>
+                <div class="step-top"><span class="stage mono"><svg class="ic sm"><use href="#i-answer"/></svg>05 · Answer check</span><span class="status mono lb-ok">OK</span></div>
+                <div class="step-title">No personal details in the answer</div>
+                <div class="step-detail">Checked against the sources the answer was written from.</div>
+              </div>
+            </li>
+          </ol>
+        </section>
+
+        <div class="legend">
+          <div class="legend-in">
+            <div class="legend-h"><span class="mono">Legend</span></div>
+            <ul class="key">
+              <li><svg class="wp sm st-ok"><use href="#s-ok"/></svg>OK</li>
+              <li><svg class="wp sm st-notice"><use href="#s-notice"/></svg>Notice</li>
+              <li><svg class="wp sm st-warning"><use href="#s-warning"/></svg>Warning</li>
+              <li><svg class="wp sm st-blocked"><use href="#s-blocked"/></svg>Blocked</li>
+            </ul>
+            <ul class="key2">
+              <li><span class="k-line"></span>Done by the copilot</li>
+              <li><span class="k-line dashed"></span>Passed to a person</li>
+              <li><span class="chip">PERSON_1</span>Detail removed</li>
+              <li>
+                <svg class="scale" width="23" height="8" viewBox="0 0 23 8" aria-hidden="true"><rect x="0" y="1" width="22" height="6" fill="currentColor"/></svg>
+                1 second
+              </li>
+            </ul>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ SHEET 2 -->
+<section class="board" id="sheet-2">
+  <div class="board-label">
+    <span class="mono">Sheet 2 of 3</span>
+    <h2 class="place">Ask view, a hand-off with personal details removed</h2>
+    <span class="mono right">Inspector open</span>
+  </div>
+
+  <div class="app">
+    <div class="topbar">
+      <div class="lockup">
+        <svg class="brandmark"><use href="#i-mark"/></svg>
+        <span class="name">Frontline Copilot</span>
+      </div>
+      <span class="tag-demo">Demo, synthetic data</span>
+      <div class="tabs" role="tablist" aria-label="View">
+        <button class="tab" role="tab" aria-selected="true" type="button"><svg class="ic"><use href="#i-ask"/></svg>Ask</button>
+        <button class="tab" role="tab" aria-selected="false" type="button"><svg class="ic"><use href="#i-calls"/></svg>Calls</button>
+      </div>
+      <span class="spacer"></span>
+      <button class="btn btn-quiet" type="button"><svg class="wp sm st-ok"><use href="#s-ok"/></svg>What's running</button>
+      <button class="iconbtn" type="button" data-theme-toggle aria-pressed="false" aria-label="Switch theme">
+        <svg class="ic t-moon"><use href="#i-moon"/></svg>
+        <svg class="ic t-sun"><use href="#i-sun"/></svg>
+      </button>
+      <button class="btn btn-primary" type="button">New conversation</button>
+    </div>
+
+    <div class="workspace">
+      <main class="conv">
+        <svg class="contours" aria-hidden="true"><use href="#contours"/></svg>
+
+        <div class="turn question">
+          <div class="ref mono"><b>Q 01</b><span>Agent</span></div>
+          <div>
+            <p class="q">Refund the late fee on this customer's account. Her name is Linda Garcia and her number is 480-555-0132.</p>
+            <p class="processed">As processed: Refund the late fee on this customer's account. Her name is <span class="chip">PERSON_1</span> and her number is <span class="chip">PHONE_NUMBER_1</span>.</p>
+          </div>
+        </div>
+
+        <div class="turn answer">
+          <div class="ref mono"><b>A 01</b><span>Copilot</span></div>
+          <div>
+            <div class="a">
+              <p>I can't refund, credit or waive a charge myself. This needs a human specialist: the billing team has to handle it.</p>
+              <div class="script">
+                <p class="lead">What to tell the customer:</p>
+                <p class="say">"I can't do this myself, so I'm passing you to the billing team. Your reference is <span class="id">ESC-B695DE84</span>. They will take it from here."</p>
+              </div>
+            </div>
+
+            <div class="handoff" role="status">
+              <svg class="wp st-warning"><use href="#s-warning"/></svg>
+              <span><b>This needs a person.</b> A hand-off was opened.</span>
+              <span class="leader" aria-hidden="true"></span>
+              <span class="to"><svg class="ic"><use href="#i-handoff"/></svg><span class="mono">ESC-B695DE84</span></span>
+            </div>
+
+            <div class="meta">
+              <span class="tool"><svg class="ic sm"><use href="#i-handoff"/></svg>Hand-off to a person</span>
+              <span class="took">
+                <!-- Scale bar: 22 px per second, 3.3 s long -->
+                <svg class="scale" width="74" height="8" viewBox="0 0 74 8" aria-hidden="true">
+                  <rect x="0" y="1" width="22" height="6" fill="currentColor"/>
+                  <rect x="44" y="1" width="22" height="6" fill="currentColor"/>
+                  <rect x=".5" y="1.5" width="72.1" height="5" fill="none" stroke="currentColor"/>
+                </svg>
+                <span class="mono">3.3 seconds</span>
+              </span>
+              <span class="thumbs">
+                <button class="iconbtn bare" type="button" aria-label="Good answer"><svg class="ic"><use href="#i-up"/></svg></button>
+                <button class="iconbtn bare" type="button" aria-label="Bad answer"><svg class="ic"><use href="#i-down"/></svg></button>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="turn composer-row">
+          <div class="ref mono"><b>Q 02</b></div>
+          <div class="composer">
+            <span class="placeholder">Ask a question</span>
+            <button class="send" type="button" aria-label="Send"><svg class="ic"><use href="#i-send"/></svg></button>
+          </div>
+        </div>
+      </main>
+
+      <aside class="insp" aria-label="Inspector">
+        <section>
+          <div class="insp-h"><h3 class="place">Sources</h3><span class="mono">0 sources</span></div>
+          <div class="nosource">This answer cites no sources.</div>
+        </section>
+
+        <section>
+          <div class="insp-h"><h3 class="place">What the copilot did</h3><span class="mono">4 steps</span></div>
+          <ol class="route">
+            <li class="step">
+              <svg class="wp st-notice"><use href="#s-notice"/></svg>
+              <div>
+                <div class="step-top"><span class="stage mono"><svg class="ic sm"><use href="#i-privacy"/></svg>01 · Privacy</span><span class="status mono lb-notice">Notice</span></div>
+                <div class="step-title">Personal details removed</div>
+                <div class="step-detail">A name and a phone number were replaced before the question was processed or logged.</div>
+              </div>
+            </li>
+            <li class="step diverted">
+              <svg class="wp st-warning"><use href="#s-warning"/></svg>
+              <div>
+                <div class="step-top"><span class="stage mono"><svg class="ic sm"><use href="#i-request"/></svg>02 · Request check</span><span class="status mono lb-warning">Warning</span></div>
+                <div class="step-title">Account request: handed to a person</div>
+                <div class="step-detail">The copilot cannot change or look up a customer's account.</div>
+              </div>
+            </li>
+            <li class="step">
+              <svg class="wp st-ok"><use href="#s-ok"/></svg>
+              <div>
+                <div class="step-top"><span class="stage mono"><svg class="ic sm"><use href="#i-handoff"/></svg>03 · Hand-off to a person</span><span class="status mono lb-ok">OK</span></div>
+                <div class="step-title">Opened a hand-off</div>
+                <div class="step-detail">A ticket was written for a human specialist, with the reason redacted.</div>
+              </div>
+            </li>
+            <li class="step">
+              <svg class="wp st-ok"><use href="#s-ok"/></svg>
+              <div>
+                <div class="step-top"><span class="stage mono"><svg class="ic sm"><use href="#i-answer"/></svg>04 · Answer check</span><span class="status mono lb-ok">OK</span></div>
+                <div class="step-title">No personal details in the answer</div>
+                <div class="step-detail">Checked against the sources the answer was written from.</div>
+              </div>
+            </li>
+          </ol>
+        </section>
+
+        <div class="legend">
+          <div class="legend-in">
+            <div class="legend-h"><span class="mono">Legend</span></div>
+            <ul class="key">
+              <li><svg class="wp sm st-ok"><use href="#s-ok"/></svg>OK</li>
+              <li><svg class="wp sm st-notice"><use href="#s-notice"/></svg>Notice</li>
+              <li><svg class="wp sm st-warning"><use href="#s-warning"/></svg>Warning</li>
+              <li><svg class="wp sm st-blocked"><use href="#s-blocked"/></svg>Blocked</li>
+            </ul>
+            <ul class="key2">
+              <li><span class="k-line"></span>Done by the copilot</li>
+              <li><span class="k-line dashed"></span>Passed to a person</li>
+              <li><span class="chip">PERSON_1</span>Detail removed</li>
+              <li>
+                <svg class="scale" width="23" height="8" viewBox="0 0 23 8" aria-hidden="true"><rect x="0" y="1" width="22" height="6" fill="currentColor"/></svg>
+                1 second
+              </li>
+            </ul>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ SHEET 3 -->
+<section class="board" id="sheet-3">
+  <div class="board-label">
+    <span class="mono">Sheet 3 of 3</span>
+    <h2 class="place">Identity sheet</h2>
+    <span class="mono right">Northline Atlas</span>
+  </div>
+
+  <div class="sheet3">
+
+    <div class="concept">
+      <span class="mono">Concept</span>
+      <h3 class="place">Northline Atlas</h3>
+      <p>A carrier's most recognisable document is its coverage map, so the console borrows the grammar of a chart instead of the look of a chat app.</p>
+      <p>Every answer is plotted like a passage: the copilot's steps are a route with waypoints, each waypoint carries a status symbol keyed in a legend that never leaves the screen, and a scale bar is as long as the answer took.</p>
+      <p>Colour follows chart practice: ink and paper for what was said, one overprint magenta for what the copilot added on top, and a separate four-symbol key for status.</p>
+    </div>
+
+    <div class="rules">
+      <div class="blk-h"><h3 class="place">Motif rules</h3><span class="mono">Each device encodes one thing</span></div>
+      <ol>
+        <li><span>Shape before colour. Circle is OK, diamond is Notice, triangle is Warning, square is Blocked. The legend stays in the inspector.</span></li>
+        <li><span>Chart magenta marks only what the copilot adds over the conversation: the route, citation references, the current view. Never status, never buttons.</span></li>
+        <li><span>A solid line was done by the copilot. A dashed line or outline is not ground truth: a leg passed to a person, a detail removed, synthetic data, nothing to cite.</span></li>
+        <li><span>The scale bar measures time and nothing else. One block is one second.</span></li>
+        <li><span>Mono labels are references an agent can quote back: Q 01, A 01, leg numbers, ticket IDs.</span></li>
+        <li><span>Contours appear once, on the empty ground of the conversation pane.</span></li>
+        <li><span>No shadows. Depth comes from hairlines and three paper tones, as on a printed sheet.</span></li>
+      </ol>
+      <p class="boldline">The single bold element: the magenta route line in "What the copilot did". Everything else is ink, hairline and paper.</p>
+    </div>
+
+    <div class="colours">
+      <div class="blk-h"><h3 class="place">Colour</h3><span class="mono">Brand is chart magenta, the overprint ink charts use for what a navigator adds; status has its own key</span></div>
+      <div class="themes">
+
+        <div class="theme-panel" data-theme="light">
+          <div class="tp-h"><h4 class="place">Day chart</h4><span class="mono">Light theme</span></div>
+          <div class="swatches">
+            <div class="sw"><div class="c"><i style="background:var(--sheet)"></i></div><div class="r">Conversation ground</div><div class="h">--sheet<br>#FEFDFE</div></div>
+            <div class="sw"><div class="c"><i style="background:var(--paper)"></i></div><div class="r">Inspector, margins</div><div class="h">--paper<br>#F5F3F6</div></div>
+            <div class="sw"><div class="c"><i style="background:var(--sunk)"></i></div><div class="r">Question, wells</div><div class="h">--sunk<br>#ECE8EE</div></div>
+            <div class="sw"><div class="c"><i style="background:var(--line)"></i></div><div class="r">Hairline</div><div class="h">--line<br>#DAD4DD</div></div>
+            <div class="sw"><div class="c"><i style="background:var(--line-strong)"></i></div><div class="r">Control outline</div><div class="h">--line-strong<br>#8F8496</div></div>
+
+            <div class="sw"><div class="c"><i style="background:var(--ink)"></i></div><div class="r">Text, primary button</div><div class="h">--ink<br>#1F1823</div></div>
+            <div class="sw"><div class="c"><i style="background:var(--ink-2)"></i></div><div class="r">Secondary text</div><div class="h">--ink-2<br>#4B4251</div></div>
+            <div class="sw"><div class="c"><i style="background:var(--ink-3)"></i></div><div class="r">Labels, muted</div><div class="h">--ink-3<br>#6A6071</div></div>
+            <div class="sw"><div class="c"><i style="background:var(--brand)"></i></div><div class="r">Brand: route, citations</div><div class="h">--brand<br>#9C1F6E</div></div>
+            <div class="sw"><div class="c"><i style="background:var(--brand-tint)"></i></div><div class="r">Brand tint</div><div class="h">--brand-tint<br>#F4DFEC</div></div>
+
+            <div class="sw"><div class="c"><i style="background:var(--ok)"></i><i style="background:var(--ok-tint)"></i></div><div class="r">OK</div><div class="h">#1D6A43<br>tint #DDEEE4</div></div>
+            <div class="sw"><div class="c"><i style="background:var(--notice)"></i><i style="background:var(--notice-tint)"></i></div><div class="r">Notice</div><div class="h">#1E5A96<br>tint #DDE9F5</div></div>
+            <div class="sw"><div class="c"><i style="background:var(--warning-mark)"></i><i style="background:var(--warning)"></i><i style="background:var(--warning-tint)"></i></div><div class="r">Warning</div><div class="h">mark #B87400<br>text #8A5800<br>tint #F7EACB</div></div>
+            <div class="sw"><div class="c"><i style="background:var(--blocked)"></i><i style="background:var(--blocked-tint)"></i></div><div class="r">Blocked</div><div class="h">#B3261E<br>tint #F7DEDA</div></div>
+            <div class="sw"><div class="c"><i style="background:var(--contour)"></i></div><div class="r">Contour line</div><div class="h">--contour<br>#CBC2D0</div></div>
+          </div>
+        </div>
+
+        <div class="theme-panel" data-theme="dark">
+          <div class="tp-h"><h4 class="place">Night chart</h4><span class="mono">Dark theme</span></div>
+          <div class="swatches">
+            <div class="sw"><div class="c"><i style="background:var(--sheet)"></i></div><div class="r">Conversation ground</div><div class="h">--sheet<br>#1D1820</div></div>
+            <div class="sw"><div class="c"><i style="background:var(--paper)"></i></div><div class="r">Inspector, margins</div><div class="h">--paper<br>#161218</div></div>
+            <div class="sw"><div class="c"><i style="background:var(--q-bg)"></i></div><div class="r">Question, raised</div><div class="h">--q-bg<br>#251E29</div></div>
+            <div class="sw"><div class="c"><i style="background:var(--line)"></i></div><div class="r">Hairline</div><div class="h">--line<br>#342C38</div></div>
+            <div class="sw"><div class="c"><i style="background:var(--line-strong)"></i></div><div class="r">Control outline</div><div class="h">--line-strong<br>#75697B</div></div>
+
+            <div class="sw"><div class="c"><i style="background:var(--ink)"></i></div><div class="r">Text, primary button</div><div class="h">--ink<br>#EFEAF1</div></div>
+            <div class="sw"><div class="c"><i style="background:var(--ink-2)"></i></div><div class="r">Secondary text</div><div class="h">--ink-2<br>#C5BCCA</div></div>
+            <div class="sw"><div class="c"><i style="background:var(--ink-3)"></i></div><div class="r">Labels, muted</div><div class="h">--ink-3<br>#9C92A2</div></div>
+            <div class="sw"><div class="c"><i style="background:var(--brand)"></i></div><div class="r">Brand: route, citations</div><div class="h">--brand<br>#F08CCB</div></div>
+            <div class="sw"><div class="c"><i style="background:var(--brand-tint)"></i></div><div class="r">Brand tint</div><div class="h">--brand-tint<br>#3B1D31</div></div>
+
+            <div class="sw"><div class="c"><i style="background:var(--ok)"></i><i style="background:var(--ok-tint)"></i></div><div class="r">OK</div><div class="h">#74CC9B<br>tint #17301F</div></div>
+            <div class="sw"><div class="c"><i style="background:var(--notice)"></i><i style="background:var(--notice-tint)"></i></div><div class="r">Notice</div><div class="h">#86B9EF<br>tint #162A40</div></div>
+            <div class="sw"><div class="c"><i style="background:var(--warning)"></i><i style="background:var(--warning-tint)"></i></div><div class="r">Warning</div><div class="h">#EDB54A<br>tint #33270F</div></div>
+            <div class="sw"><div class="c"><i style="background:var(--blocked)"></i><i style="background:var(--blocked-tint)"></i></div><div class="r">Blocked</div><div class="h">#F49088<br>tint #3A1916</div></div>
+            <div class="sw"><div class="c"><i style="background:var(--contour)"></i></div><div class="r">Contour line</div><div class="h">--contour<br>#40364A</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="type">
+      <div class="blk-h"><h3 class="place">Type</h3><span class="mono">Three faces, three jobs</span></div>
+
+      <div class="spec">
+        <div class="n"><span class="mono">Source Sans 3 · 400 / 600 / 700</span><span class="mono">Reading and controls</span></div>
+        <div class="s-sans">The late-payment fee is <b>$5</b>. Dial <b>611</b>.</div>
+        <p class="why">The plain, open sans that modern topographic sheets use for towns and roads. Wide apertures and a clearly different 1, l and I keep 611 and 1-800-555-0199 unmistakable when an agent reads them aloud. Conversation text is set at 18 px on a 1.65 line.</p>
+      </div>
+
+      <div class="spec">
+        <div class="n"><span class="mono">Source Serif 4 Italic · 500</span><span class="mono">Names of places</span></div>
+        <div class="s-serif place">What the copilot did</div>
+        <p class="why">Charts letter water and regions in italic and built things upright. Here the italic names the regions of the interface (panels and sheets) and is never used for anything an agent has to read out or press.</p>
+      </div>
+
+      <div class="spec">
+        <div class="n"><span class="mono">B612 Mono · 400 / 700</span><span class="mono">References</span></div>
+        <div class="s-mono">ESC-B695DE84 &nbsp;PHONE_NUMBER_1 &nbsp;Q 01</div>
+        <p class="why">Drawn for aircraft cockpit displays, where a misread character has a cost. Used wherever a string is quoted back exactly: ticket references, placeholders, timings, leg numbers.</p>
+      </div>
+    </div>
+
+    <div class="icons">
+      <div class="blk-h"><h3 class="place">Symbols</h3><span class="mono">Drawn for this product, 20 px grid</span></div>
+      <ul class="icon-grid">
+        <li><span class="tile brand"><svg class="ic lg"><use href="#i-mark"/></svg></span>Brand mark</li>
+        <li><span class="tile"><svg class="ic lg"><use href="#i-ask"/></svg></span>Ask</li>
+        <li><span class="tile"><svg class="ic lg"><use href="#i-calls"/></svg></span>Calls</li>
+        <li><span class="tile"><svg class="ic lg"><use href="#i-help"/></svg></span>Help articles</li>
+        <li><span class="tile"><svg class="ic lg"><use href="#i-plans"/></svg></span>Plan catalogue</li>
+        <li><span class="tile"><svg class="ic lg"><use href="#i-summary"/></svg></span>Call summary</li>
+        <li><span class="tile"><svg class="ic lg"><use href="#i-handoff"/></svg></span>Hand-off</li>
+
+        <li><span class="tile"><svg class="ic lg"><use href="#i-privacy"/></svg></span>Privacy</li>
+        <li><span class="tile"><svg class="ic lg"><use href="#i-request"/></svg></span>Request check</li>
+        <li><span class="tile"><svg class="ic lg"><use href="#i-answer"/></svg></span>Answer check</li>
+        <li><span class="tile"><svg class="wp st-ok"><use href="#s-ok"/></svg></span>Status OK</li>
+        <li><span class="tile"><svg class="wp st-notice"><use href="#s-notice"/></svg></span>Status Notice</li>
+        <li><span class="tile"><svg class="wp st-warning"><use href="#s-warning"/></svg></span>Status Warning</li>
+        <li><span class="tile"><svg class="wp st-blocked"><use href="#s-blocked"/></svg></span>Status Blocked</li>
+
+        <li><span class="tile"><svg class="ic lg"><use href="#i-send"/></svg></span>Send</li>
+        <li><span class="tile"><svg class="ic lg"><use href="#i-sun"/></svg></span>Sun</li>
+        <li><span class="tile"><svg class="ic lg"><use href="#i-moon"/></svg></span>Moon</li>
+        <li><span class="tile"><svg class="ic lg"><use href="#i-up"/></svg></span>Thumb up</li>
+        <li><span class="tile"><svg class="ic lg"><use href="#i-down"/></svg></span>Thumb down</li>
+        <li><span class="tile"><svg class="ic lg"><use href="#i-ext"/></svg></span>External link</li>
+        <li><span class="tile"><svg class="ic lg"><use href="#i-search"/></svg></span>Search</li>
+      </ul>
+      <p class="hand">One hand: a 1.5 px line with square-cut ends and mitred corners, and one solid station dot where the symbol has a point of interest. The brand mark is a half-filled north arrow standing on a line; Send reuses its arrow. Status symbols are solid shapes so they read at 16 px and without colour.</p>
+    </div>
+
+  </div>
+</section>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var toggles = document.querySelectorAll('[data-theme-toggle]');
+  function apply(theme) {
+    root.setAttribute('data-theme', theme);
+    toggles.forEach(function (b) {
+      b.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+      var label = b.querySelector('[data-label]');
+      if (label) label.textContent = theme === 'dark' ? 'Day chart' : 'Night chart';
+    });
+  }
+  toggles.forEach(function (b) {
+    b.addEventListener('click', function () {
+      apply(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+    });
+  });
+})();
+</script>
+</body>
+</html>
