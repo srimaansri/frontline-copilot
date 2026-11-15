@@ -413,6 +413,7 @@ The evaluation refuses to start from a dirty folder and stamps its result with t
 - **The 40-row run lost its report.** It scored every row, then got HTTP 401 while reading its traces back. The report was rebuilt from the same MLflow run with the runner's own functions, and the file says so.
 - **I pushed a commit with one failing test.** The command that ran the checks did not stop on the failure. The test was a new one that loaded the local `.env` and changed settings for later tests; CI has no `.env` and would not have caught it. Fixed in the next commit.
 - A file written by a local test run (`mlflow.db`) was staged by mistake and removed before anything was pushed.
+- **The MCP server hung on its first real call over stdio.** The Databricks SDK signs in by running the Databricks CLI, which inherited the server's standard input, and over stdio that is the MCP channel. Unit tests could not see it; a live call from an MCP client did. The server now gives the transport its own copy of standard input.
 - GitHub did not start CI jobs for about two hours ("account is locked due to a billing issue"). It cleared without a change to the repository.
 
 **Worth knowing**
@@ -424,7 +425,7 @@ The evaluation refuses to start from a dirty folder and stamps its result with t
 **Not done**
 
 - The app runs locally. It is not deployed to Databricks Apps.
-- The MCP server is unit-tested. It has not been used from Claude Code against the live workspace.
+- The MCP server was called by an MCP client over stdio against the live workspace, and its Docker image was built and answered over HTTP. It has not been registered with Claude Code itself, and its tools were not called inside the container.
 - No demo video. No `eval.yml` gate. No hand check of the judge.
 
 **For me to review**
@@ -435,4 +436,4 @@ The evaluation refuses to start from a dirty folder and stamps its result with t
 
 **M4 acceptance** (PLAN.md §12): all four tools working, the hand-off path, input and output guards, routing tests passing, the default setting evaluated on all 40 rows. All met.
 
-**M5 acceptance** (PLAN.md §12): Streamlit app deployed as a Databricks App; MCP server working from Claude Code over stdio and in Docker. Not met yet: see "Not done".
+**M5 acceptance** (PLAN.md §12): Streamlit app deployed as a Databricks App; MCP server working from Claude Code over stdio and in Docker. Partly met: the app runs locally and is not deployed, and the MCP server works over stdio from a client and starts in Docker. See "Not done".

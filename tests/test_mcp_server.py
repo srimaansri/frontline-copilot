@@ -198,6 +198,10 @@ def test_main_runs_the_chosen_transport_without_local_tracing(
     # every later test sees.
     monkeypatch.setattr("dotenv.load_dotenv", lambda *args, **kwargs: False)
     monkeypatch.setattr(server_module, "build_server", fake_build)
+    detached: list[bool] = []
+    monkeypatch.setattr(
+        server_module, "keep_stdin_for_the_transport", lambda: detached.append(True)
+    )
     disabled: list[bool] = []
     monkeypatch.setattr("mlflow.tracing.disable", lambda: disabled.append(True))
 
@@ -205,3 +209,28 @@ def test_main_runs_the_chosen_transport_without_local_tracing(
 
     assert ran == {"host": "0.0.0.0", "port": 9000, "transport": "streamable-http"}  # noqa: S104
     assert disabled == [True]
+    # Only stdio uses standard input as its channel.
+    assert detached == []
+
+    main(["--transport", "stdio"])
+
+    assert ran["transport"] == "stdio"
+    assert detached == [True]
+
+
+def test_the_stdio_transport_gets_its_own_copy_of_standard_input(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Programs the server starts, such as the Databricks CLI, must not read the MCP channel."""
+    calls: list[tuple[Any, ...]] = []
+    monkeypatch.setattr("os.dup", lambda fd: calls.append(("dup", fd)) or 7)
+    monkeypatch.setattr("os.open", lambda path, flags: calls.append(("open", path)) or 8)
+    monkeypatch.setattr("os.dup2", lambda src, dst: calls.append(("dup2", src, dst)))
+    monkeypatch.setattr("os.close", lambda fd: calls.append(("close", fd)))
+    monkeypatch.setattr("os.fdopen", lambda fd, *args, **kwargs: f"stream-on-{fd}")
+    monkeypatch.setattr("sys.stdin", None)
+
+    server_module.keep_stdin_for_the_transport()
+
+    assert calls == [("dup", 0), ("open", server_module.os.devnull), ("dup2", 8, 0), ("close", 8)]
+    assert server_module.sys.stdin == "stream-on-7"

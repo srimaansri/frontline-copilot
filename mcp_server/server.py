@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import sys
 from typing import Any, Literal
 
 from mcp.server.fastmcp import FastMCP
@@ -114,6 +115,22 @@ def build_server(
     return server
 
 
+def keep_stdin_for_the_transport() -> None:
+    """Give the stdio transport its own copy of standard input.
+
+    Programs this process starts are left with an empty one. Over stdio, standard
+    input is the MCP channel. The Databricks SDK signs in by running the Databricks
+    CLI, and a program started that way inherits standard input. With the channel
+    as its input, the CLI blocks, and so does the first tool call that needs to
+    sign in.
+    """
+    transport = os.dup(0)
+    empty = os.open(os.devnull, os.O_RDONLY)
+    os.dup2(empty, 0)
+    os.close(empty)
+    sys.stdin = os.fdopen(transport, "r", encoding="utf-8")
+
+
 def main(argv: list[str] | None = None) -> None:
     """Command-line entry point."""
     parser = argparse.ArgumentParser(description="MCP server for the Frontline Copilot tools.")
@@ -132,6 +149,8 @@ def main(argv: list[str] | None = None) -> None:
         # The tools open MLflow spans. Without a tracking server configured they would
         # be written to a local file next to wherever the server was started.
         mlflow.tracing.disable()
+    if args.transport == "stdio":
+        keep_stdin_for_the_transport()
     build_server(host=args.host, port=args.port).run(transport=args.transport)
 
 

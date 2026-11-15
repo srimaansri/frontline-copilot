@@ -65,8 +65,18 @@ Add this to the `mcpServers` section of Claude Desktop's configuration file, wit
 docker build -f mcp_server/Dockerfile -t frontline-mcp .
 ```
 
-The Dockerfile has not been built or run yet. Treat it as untested until that is done.
+```bash
+docker run --rm -p 8000:8000 --env-file .env.mcp frontline-mcp
+```
+
+`.env.mcp` is a file you create (git ignores it), holding `DATABRICKS_HOST`, `DATABRICKS_CLIENT_ID`, `DATABRICKS_CLIENT_SECRET` and `SQL_WAREHOUSE_ID` for a service principal.
+
+The image was built and a container started on 2026-11-14: it reported healthy, ran as a non-root user, and answered an MCP `initialize` request over HTTP. The tools were not called inside the container, because that needs a service principal's credentials.
 
 ## Status
 
-The server is covered by unit tests that call each tool in process (`tests/test_mcp_server.py`). It has not yet been exercised from Claude Code or Claude Desktop against a live workspace.
+- Unit tests call each tool in process (`tests/test_mcp_server.py`).
+- On 2026-11-14 an MCP client started the server over stdio and called it against the live workspace: the tool list, a plan lookup, an article search and a rejected transcript id all came back correctly.
+- It has not yet been registered with Claude Code or Claude Desktop.
+
+One thing worth knowing if you write your own stdio server on Databricks: the SDK signs in by running the Databricks CLI, and that child process inherits standard input, which over stdio is the MCP channel. The first tool call that needed to sign in hung until the server gave the transport its own copy of standard input.

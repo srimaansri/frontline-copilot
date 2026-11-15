@@ -17,7 +17,7 @@ This repo is being built milestone by milestone. Every number here comes from a 
 | M2 | Databricks pipelines: bronze, silver, gold, quality checks | Done |
 | M3 | Retrieval-augmented answers and the first evaluation | Done |
 | M4 | Agent with tools, guardrails, escalation | Done |
-| M5 | Streamlit app, MCP server | Runs locally. Not yet deployed to Databricks Apps; the Docker image is not yet built |
+| M5 | Streamlit app, MCP server | Both run locally against the live workspace, and the MCP Docker image builds and starts. The app is not yet deployed to Databricks Apps |
 | M6 | Results, model and data cards, responsible-AI notes | Done: [model card](docs/MODEL_CARD.md), [data card](docs/DATA_CARD.md), [responsible-AI notes](docs/RESPONSIBLE_AI.md) |
 
 The full specification is in [PLAN.md](PLAN.md).
