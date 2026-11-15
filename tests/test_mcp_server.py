@@ -194,6 +194,9 @@ def test_main_runs_the_chosen_transport_without_local_tracing(
         return FakeServer()
 
     monkeypatch.delenv("MLFLOW_TRACKING_URI", raising=False)
+    # main() loads the developer's .env. A test must not: it would change the settings
+    # every later test sees.
+    monkeypatch.setattr("dotenv.load_dotenv", lambda *args, **kwargs: False)
     monkeypatch.setattr(server_module, "build_server", fake_build)
     disabled: list[bool] = []
     monkeypatch.setattr("mlflow.tracing.disable", lambda: disabled.append(True))
