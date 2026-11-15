@@ -59,8 +59,8 @@ const SHAPES: Record<StepStatus, Shape> = {
 
 export interface StatusStampProps {
   status: StepStatus;
-  /** Width and height in pixels. */
-  size?: number;
+  /** Width and height in pixels: 16 beside text, 20 in a notice, 24 on the route. */
+  size?: 16 | 20 | 24;
   className?: string;
 }
 
@@ -96,7 +96,7 @@ export function StatusWord({ status, className }: StatusWordProps) {
   return (
     <span
       className={cn(
-        "text-label font-bold tracking-[0.07em] whitespace-nowrap uppercase",
+        "text-label font-bold tracking-status whitespace-nowrap uppercase",
         shape.tone,
         className,
       )}
@@ -118,7 +118,7 @@ export function StatusLabel({ status, children, className }: StatusLabelProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 text-meta font-semibold whitespace-nowrap",
+        "inline-flex items-center gap-2 text-meta font-semibold whitespace-nowrap",
         SHAPES[status].tone,
         className,
       )}

@@ -21,9 +21,12 @@ Cobalt on cool neutrals. Every neutral leans toward cobalt; there is no pure gre
 | `ink` | `#0F1833` | `#EDF1FC` | Text; the fill that means "you are here" |
 | `ink-2` | `#38425F` | `#C2CAE4` | Secondary text, labels |
 | `ink-3` | `#586384` | `#98A4C8` | Hints and placeholders |
-| `brand` | `#1D43D8` | `#4868F5` | Cobalt fills: the send button, the primary button, the mark |
+| `brand` | `#1D43D8` | `#4868F5` | Cobalt fills: the send button, the primary button |
+| `brand-strong` | `#1838BF` | `#3D5CE8` | A cobalt fill under the pointer |
+| `brand-press` | `#142F9F` | `#3350D2` | A cobalt fill while pressed |
 | `brand-text` | `#1D43D8` | `#9DB1FF` | Cobalt on a surface: links, citation chips, live bars, the focus ring |
 | `brand-tint` | `#E1E8FC` | `#24346E` | The selected row in the calls list |
+| `mark` | `#1D43D8` | `#6480FF` | The head of the brand mark. Lighter than the fill in the dark theme, so the mark holds on the bar (4.2:1) |
 | `on-brand` | `#FFFFFF` | `#FFFFFF` | Text and icons on a cobalt fill |
 | `hi` | `#D9F23E` | `#D9F23E` | The highlighter |
 | `hi-ink` | `#0F1833` | `#0F1833` | Text on the highlighter |
@@ -35,13 +38,11 @@ Cobalt on cool neutrals. Every neutral leans toward cobalt; there is no pure gre
 | `block` / `block-tint` | `#B3261E` / `#FBE4E1` | `#FF8F85` / `#46191B` | Refused |
 | `knock` | `#FFFFFF` | `#111B3D` | The glyph knocked out of a status shape |
 
-Contrast, checked for every pair in use (WCAG AA):
+Contrast is checked by a script, not by eye. `npm run check:contrast` (also run by `npm run lint`) reads the two token blocks out of `src/index.css`, measures every foreground and background pair listed in `scripts/contrast-pairs.mjs` in both themes, and fails if one is under WCAG 2.1 AA: 4.5:1 for body text, 3:1 for large text, icons, control borders and focus rings. When a component puts one token on another for the first time, add the pair to that table. The pairs with the least room today:
 
-- Text: `ink`, `ink-2` and `ink-3` are at least 5.0:1 on `paper`, `surface` and `sunken` in both themes.
-- Cobalt: `brand-text` is at least 5.6:1 on every background it sits on; white on `brand` is 7.4:1 light and 4.6:1 dark.
-- Status colours are at least 5.1:1 on `paper`, `surface`, `sunken` and `brand-tint` in both themes.
-- `hi-ink` on `hi` is 13.9:1. `on-redact` on `redact` is 15.9:1 light and 10.3:1 dark.
-- `line-strong` is between 3.2:1 and 4.2:1 on every background. It is used for borders and the route, never for text.
+- `line-strong` on `sunken`, light: 3.2:1 (needs 3). It is used for borders and the route, never for text.
+- `on-brand` on `brand`, dark: 4.6:1 (needs 4.5).
+- `ink-3` on `sunken`, light: 5.0:1 (needs 4.5).
 
 ## Type
 
@@ -49,7 +50,7 @@ Three faces, bundled from `@fontsource-variable` packages, latin subset only (`s
 
 | Face | Role | Why |
 | --- | --- | --- |
-| Bricolage Grotesque, 700 | Display: the headline, view titles, section titles, the product name. Never for anything read aloud. | A grotesque with ink traps and slightly uneven curves, drawn from printed matter. It gives a console a voice with some grain in it, like the header on a printed call script. |
+| Bricolage Grotesque, 700 (650 for the headline) | Display: the headline, view titles, section titles, the product name. Never for anything read aloud. | A grotesque with ink traps and slightly uneven curves, drawn from printed matter. It gives a console a voice with some grain in it, like the header on a printed call script. |
 | Atkinson Hyperlegible Next, 400 / 600 / 700 | Text: everything read or operated. | Drawn for low-vision readers, with look-alike characters pulled apart. Agents read fees and phone numbers aloud from it, and a 1 mistaken for an l is a wrong number given to a customer. |
 | Atkinson Hyperlegible Mono, 400 / 600 / 700 | Codes and readouts, never words: placeholders, call ids, references, citation numerals, list numerals, timings, counts. | The same skeleton as the text face at a fixed width, so a reference can be read out character by character without losing your place. |
 
@@ -66,6 +67,7 @@ One scale. Nothing is set outside it.
 | `text-head` | 46px | The empty-state headline |
 
 - Headings use `text-wrap: balance`.
+- Display type is set with three classes and nowhere else: `display-title` (700, tracking -0.01em), `display-view` (700, -0.012em) and `display-head` (650, -0.012em). The face has an optical-size axis, which the browser sets from the font size, so the headline is already drawn tighter than the titles; the tracking only trims that. At 46px the 700 weight closes up the counters, so the headline is a shade lighter.
 - On a phone the headline drops to `text-view`, a call's category to `text-title`, and the product name to `text-read`, so the top bar fits on one row. That is the only place the display face is set below 22px.
 
 ## Motifs
@@ -74,13 +76,13 @@ Each device means one thing. Do not use a device for anything outside its row.
 
 | Device | Means | Where it may be used |
 | --- | --- | --- |
-| Highlighter (`.hi`, `strong.fact` in `.answer`) | Say this out loud. | Bold facts in a copilot answer (see "Which bold is highlighted" below), and the hand-off reference in it. The eyes of the mark. Nowhere else: not buttons, headings, labels, status or selection. |
+| Highlighter (`.hi`, `strong.fact` in `.answer`) | Say this out loud. | Bold facts in a copilot answer (see "Which bold is highlighted" below), and the hand-off reference in it. Nowhere else: not buttons, headings, labels, status or selection. |
 | Redaction bar (`.ph`) | A personal detail was here and was removed. | Placeholders such as `PERSON_1`, wherever redacted text is shown: "As processed" lines, transcripts, summaries, answers. No other running text is set light on ink. |
 | Underline in the notice colour (`.pii`) | This detail in your question was replaced. | The agent's own question, under the words that were removed. |
 | SIM chamfer (`.sim`) | The copilot wrote this. | The answer card, the pending card, the summary card and its "Summarizing" card, and the mark. People's words, buttons, inputs and error notices keep 3px corners. |
 | Signal bars (`.bars`) | The copilot's own state. One bar per stage: privacy, request check, lookup, answer check. | Seeking on the pending card and while summarizing. All four steady on the "What's running" button. Still and in ink as the stage key on the empty state. Never a rating, never decoration. |
 | Status shapes | Circle OK, square Notice, triangle Warning, octagon Blocked. Colour and the word repeat what the shape already says. | Steps, the tally of a run, the legend, call status and its filters, error notices, the "What's running" rows, "Saved". |
-| Citation chip (`.cite`) | This claim has a source. | After a claim in an answer and in front of its source, so the eye can match them. It fills with cobalt when its source is the one in focus. |
+| Citation chip (`.cite`) | This claim has a source. | After a claim in an answer and in front of its source, so the eye can match them. Outlined at rest, tinted under the pointer, filled with cobalt when its source is the one in focus. |
 | Ink fill | You are here; this is the one that is on. | The current view, the active filter, the theme in use, the "Sources and steps" button whose details are on show, the vote that was cast, and the tag at the end of a hand-off (where the request is now). |
 | Cobalt | You can press this. | Send, the primary button, links, citation chips, the arrow on an example and on a source, the bars while live, the focus ring, and the mark. Never a status, never a background wash. The selected call is the one exception to "wash": it takes `brand-tint` with an ink outline, so the status colours inside it stay legible. |
 | Route (`.route`) | What the copilot did, in order: one line, a station per step. | "What the copilot did" only. Drawn in `line-strong`; the status shapes carry the colour. |
@@ -96,12 +98,56 @@ Which bold is highlighted. The model uses bold for facts, for labels and for str
 
 Numbered lists in an answer. The numerals are drawn in mono by a CSS counter. A list that bullets interrupt arrives as two lists, the second with a `start`; it carries on from that number, and the bullets are set in under the step they belong to, so the whole reads as one set of steps.
 
+## Spacing, shape and motion
+
+Spacing is one scale on a 4px base (`--spacing`): `p-4` is 16px, `gap-6` is 24px. Use whole steps, plus the half step `0.5` (2px) for optical nudges. There are no one-off pixel values in the components.
+
+- Steps in use: 0.5, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 18.
+- Control heights sit on the same grid: 28 (tool badge), 36 (small button, icon button, view switcher), 40 (button), 44 (search box, send button, one line of the question box), 48 (list row).
+- Widths of text columns come from Tailwind's container scale (`max-w-md`, `max-w-2xl`, `max-w-3xl`, `max-w-5xl`, `max-w-7xl`). Rails are `w-88`, `w-96`, `w-100` and `w-110`.
+- Two things are sized in em, so that they follow the text they sit in: the padding of the highlighter and of the redaction bar.
+- A drawn glyph keeps its own geometry: the widths of the signal bars, the 6px list bullet, the 28px sidestep of the hand-off branch.
+
 Shape and elevation:
 
 - One radius, 3px (`rounded-box`), on controls and on people's words. Chips are 2px (`rounded-chip`). There are no pills and no fully rounded buttons.
+- A control's border is 1.5px (`frame`); a hairline between regions is 1px.
+- The SIM cut is 24px, 20px on a phone, and 16px on the small working card.
 - Borders and background tone carry the structure. Only popovers and tooltips cast a shadow (`shadow-pop`).
-- The focus ring is cobalt, 2px, offset by 2px, for keyboard focus only.
-- Motion is short and can be turned off: `prefers-reduced-motion` stops every animation and transition, and the seeking bar holds still, half filled.
+
+Motion:
+
+- One duration and one easing for every change of state: 120ms, `cubic-bezier(0.2, 0.7, 0.2, 1)` (`--speed`, `--ease`). Every `transition-*` class uses them; no component names a duration.
+- Something arriving on the page takes 200ms (`--speed-enter`). The steps of a route arrive 50ms apart (`--stagger`).
+- While the copilot works, the eyes of the mark glance out through the visor and back, once every 2.4 seconds.
+- `prefers-reduced-motion` stops every animation and transition, and the seeking bar holds still, half filled. The eyes of the mark hold still.
+
+## States
+
+Every control has four states beside rest. None of them changes the size of anything: borders keep their width, and heavier outlines are drawn inside the box.
+
+| Control | Under the pointer | Pressed | Disabled |
+| --- | --- | --- | --- |
+| Primary button, send | `brand-strong` fill | `brand-press` fill | 50% opacity |
+| Outline button, icon button, theme toggle | border turns to ink | `sunken` fill | 50% opacity |
+| Quiet button | a `line-strong` border appears | `sunken` fill | 50% opacity |
+| Ink-filled button (something that is on) | `ink-2` fill | `ink-3` fill | 50% opacity; the vote that was cast stays at full strength |
+| View switcher, filter chip (not the current one) | `sunken` fill | `line` fill | |
+| Calls list row | `sunken` fill | `brand-tint` fill, as it will have once selected | |
+| Example card, source card | outline in ink, half a pixel heavier (`edge-ink`) | `sunken` fill | |
+| Citation chip | `brand-tint` fill | `brand-press` fill | |
+| Link | underline thickens to 2px | text turns to ink | |
+| Question box, search box | border turns to ink | | sending is off while an answer is on its way; typing still works |
+
+Focus from the keyboard is the same everywhere: a cobalt ring, 2px, set off by 2px (drawn inside a control that sits flush in a row). A text field is the one exception in form: its border turns cobalt and grows outward to 3px, as one line with no gap, because the box is the field.
+
+To show a transient state in a still picture, write `data-force="hover"`, `"focus"` or `"pressed"` on the element. The `hover:`, `focus-visible:` and `active:` variants and the hand-written rules in `index.css` all answer to it. The component gallery does this with its `Force` wrapper.
+
+## Reviewing: the gallery and the demo states
+
+- `npm run dev:mock`, then open `/gallery.html`: every component in every state, drawn by the real component code from the mock fixtures. `?section=<id>` shows one section and `?theme=light|dark` pins the theme. `README.md` lists the section ids.
+- In mock mode the app opens on a fixture state with `?demo=<name>`: `empty`, `cited`, `waiver`, `handoff`, `refusal`, `error`, `pending`, `calls`, `calls-summary`.
+- The gallery and these query hooks exist only in the dev server and in `npm run build:mock`. A normal build has neither.
 
 ## Icons
 
@@ -113,6 +159,35 @@ All icons are drawn for this product. There is no icon library.
 - Fill: none, except the redaction bar in the privacy icon.
 - Sizes: 16, 20, 24 or 32. Every icon must read at 16.
 - Decorative by default (`aria-hidden`). Pass `title` only when the icon stands alone with no words beside it.
-- Status stamps (`StatusStamp.tsx`) are the exception to the stroke rule: solid shapes on a 16 grid with the glyph knocked out, so that shape survives at 14px and without colour.
-- The mark (`CopilotMark.tsx`) is a robot whose head is a SIM card: the top-right corner is cut, the eyes are the highlighter, and the antenna sends two signal arcs drawn with the same cut corner. `public/favicon.svg` is the same drawing with the colours written in.
+- Status stamps (`StatusStamp.tsx`) are the exception to the stroke rule: solid shapes on a 16 grid with the glyph knocked out, so that shape survives small and without colour. They are drawn at 16px beside text, 20px in a notice and 24px on the route.
+- The mark (`CopilotMark.tsx`) is described under "The mark" below.
 - The mood faces share one eight-sided face and one pair of eyes; only the mouth changes.
+
+## The mark
+
+The mark is a helmet seen from the front, with its visor open to one side. It was chosen from twelve candidates in three families; the sheets and the reasons are in [design/marks](../design/marks).
+
+It has three readings, and each one is true of the product:
+
+- **A face.** Two eyes behind a visor. They look out through the gap, so in the top bar the mark looks at its own name.
+- **A SIM card.** Three round corners and one cut at 45 degrees: the cut every card the copilot writes has.
+- **A letter C.**
+
+Construction (`src/components/icons/CopilotMark.tsx`):
+
+- Master drawing, 32 grid. A 26 by 26 square with a wall of 6, an outer radius of 6 and a cut with legs of 6: one measure. The visor is 14 high with an inner radius of 3.
+- Across the visor the rhythm is even: 4 of space, an eye of 4, 4 of space, an eye of 4, 4 of space. The eyes are 8 high, with 3 above and 3 below. Their corners have a radius of 1, as firm as the 3px corners of the controls beside the mark.
+- Small drawing, 16 grid, used at 20px and under. It is drawn again, not scaled down: the wall is thicker for its size, and every edge is on a whole pixel at 16. `public/favicon.svg` is this drawing.
+- Sizes in use: 16 beside the copilot's name on a card, 32 in the top bar, 64 on the empty screen. At 16, 32 and 64 every edge of the drawing lands on a whole pixel.
+
+Colour:
+
+- The head is `mark` and the eyes are `ink`, in both themes. Two colours, and it holds in one.
+- The eyes are not the highlighter. The highlighter has one job.
+
+Rules:
+
+- The mark is never shown without its eyes, and never without the cut. Without them it is only a blocky C, which other products also use.
+- It is decorative (`aria-hidden`): the product's name is always written beside it.
+- It moves in one case only: while the copilot is working, the eyes glance toward the gap and back (`working`).
+- It was not checked against registered trademarks. This is a portfolio demo; a real product would need that search.

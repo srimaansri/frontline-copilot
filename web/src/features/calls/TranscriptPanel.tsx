@@ -36,23 +36,18 @@ function Turns({ transcript }: { transcript: CallTranscript }) {
             // Turns are in spoken order and are never reordered.
             key={index}
             className={cn(
-              "flex max-w-[min(88%,27rem)] flex-col gap-2",
+              "flex max-w-[min(88%,var(--container-md))] flex-col gap-2",
               agent ? "items-start self-start" : "items-end self-end",
               startsRun ? "mt-4 first:mt-0" : "mt-2",
             )}
           >
-            <span
-              className={cn(
-                "text-label font-bold tracking-[0.01em] text-ink-2",
-                !startsRun && "sr-only",
-              )}
-            >
+            <span className={cn("cue", !startsRun && "sr-only")}>
               {SPEAKER_LABELS[turn.speaker]}
             </span>
             {/* People's words keep soft-square corners. Only the copilot gets the cut corner. */}
             <p
               className={cn(
-                "rounded-box border px-4 py-2.5 text-read leading-normal break-words text-ink",
+                "rounded-box border px-4 py-3 text-read leading-normal break-words text-ink",
                 agent ? "border-line-strong bg-surface" : "border-transparent bg-sunken",
               )}
             >
@@ -73,7 +68,7 @@ export interface TranscriptPanelProps {
 /** One call as a script: the agent on the left, the customer on the right. */
 export function TranscriptPanel({ transcript, onRetry }: TranscriptPanelProps) {
   return (
-    <div className="px-4 pt-[22px] pb-8 sm:px-8">
+    <div className="px-4 pt-6 pb-8 sm:px-8">
       {transcript.status === "loading" && <Loading />}
       {transcript.status === "error" && (
         <ErrorNotice message={transcript.message} onRetry={onRetry} />

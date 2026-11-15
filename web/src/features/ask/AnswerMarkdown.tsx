@@ -104,7 +104,7 @@ export interface AnswerMarkdownProps {
 }
 
 /**
- * An answer, set like a call script. Bold text is run over with the
+ * An answer, set like a call script. Bold facts are run over with the
  * highlighter, citation markers such as [1] become chips that point at their
  * source, and placeholders become redaction bars.
  */

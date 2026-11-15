@@ -5,7 +5,7 @@ import { ThumbDownIcon, ThumbUpIcon } from "@/components/icons/glyphs";
 import { StatusLabel } from "@/components/icons/StatusStamp";
 import { IconButton } from "@/components/ui/icon-button";
 
-type FeedbackState =
+export type FeedbackState =
   | { status: "idle" }
   | { status: "saving"; helpful: boolean }
   | { status: "saved"; helpful: boolean }
@@ -14,11 +14,13 @@ type FeedbackState =
 export interface FeedbackButtonsProps {
   /** The trace the vote is recorded against. */
   traceId: string;
+  /** The state to start in. Only the component gallery sets it, to show each state. */
+  initialState?: FeedbackState;
 }
 
 /** Thumbs up and down for one answer. One vote, then both buttons are off. */
-export function FeedbackButtons({ traceId }: FeedbackButtonsProps) {
-  const [state, setState] = useState<FeedbackState>({ status: "idle" });
+export function FeedbackButtons({ traceId, initialState }: FeedbackButtonsProps) {
+  const [state, setState] = useState<FeedbackState>(initialState ?? { status: "idle" });
 
   const vote = (helpful: boolean) => {
     setState({ status: "saving", helpful });
@@ -36,8 +38,8 @@ export function FeedbackButtons({ traceId }: FeedbackButtonsProps) {
   const chosen = locked ? state.helpful : null;
 
   return (
-    <div className="flex items-center gap-1.5">
-      <span aria-live="polite" className="mr-1 text-meta">
+    <div className="flex items-center gap-2">
+      <span aria-live="polite" className="text-meta">
         {state.status === "saved" && (
           <StatusLabel status="ok" className="animate-fade">
             Saved

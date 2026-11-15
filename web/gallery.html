@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="robots" content="noindex" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Frontline Copilot: component gallery</title>
+    <!--
+      The component gallery: every component in every state, from fixtures.
+      It is served by the dev server and built only by `npm run build:mock`.
+      A normal build does not contain it, and the app never links to it.
+    -->
+    <script>
+      // Set the theme before the first paint. The key matches src/hooks/useTheme.ts.
+      // The `?theme=` hook is added after this script by vite.config.ts.
+      (function () {
+        var stored = null;
+        try {
+          stored = window.localStorage.getItem("frontline-copilot.theme");
+        } catch (error) {
+          stored = null;
+        }
+        var dark =
+          stored === "dark" ||
+          (stored !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.classList.toggle("dark", dark);
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/gallery/main.tsx"></script>
+  </body>
+</html>

@@ -8,6 +8,7 @@ import { IconButton } from "@/components/ui/icon-button";
 import { useLoad, type Loadable } from "@/hooks/useLoad";
 import { EXTRA_WIDE_SCREEN, useMediaQuery } from "@/hooks/useMediaQuery";
 import { cn } from "@/lib/cn";
+import { DEMO_CALL, DEMO_CALL_SUMMARY } from "@/lib/devHooks";
 import { humanize } from "@/lib/format";
 
 import { CallList } from "./CallList";
@@ -17,6 +18,47 @@ import { SummaryPanel } from "./SummaryPanel";
 import { TranscriptPanel } from "./TranscriptPanel";
 
 const loadCalls = (signal: AbortSignal) => api.listCalls(signal);
+
+type Summaries = Record<string, Loadable<CallSummary>>;
+
+/** In mock mode `?demo=calls-summary` opens with one summary already asked for. */
+const FIRST_SUMMARIES: Summaries =
+  DEMO_CALL !== null && DEMO_CALL_SUMMARY ? { [DEMO_CALL]: { status: "loading" } } : {};
+
+export interface CallHeaderProps {
+  call: CallListItem;
+  /** Shown on narrow screens, where the call replaces the list. */
+  onBack?: () => void;
+  backButton?: React.Ref<HTMLButtonElement>;
+}
+
+/** The head of a call: its id, its category, how it ended, and the note on redaction. */
+export function CallHeader({ call, onBack, backButton }: CallHeaderProps) {
+  return (
+    <header className="shrink-0 border-b border-line px-4 pt-5 pb-4 sm:px-8 sm:pt-6">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        {onBack && (
+          <IconButton ref={backButton} label="Back to calls" className="lg:hidden" onClick={onBack}>
+            <BackIcon />
+          </IconButton>
+        )}
+        <h2 className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-4">
+          <span className="font-mono text-read font-semibold text-ink-2 sm:text-title">
+            {call.transcript_id}
+          </span>
+          <span className="display-title break-words text-ink sm:display-view">
+            {humanize(call.category)}
+          </span>
+        </h2>
+        <CallStatus resolution={call.resolution} />
+      </div>
+      <p className="mt-2 flex gap-2 text-meta text-ink-2">
+        <PrivacyIcon size={16} className="mt-0.5" />
+        Personal details were replaced with placeholders before this was saved.
+      </p>
+    </header>
+  );
+}
 
 interface CallDetailProps {
   call: CallListItem;
@@ -53,27 +95,7 @@ function CallDetail({ call, summary, onSummarize, onBack }: CallDetailProps) {
 
   return (
     <>
-      <header className="shrink-0 border-b border-line px-4 pt-5 pb-[18px] sm:px-8 sm:pt-6">
-        <div className="flex flex-wrap items-center gap-x-3.5 gap-y-2">
-          <IconButton ref={backButton} label="Back to calls" className="lg:hidden" onClick={onBack}>
-            <BackIcon />
-          </IconButton>
-          <h2 className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3.5">
-            <span className="font-mono text-read font-semibold text-ink-2 sm:text-title">
-              {transcriptId}
-            </span>
-            <span className="font-display text-title font-bold tracking-[-0.02em] break-words text-ink sm:text-view">
-              {humanize(call.category)}
-            </span>
-          </h2>
-          <CallStatus resolution={call.resolution} />
-        </div>
-        <p className="mt-2.5 flex gap-2 text-meta text-ink-2">
-          <PrivacyIcon size={16} className="mt-0.5" />
-          Personal details were replaced with placeholders before this was saved.
-        </p>
-      </header>
-
+      <CallHeader call={call} onBack={onBack} backButton={backButton} />
       <div className="scroll-area flex min-h-0 flex-1 flex-col xl:flex-row xl:overflow-hidden">
         {!threeColumns && (
           <div className="shrink-0 border-b border-line bg-sunken px-4 py-5 sm:px-8">
@@ -85,7 +107,7 @@ function CallDetail({ call, summary, onSummarize, onBack }: CallDetailProps) {
         </div>
         {threeColumns && (
           // The copilot's side rail, on the sunken tone.
-          <aside className="scroll-area w-[25.25rem] shrink-0 border-l border-line bg-sunken p-6">
+          <aside className="scroll-area w-100 shrink-0 border-l border-line bg-sunken p-6">
             {summaryPanel}
           </aside>
         )}
@@ -94,13 +116,12 @@ function CallDetail({ call, summary, onSummarize, onBack }: CallDetailProps) {
   );
 }
 
-function NothingSelected() {
+/** What the Calls view shows on a wide screen before a call is chosen. */
+export function NothingSelected() {
   return (
     <div className="px-8 pt-16">
       <CallsIcon size={32} className="text-ink-3" />
-      <p className="mt-4 font-display text-title font-bold tracking-[-0.01em] text-ink">
-        Choose a call to read it
-      </p>
+      <p className="mt-4 display-title text-ink">Choose a call to read it</p>
       <p className="mt-2 max-w-sm text-ink-2">
         Each transcript can be summarized: what the call was about, the customer&apos;s mood and the
         next step.
@@ -115,14 +136,14 @@ function NothingSelected() {
  */
 export function CallsView() {
   const { state: calls, reload } = useLoad(loadCalls);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [summaries, setSummaries] = useState<Record<string, Loadable<CallSummary>>>({});
+  const [selectedId, setSelectedId] = useState<string | null>(DEMO_CALL);
+  const [summaries, setSummaries] = useState<Summaries>(FIRST_SUMMARIES);
 
-  const summarize = useCallback((transcriptId: string) => {
+  /** Ask the server for a summary and keep whatever comes back. */
+  const fetchSummary = useCallback((transcriptId: string) => {
     const store = (summary: Loadable<CallSummary>) => {
       setSummaries((current) => ({ ...current, [transcriptId]: summary }));
     };
-    store({ status: "loading" });
     api.summarizeCall(transcriptId).then(
       (data) => {
         store({ status: "ready", data });
@@ -132,6 +153,21 @@ export function CallsView() {
       },
     );
   }, []);
+
+  const summarize = useCallback(
+    (transcriptId: string) => {
+      setSummaries((current) => ({ ...current, [transcriptId]: { status: "loading" } }));
+      fetchSummary(transcriptId);
+    },
+    [fetchSummary],
+  );
+
+  // The `?demo=calls-summary` hook of mock mode: the summary is already marked as on its way.
+  useEffect(() => {
+    if (DEMO_CALL !== null && DEMO_CALL_SUMMARY) {
+      fetchSummary(DEMO_CALL);
+    }
+  }, [fetchSummary]);
 
   const back = () => {
     const returnTo = selectedId;
@@ -154,7 +190,7 @@ export function CallsView() {
       <h1 className="sr-only">Calls</h1>
       <div
         className={cn(
-          "w-full shrink-0 flex-col border-r border-line bg-surface lg:flex lg:w-[22rem] xl:w-[24.25rem]",
+          "w-full shrink-0 flex-col border-r border-line bg-surface lg:flex lg:w-88 xl:w-96",
           selected ? "hidden" : "flex",
         )}
       >

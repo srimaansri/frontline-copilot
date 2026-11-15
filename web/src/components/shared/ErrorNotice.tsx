@@ -29,7 +29,7 @@ export function ErrorNotice({
       )}
     >
       <div className="flex min-w-0 flex-1 basis-56 items-start gap-3">
-        <StatusStamp status="warning" size={18} className="mt-0.5" />
+        <StatusStamp status="warning" size={20} className="mt-0.5" />
         <p className="text-ui leading-relaxed text-ink">{message}</p>
       </div>
       {onRetry && (

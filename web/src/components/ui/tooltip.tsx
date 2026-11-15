@@ -18,9 +18,9 @@ export function Tooltip({ label, children }: TooltipProps) {
       <TooltipPrimitive.Trigger asChild>{children}</TooltipPrimitive.Trigger>
       <TooltipPrimitive.Portal>
         <TooltipPrimitive.Content
-          sideOffset={6}
+          sideOffset={8}
           collisionPadding={8}
-          className="z-50 animate-fade rounded-box bg-ink px-2.5 py-1.5 text-label font-semibold text-surface shadow-pop"
+          className="z-50 animate-fade rounded-box bg-ink px-2 py-1 text-label font-semibold text-surface shadow-pop"
         >
           {label}
         </TooltipPrimitive.Content>

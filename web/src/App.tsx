@@ -8,8 +8,12 @@ import { AskView } from "@/features/ask/AskView";
 import { CallsView } from "@/features/calls/CallsView";
 import { useLoad } from "@/hooks/useLoad";
 import { useTheme } from "@/hooks/useTheme";
+import { DEMO_CALL, DEMO_QUESTION } from "@/lib/devHooks";
 
 const loadMeta = (signal: AbortSignal) => api.getMeta(signal);
+
+/** In mock mode a `?demo=` in the URL can open the page on the Calls view. Otherwise: Ask. */
+const FIRST_VIEW: View = DEMO_CALL === null ? "ask" : "calls";
 
 /**
  * The shell: a top bar, one of two views, and the disclaimer. Both views stay
@@ -18,8 +22,8 @@ const loadMeta = (signal: AbortSignal) => api.getMeta(signal);
 export function App() {
   const { state: meta, reload: reloadMeta } = useLoad(loadMeta);
   const { theme, toggleTheme } = useTheme();
-  const [view, setView] = useState<View>("ask");
-  const [callsOpened, setCallsOpened] = useState(false);
+  const [view, setView] = useState<View>(FIRST_VIEW);
+  const [callsOpened, setCallsOpened] = useState(FIRST_VIEW === "calls");
   // A new key remounts the Ask view, which clears the conversation and cancels its request.
   const [conversation, setConversation] = useState(0);
 
@@ -54,7 +58,13 @@ export function App() {
         />
         <main id="main" tabIndex={-1} className="min-h-0 flex-1 focus-visible:outline-none">
           <div hidden={view !== "ask"} className="h-full">
-            <AskView key={conversation} meta={meta} onRetryMeta={reloadMeta} />
+            <AskView
+              key={conversation}
+              meta={meta}
+              onRetryMeta={reloadMeta}
+              // A demo question is sent once, when the page opens, not after "New conversation".
+              firstQuestion={conversation === 0 ? DEMO_QUESTION : null}
+            />
           </div>
           {callsOpened && (
             <div hidden={view !== "calls"} className="h-full">

@@ -5,7 +5,11 @@ import { ExternalLinkIcon } from "@/components/icons/glyphs";
 import { cn } from "@/lib/cn";
 import { hostOf } from "@/lib/format";
 
-/** The source a citation chip pointed at. `tick` changes on every click. */
+/**
+ * The source a citation chip pointed at. `tick` starts at 1 and goes up on
+ * every click, and each new value moves focus to the source. A `tick` of 0
+ * highlights the source without moving focus; the component gallery uses it.
+ */
 export interface SourceHighlight {
   number: number;
   tick: number;
@@ -22,7 +26,7 @@ function SourceCard({ citation, highlightTick }: SourceCardProps) {
 
   // Following a citation moves focus to its source, and scrolls it into view.
   useEffect(() => {
-    if (highlightTick !== null) {
+    if (highlightTick !== null && highlightTick > 0) {
       link.current?.focus();
     }
   }, [highlightTick]);
@@ -37,10 +41,10 @@ function SourceCard({ citation, highlightTick }: SourceCardProps) {
         rel="noopener noreferrer"
         aria-current={highlighted ? "true" : undefined}
         className={cn(
-          "grid grid-cols-[22px_minmax(0,1fr)_20px] items-center gap-x-3 rounded-box border bg-surface px-3.5 py-3 text-ink transition-colors duration-150",
+          "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 rounded-box border bg-surface px-4 py-3 text-ink transition-[border-color,background-color,box-shadow]",
           highlighted
-            ? "border-ink shadow-[inset_0_0_0_0.5px_var(--ink)]"
-            : "border-line-strong hover:border-ink",
+            ? "edge-ink active:bg-sunken"
+            : "border-line-strong hover:edge-ink active:bg-sunken",
         )}
       >
         {/* The same square as the chip in the answer, so the eye can match them. */}

@@ -10,7 +10,7 @@ import { EmptyState } from "./EmptyState";
 import { ExchangeItem } from "./ExchangeItem";
 import { InspectorPanel } from "./InspectorPanel";
 import type { SourceHighlight } from "./SourceList";
-import { useConversation } from "./useConversation";
+import { FIRST_EXCHANGE_ID, useConversation } from "./useConversation";
 
 const NO_TOOLS: readonly ToolInfo[] = [];
 
@@ -22,6 +22,8 @@ interface ExchangeHighlight extends SourceHighlight {
 export interface AskViewProps {
   meta: Loadable<Meta>;
   onRetryMeta: () => void;
+  /** A question to open on and send at once. Only the `?demo=` hook of mock mode passes one. */
+  firstQuestion?: string | null;
 }
 
 /**
@@ -29,9 +31,11 @@ export interface AskViewProps {
  * wide screens, a side rail with the sources and steps of the selected answer.
  * On narrow screens those sit under the answer instead.
  */
-export function AskView({ meta, onRetryMeta }: AskViewProps) {
-  const { exchanges, waiting, ask, retry } = useConversation();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+export function AskView({ meta, onRetryMeta, firstQuestion = null }: AskViewProps) {
+  const { exchanges, waiting, ask, retry } = useConversation(firstQuestion);
+  const [selectedId, setSelectedId] = useState<string | null>(
+    firstQuestion === null ? null : FIRST_EXCHANGE_ID,
+  );
   const [highlight, setHighlight] = useState<ExchangeHighlight | null>(null);
   const composerInput = useRef<HTMLTextAreaElement>(null);
   const sidePanel = useMediaQuery(WIDE_SCREEN);
@@ -99,8 +103,8 @@ export function AskView({ meta, onRetryMeta }: AskViewProps) {
 
   // The conversation and the question box share one column and one left edge.
   const column = empty
-    ? "mx-auto w-full max-w-[86rem] px-4 sm:px-6 lg:px-12 xl:px-[72px]"
-    : "mx-auto w-full max-w-[60rem] px-4 sm:px-6 lg:px-12";
+    ? "mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-12 xl:px-18"
+    : "mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-12";
 
   return (
     <div className="flex h-full min-h-0">

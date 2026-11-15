@@ -7,6 +7,8 @@
  * normal build.
  */
 
+import { DEMO } from "@/lib/devHooks";
+
 import { ApiError } from "./client";
 import type {
   Api,
@@ -595,6 +597,9 @@ function noContextAnswer(): AnswerBody {
 /** Typing exactly this in mock mode makes the request fail, to show the error state. */
 const ERROR_TRIGGER = "/error";
 
+/** Typing exactly this in mock mode leaves the request waiting, to show the pending state. */
+const PENDING_TRIGGER = "/pending";
+
 function chooseAnswer(question: string): AnswerBody {
   const transcriptId = /\bT\d{4}\b/i.exec(question)?.[0].toUpperCase();
   if (/\b(?:ignore|disregard|forget)\b.*\binstructions\b|\bsystem prompt\b/i.test(question)) {
@@ -618,9 +623,36 @@ function chooseAnswer(question: string): AnswerBody {
   return noContextAnswer();
 }
 
+/**
+ * The whole answer to a question, worked out at once. The mock API returns it
+ * after a delay; the component gallery uses it directly.
+ */
+export function mockAnswer(question: string): AskResponse {
+  const redacted = redactQuestion(question);
+  const { flags, steps, ...body } = chooseAnswer(question);
+  return {
+    ...body,
+    question_as_processed: redacted.text,
+    guardrail_flags: [...redacted.flags, ...flags],
+    steps: [redacted.step, ...steps],
+  };
+}
+
+/** The fixtures themselves, for the component gallery. */
+export {
+  CALLS as mockCalls,
+  META as mockMeta,
+  SUMMARIES as mockSummaries,
+  TRANSCRIPTS as mockTranscripts,
+};
+
 // --- The mock API ---------------------------------------------------------------------------
 
-function wait(milliseconds: number, signal?: AbortSignal): Promise<void> {
+/** A page opened on a demo state shows it at once, so a screenshot need not wait. */
+const DELAY_SCALE = DEMO === null ? 1 : 0;
+
+function wait(duration: number, signal?: AbortSignal): Promise<void> {
+  const milliseconds = duration * DELAY_SCALE;
   return new Promise((resolve, reject) => {
     const aborted = () => new DOMException("The request was cancelled.", "AbortError");
     if (signal?.aborted) {
@@ -636,6 +668,19 @@ function wait(milliseconds: number, signal?: AbortSignal): Promise<void> {
       resolve();
     }, milliseconds);
     signal?.addEventListener("abort", onAbort, { once: true });
+  });
+}
+
+/** Never answers. It ends only when the request is cancelled. */
+function untilCancelled(signal?: AbortSignal): Promise<never> {
+  return new Promise((_resolve, reject) => {
+    signal?.addEventListener(
+      "abort",
+      () => {
+        reject(new DOMException("The request was cancelled.", "AbortError"));
+      },
+      { once: true },
+    );
   });
 }
 
@@ -664,17 +709,14 @@ export const mockApi: Api = {
   async ask(request: AskRequest, signal) {
     // Long enough to show the progress hint moving through its steps.
     await wait(2600, signal);
-    if (request.question.trim() === ERROR_TRIGGER) {
+    const question = request.question.trim();
+    if (question === ERROR_TRIGGER) {
       throw new ApiError("The copilot could not answer just now. Please try again.", 502);
     }
-    const redacted = redactQuestion(request.question);
-    const { flags, steps, ...body } = chooseAnswer(request.question);
-    return {
-      ...body,
-      question_as_processed: redacted.text,
-      guardrail_flags: [...redacted.flags, ...flags],
-      steps: [redacted.step, ...steps],
-    };
+    if (question === PENDING_TRIGGER) {
+      await untilCancelled(signal);
+    }
+    return mockAnswer(request.question);
   },
 
   async listCalls(signal) {

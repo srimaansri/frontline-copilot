@@ -30,13 +30,8 @@ export function Sim({ children, cut, selected = false, className, bodyClassName 
 /** The line at the top of anything the copilot wrote: its mark and its name. */
 export function Byline({ className }: { className?: string }) {
   return (
-    <p
-      className={cn(
-        "flex items-center gap-2 text-label font-bold tracking-[0.01em] text-ink-2",
-        className,
-      )}
-    >
-      <CopilotMark size={18} />
+    <p className={cn("flex items-center gap-2 cue", className)}>
+      <CopilotMark size={16} />
       Copilot
     </p>
   );

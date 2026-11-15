@@ -1,7 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 
 import type { CallSummary, Sentiment } from "@/api/types";
-import { CopilotMark } from "@/components/icons/CopilotMark";
 import {
   ArticlesIcon,
   CallSummaryIcon,
@@ -12,8 +11,8 @@ import {
 import type { IconProps } from "@/components/icons/Icon";
 import { ErrorNotice } from "@/components/shared/ErrorNotice";
 import { PlaceholderText } from "@/components/shared/PlaceholderText";
-import { SignalBars } from "@/components/shared/SignalBars";
 import { Byline, Sim } from "@/components/shared/Sim";
+import { WorkingCard } from "@/components/shared/WorkingCard";
 import { Button } from "@/components/ui/button";
 import { useCycle } from "@/hooks/useCycle";
 import type { Loadable } from "@/hooks/useLoad";
@@ -36,7 +35,7 @@ const MOODS: Record<Sentiment, Mood> = {
 function Field({ term, children }: { term: string; children: ReactNode }) {
   return (
     <div>
-      <dt className="mb-1 text-label font-bold tracking-[0.01em] text-ink-2">{term}</dt>
+      <dt className="mb-1 cue">{term}</dt>
       <dd className="leading-normal text-ink">{children}</dd>
     </div>
   );
@@ -48,9 +47,9 @@ function SummaryCard({ summary }: { summary: CallSummary }) {
   return (
     <Sim className="animate-rise" bodyClassName="px-5 pt-5 pb-6 sm:px-6">
       <Byline />
-      <dl className="mt-4 grid gap-[18px]">
+      <dl className="mt-4 grid gap-5">
         <Field term="Intent">
-          <span className="block font-display text-title font-bold tracking-[-0.01em]">
+          <span className="block display-title">
             <PlaceholderText text={humanize(summary.intent)} />
           </span>
         </Field>
@@ -63,7 +62,7 @@ function SummaryCard({ summary }: { summary: CallSummary }) {
         <Field term="What happened">
           <ol className="grid gap-2">
             {summary.summary_bullets.map((bullet, index) => (
-              <li key={bullet} className="grid grid-cols-[24px_minmax(0,1fr)]">
+              <li key={bullet} className="grid grid-cols-[--spacing(6)_minmax(0,1fr)]">
                 <span aria-hidden="true" className="font-mono font-semibold text-ink-3">
                   {index + 1}.
                 </span>
@@ -79,14 +78,14 @@ function SummaryCard({ summary }: { summary: CallSummary }) {
         </Field>
         {summary.related_articles.length > 0 && (
           <Field term="Related articles">
-            <ul className="mt-0.5">
+            <ul>
               {summary.related_articles.map((article) => (
                 <li key={article.number} className="border-t border-line first:border-t-0">
                   <a
                     href={article.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="grid grid-cols-[20px_minmax(0,1fr)] items-center gap-2.5 py-[9px] font-semibold text-brand-text underline underline-offset-[3px]"
+                    className="link grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 py-2"
                   >
                     <ArticlesIcon />
                     <span>
@@ -107,15 +106,7 @@ function SummaryCard({ summary }: { summary: CallSummary }) {
 /** The copilot's card while it writes the summary, with its signal bars seeking. */
 function Summarizing() {
   const bar = useCycle(4, 900);
-  return (
-    <div role="status" className="flex">
-      <Sim cut={16} bodyClassName="flex items-center gap-3.5 py-3.5 pr-9 pl-[18px] text-read">
-        <CopilotMark size={18} />
-        <SignalBars level={bar} seeking={bar} />
-        Summarizing
-      </Sim>
-    </div>
-  );
+  return <WorkingCard bar={bar}>Summarizing</WorkingCard>;
 }
 
 export interface SummaryPanelProps {
@@ -128,9 +119,7 @@ export interface SummaryPanelProps {
 export function SummaryPanel({ summary, onSummarize }: SummaryPanelProps) {
   return (
     <section aria-label="Call summary">
-      {summary?.status !== "ready" && (
-        <h3 className="font-display text-title font-bold tracking-[-0.01em] text-ink">Summary</h3>
-      )}
+      {summary?.status !== "ready" && <h3 className="display-title text-ink">Summary</h3>}
       <div aria-live="polite">
         {summary === undefined && (
           <>

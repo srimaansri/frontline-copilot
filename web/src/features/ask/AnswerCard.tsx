@@ -1,21 +1,16 @@
 import { useMemo } from "react";
 
 import type { ToolInfo } from "@/api/types";
-import { ChevronDownIcon, HandoffIcon, PanelIcon } from "@/components/icons/glyphs";
+import { HandoffIcon } from "@/components/icons/glyphs";
 import { Byline, Sim } from "@/components/shared/Sim";
-import { ToolIcon } from "@/components/shared/ToolIcon";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/cn";
-import { formatSeconds } from "@/lib/format";
-import { toolLabel } from "@/lib/tools";
 
+import { AnswerFooter } from "./AnswerFooter";
 import { AnswerMarkdown } from "./AnswerMarkdown";
-import { FeedbackButtons } from "./FeedbackButtons";
 import type { AnsweredExchange } from "./useConversation";
 
 function HandOffBanner() {
   return (
-    <div className="mt-2 flex items-center gap-2.5 rounded-box border border-warn bg-warn-tint px-4 py-[11px] font-semibold text-ink">
+    <div className="mt-2 flex items-center gap-3 rounded-box border border-warn bg-warn-tint px-4 py-3 font-semibold text-ink">
       <HandoffIcon className="text-warn" />
       This needs a person. A hand-off was opened.
     </div>
@@ -58,7 +53,7 @@ export function AnswerCard({
   );
   return (
     <div>
-      <Sim selected={selected && sidePanel} bodyClassName="px-5 pt-5 pb-6 sm:px-[30px] sm:pb-7">
+      <Sim selected={selected && sidePanel} bodyClassName="px-5 pt-5 pb-6 sm:px-8 sm:pb-8">
         <Byline className="mb-3" />
         <AnswerMarkdown
           markdown={response.answer}
@@ -71,55 +66,15 @@ export function AnswerCard({
 
       {response.escalated && <HandOffBanner />}
 
-      <div className="mt-2.5 flex flex-wrap items-center gap-x-3.5 gap-y-2">
-        {response.tools_used.length > 0 && (
-          <ul aria-label="Used for this answer" className="flex flex-wrap items-center gap-1.5">
-            {response.tools_used.map((name) => (
-              <li
-                key={name}
-                className="inline-flex h-[30px] items-center gap-[7px] rounded-box border border-line-strong bg-surface pr-2.5 pl-2 text-meta font-semibold text-ink-2"
-              >
-                <ToolIcon name={name} size={16} />
-                {toolLabel(tools, name)}
-              </li>
-            ))}
-          </ul>
-        )}
-        <p className="font-mono text-meta text-ink-2">
-          <span className="sr-only">Answered in </span>
-          {formatSeconds(response.seconds)}
-        </p>
-
-        <div className="ml-auto flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
-          {response.trace_id !== null && <FeedbackButtons traceId={response.trace_id} />}
-          {sidePanel ? (
-            <Button
-              size="sm"
-              className="h-9"
-              // Ink fill: these are the details on show in the side rail.
-              variant={selected ? "on" : "outline"}
-              aria-pressed={selected}
-              onClick={onToggleDetails}
-            >
-              <PanelIcon size={16} />
-              Sources and steps
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              className="h-9 pr-2 pl-3"
-              aria-expanded={selected}
-              aria-controls={detailsId}
-              onClick={onToggleDetails}
-            >
-              Sources and steps
-              <ChevronDownIcon
-                size={16}
-                className={cn("transition-transform duration-200", selected && "rotate-180")}
-              />
-            </Button>
-          )}
-        </div>
+      <div className="mt-3">
+        <AnswerFooter
+          response={response}
+          tools={tools}
+          selected={selected}
+          sidePanel={sidePanel}
+          detailsId={detailsId}
+          onToggleDetails={onToggleDetails}
+        />
       </div>
     </div>
   );

@@ -1,6 +1,4 @@
-import { CopilotMark } from "@/components/icons/CopilotMark";
-import { SignalBars } from "@/components/shared/SignalBars";
-import { Sim } from "@/components/shared/Sim";
+import { WorkingCard } from "@/components/shared/WorkingCard";
 import { useCycle } from "@/hooks/useCycle";
 
 /** The stages every question goes through. Shown in turn; they are not live progress. */
@@ -22,15 +20,11 @@ const HINT_MILLISECONDS = 1800;
 export function ProgressHint() {
   const index = useCycle(HINTS.length, HINT_MILLISECONDS);
   return (
-    <div role="status" className="flex">
+    <WorkingCard bar={index}>
       <span className="sr-only">Working on the answer.</span>
-      <Sim cut={16} bodyClassName="flex items-center gap-3.5 py-3.5 pr-9 pl-[18px] text-read">
-        <CopilotMark size={18} />
-        <SignalBars level={index} seeking={index} />
-        <span key={index} aria-hidden="true" className="animate-fade">
-          {HINTS[index]}
-        </span>
-      </Sim>
-    </div>
+      <span key={index} aria-hidden="true" className="animate-fade">
+        {HINTS[index]}
+      </span>
+    </WorkingCard>
   );
 }

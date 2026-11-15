@@ -16,6 +16,9 @@ export const MAX_QUESTION_CHARS = 2000;
 const MAX_HISTORY_EXCHANGES = 20;
 const MAX_TURN_CHARS = 8000;
 
+/** The id of the exchange for a question the conversation opens with. */
+export const FIRST_EXCHANGE_ID = "exchange-0";
+
 /** The answered exchanges as the server wants them: the newest twenty, oldest first. */
 function toHistory(exchanges: readonly Exchange[]): ChatTurn[] {
   return exchanges
@@ -40,17 +43,18 @@ export interface Conversation {
 /**
  * The conversation on the Ask view. A failed question stays in the list with
  * its text, so it can be sent again and is never lost.
+ *
+ * @param firstQuestion A question to open with and send at once. Only the
+ *   `?demo=` hook of mock mode passes one. Its exchange is `FIRST_EXCHANGE_ID`.
  */
-export function useConversation(): Conversation {
-  const [exchanges, setExchanges] = useState<Exchange[]>([]);
+export function useConversation(firstQuestion: string | null = null): Conversation {
+  const [exchanges, setExchanges] = useState<Exchange[]>(() =>
+    firstQuestion === null
+      ? []
+      : [{ id: FIRST_EXCHANGE_ID, question: firstQuestion, status: "pending" }],
+  );
   const nextId = useRef(1);
   const controller = useRef<AbortController | null>(null);
-
-  useEffect(() => {
-    return () => {
-      controller.current?.abort();
-    };
-  }, []);
 
   const waiting = exchanges.some((exchange) => exchange.status === "pending");
 
@@ -71,6 +75,16 @@ export function useConversation(): Conversation {
       },
     );
   }, []);
+
+  // Send the opening question, if there is one, and cancel whatever is in flight on the way out.
+  useEffect(() => {
+    if (firstQuestion !== null) {
+      send(FIRST_EXCHANGE_ID, firstQuestion, []);
+    }
+    return () => {
+      controller.current?.abort();
+    };
+  }, [firstQuestion, send]);
 
   const ask = useCallback(
     (question: string): string | null => {

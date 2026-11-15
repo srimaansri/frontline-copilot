@@ -30,4 +30,14 @@ export default tseslint.config(
       "@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: true }],
     },
   },
+  {
+    // Node scripts, such as the contrast check.
+    files: ["scripts/**/*.mjs"],
+    extends: [js.configs.recommended],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: "module",
+      globals: globals.node,
+    },
+  },
 );

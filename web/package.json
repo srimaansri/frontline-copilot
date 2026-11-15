@@ -5,9 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:mock": "vite --mode mock",
     "build": "tsc -b && vite build",
+    "build:mock": "tsc -b && vite build --mode mock",
     "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json",
-    "lint": "eslint . --max-warnings 0",
+    "lint": "npm run lint:code && npm run check:contrast",
+    "lint:code": "eslint . --max-warnings 0",
+    "check:contrast": "node scripts/check-contrast.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

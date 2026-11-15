@@ -5,7 +5,7 @@ export interface FooterProps {
 
 export function Footer({ disclaimer }: FooterProps) {
   return (
-    <footer className="shrink-0 border-t border-line bg-paper px-4 py-2.5 sm:px-6">
+    <footer className="shrink-0 border-t border-line bg-paper px-4 py-2 sm:px-6">
       <p className="min-h-4 text-label text-ink-3">{disclaimer}</p>
     </footer>
   );

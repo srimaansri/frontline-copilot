@@ -38,7 +38,7 @@ function StageCue({ step, tools }: { step: Step; tools: readonly ToolInfo[] }) {
   const stage = STAGES[step.stage];
   const Glyph = stage.icon;
   return (
-    <p className="flex min-h-[22px] items-center gap-1.5 text-label font-bold tracking-[0.01em] text-ink-2">
+    <p className="flex min-h-6 items-center gap-2 cue">
       {step.tool === null ? <Glyph size={16} /> : <ToolIcon name={step.tool} size={16} />}
       {step.tool === null ? stage.label : toolLabel(tools, step.tool)}
     </p>
@@ -57,27 +57,27 @@ function Station({ step, tools, index }: StationProps) {
     <li
       className="stn animate-rise"
       data-branch={branch}
-      style={{ animationDelay: `${index * 55}ms` }}
+      style={{ animationDelay: `calc(var(--stagger) * ${index})` }}
     >
       {branch && (
         // The line leaves the copilot at 45 degrees. This leg is still the copilot's: solid.
-        <svg className="stn-diag" viewBox="0 0 50 28" aria-hidden="true" focusable="false">
-          <path d="M11 0L39 28" />
+        <svg className="stn-diag" viewBox="0 0 52 28" aria-hidden="true" focusable="false">
+          <path d="M12 0L40 28" />
         </svg>
       )}
       <div className="stn-row">
         <span className="stn-stamp">
-          <StatusStamp status={step.status} size={22} className="relative z-[1]" />
+          <StatusStamp status={step.status} size={24} className="relative z-[1]" />
           {/* From here the request is with a person: dashed, down to the tag. */}
           {branch && <span aria-hidden="true" className="stn-leg" />}
         </span>
         {/* On the branch, the space under the text is where the dashed leg runs down to the tag. */}
         <div className={cn("min-w-0", branch && "pb-3")}>
           <StageCue step={step} tools={tools} />
-          <p className="mt-[3px] font-bold text-ink">{step.title}</p>
+          <p className="mt-0.5 font-bold text-ink">{step.title}</p>
           {step.detail !== "" && <p className="mt-0.5 text-meta text-ink-2">{step.detail}</p>}
         </div>
-        <StatusWord status={step.status} className="leading-[22px]" />
+        <StatusWord status={step.status} className="leading-6" />
       </div>
       {branch && (
         <p className="stn-tag">
@@ -92,19 +92,20 @@ function Station({ step, tools, index }: StationProps) {
   );
 }
 
-function Legend() {
+/** The key to the route: the four status shapes and the two kinds of leg. */
+export function RouteLegend() {
   return (
-    <div className="mt-6 border-t border-line pt-3 text-label text-ink-2">
-      <h4 className="font-bold tracking-[0.01em]">Legend</h4>
-      <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5">
+    <div className="border-t border-line pt-3 text-label text-ink-2">
+      <h4 className="cue">Legend</h4>
+      <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-2">
         {LEGEND_STATUSES.map(({ status, word }) => (
-          <li key={status} className="flex items-center gap-1.5">
-            <StatusStamp status={status} size={14} />
+          <li key={status} className="flex items-center gap-2">
+            <StatusStamp status={status} />
             {word}
           </li>
         ))}
       </ul>
-      <ul className="mt-2 flex flex-wrap gap-x-5 gap-y-1.5">
+      <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-2">
         <li className="flex items-center gap-2">
           <span aria-hidden="true" className="legend-line" />
           Done by the copilot
@@ -138,7 +139,9 @@ export function StepsRoute({ steps, tools }: StepsRouteProps) {
           <Station key={index} step={step} tools={tools} index={index} />
         ))}
       </ol>
-      <Legend />
+      <div className="mt-6">
+        <RouteLegend />
+      </div>
     </>
   );
 }

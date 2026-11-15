@@ -27,10 +27,10 @@ function describeRun(steps: readonly Step[]): string {
 /** A row of status shapes, one per step: the whole run at a glance, before its detail. */
 function Tally({ steps }: { steps: readonly Step[] }) {
   return (
-    <span role="img" aria-label={describeRun(steps)} className="inline-flex items-center gap-[3px]">
+    <span role="img" aria-label={describeRun(steps)} className="inline-flex items-center gap-0.5">
       {steps.map((step, index) => (
         // Steps arrive in a fixed order and are never reordered.
-        <StatusStamp key={index} status={step.status} size={14} />
+        <StatusStamp key={index} status={step.status} />
       ))}
     </span>
   );
@@ -46,10 +46,10 @@ interface SectionProps {
 function Section({ title, aside, children }: SectionProps) {
   return (
     <section className="border-line-strong not-first:mt-8 not-first:border-t not-first:pt-6">
-      <div className="mb-3.5 flex flex-wrap items-center gap-x-2.5 gap-y-1">
-        <h3 className="font-display text-title font-bold tracking-[-0.01em] text-ink">{title}</h3>
+      <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1">
+        <h3 className="display-title text-ink">{title}</h3>
         {aside !== undefined && (
-          <span className="ml-auto inline-flex items-center gap-2.5 font-mono text-meta text-ink-2">
+          <span className="ml-auto inline-flex items-center gap-3 font-mono text-meta text-ink-2">
             {aside}
           </span>
         )}

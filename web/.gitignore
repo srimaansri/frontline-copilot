@@ -3,3 +3,5 @@ dist/
 *.tsbuildinfo
 .env.local
 .env.*.local
+# The mode file for mock mode holds no secret and is part of the project.
+!.env.mock

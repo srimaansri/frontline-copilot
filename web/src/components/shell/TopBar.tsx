@@ -26,12 +26,17 @@ const VIEWS: readonly { id: View; label: string; icon: (props: IconProps) => Rea
   { id: "calls", label: "Calls", icon: CallsIcon },
 ];
 
+export interface DataTagProps {
+  children: string;
+  className?: string;
+}
+
 /** A dashed outline marks a label about the data itself: it is synthetic, or mocked. */
-function DataTag({ children, className }: { children: string; className?: string }) {
+export function DataTag({ children, className }: DataTagProps) {
   return (
     <span
       className={cn(
-        "shrink-0 border border-dashed border-line-strong px-2 py-[3px] text-label font-semibold whitespace-nowrap text-ink-2",
+        "shrink-0 border border-dashed border-line-strong px-2 py-0.5 text-label font-semibold whitespace-nowrap text-ink-2",
         className,
       )}
     >
@@ -40,15 +45,52 @@ function DataTag({ children, className }: { children: string; className?: string
   );
 }
 
-interface ThemeToggleProps {
+export interface ViewSwitcherProps {
+  view: View;
+  onViewChange: (view: View) => void;
+  className?: string;
+}
+
+/** Ask and Calls, side by side. The view you are on is filled with ink. */
+export function ViewSwitcher({ view, onViewChange, className }: ViewSwitcherProps) {
+  return (
+    <nav
+      aria-label="Views"
+      className={cn("flex overflow-hidden rounded-box frame border-ink", className)}
+    >
+      {VIEWS.map(({ id, label, icon: Glyph }, index) => (
+        <button
+          key={id}
+          type="button"
+          aria-current={view === id ? "page" : undefined}
+          onClick={() => {
+            onViewChange(id);
+          }}
+          className={cn(
+            "inline-flex h-9 flex-1 items-center justify-center gap-2 pr-4 pl-3 font-semibold transition-colors focus-visible:-outline-offset-2 sm:flex-none",
+            index > 0 && "border-l-(length:--control-border) border-ink",
+            view === id
+              ? "bg-ink text-surface"
+              : "bg-surface text-ink hover:bg-sunken active:bg-line",
+          )}
+        >
+          <Glyph />
+          {label}
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+export interface ThemeToggleProps {
   theme: Theme;
   onToggle: () => void;
 }
 
 /** Sun and moon side by side. The one that is on is filled with ink. */
-function ThemeToggle({ theme, onToggle }: ThemeToggleProps) {
+export function ThemeToggle({ theme, onToggle }: ThemeToggleProps) {
   const label = `Switch to ${theme === "dark" ? "light" : "dark"} theme`;
-  const half = "grid w-[30px] place-items-center sm:w-[38px]";
+  const half = "grid w-7 place-items-center transition-colors sm:w-10";
   const on = "bg-ink text-surface";
   const off = "text-ink-3";
   return (
@@ -57,7 +99,7 @@ function ThemeToggle({ theme, onToggle }: ThemeToggleProps) {
         type="button"
         aria-label={label}
         onClick={onToggle}
-        className="inline-flex h-9 shrink-0 overflow-hidden rounded-box border-[1.5px] border-line-strong bg-surface transition-colors duration-150 hover:border-ink sm:h-10"
+        className="inline-flex h-9 shrink-0 overflow-hidden rounded-box frame border-line-strong bg-surface transition-colors hover:border-ink active:bg-sunken sm:h-10"
       >
         <span className={cn(half, theme === "light" ? on : off)}>
           <SunIcon />
@@ -89,46 +131,26 @@ export function TopBar({
 }: TopBarProps) {
   return (
     <header className="shrink-0 border-b border-line bg-surface">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5 px-4 py-2.5 sm:h-16 sm:flex-nowrap sm:px-6 sm:py-0">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <CopilotMark size={30} />
-          <p className="truncate font-display text-read font-bold tracking-[-0.015em] sm:text-title">
-            Frontline Copilot
-          </p>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2 sm:h-16 sm:flex-nowrap sm:px-6 sm:py-0">
+        <div className="flex min-w-0 items-center gap-2">
+          <CopilotMark size={32} />
+          {/* On a phone the name is set at the reading size, so the bar fits on one row. */}
+          <p className="truncate display-title max-sm:text-read">Frontline Copilot</p>
         </div>
         <DataTag className="hidden lg:inline">Demo, synthetic data</DataTag>
         {USE_MOCK && <DataTag className="hidden xl:inline">Mock mode</DataTag>}
 
-        <nav
-          aria-label="Views"
-          className="order-last flex w-full overflow-hidden rounded-box border-[1.5px] border-ink sm:order-none sm:ml-1 sm:w-auto"
-        >
-          {VIEWS.map(({ id, label, icon: Glyph }, index) => (
-            <button
-              key={id}
-              type="button"
-              aria-current={view === id ? "page" : undefined}
-              onClick={() => {
-                onViewChange(id);
-              }}
-              className={cn(
-                "inline-flex h-[37px] flex-1 items-center justify-center gap-2 pr-4 pl-3 font-semibold transition-colors duration-150 focus-visible:-outline-offset-2 sm:flex-none",
-                index > 0 && "border-l-[1.5px] border-ink",
-                // Ink fill: you are here.
-                view === id ? "bg-ink text-surface" : "bg-surface text-ink hover:bg-sunken",
-              )}
-            >
-              <Glyph />
-              {label}
-            </button>
-          ))}
-        </nav>
+        <ViewSwitcher
+          view={view}
+          onViewChange={onViewChange}
+          className="order-last w-full sm:order-none sm:w-auto"
+        />
 
-        <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2.5">
+        <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
           <RunningPopover meta={meta} />
           <ThemeToggle theme={theme} onToggle={onToggleTheme} />
           <Button
-            className="h-9 px-2 sm:h-10 sm:px-2.5 xl:pr-3.5 xl:pl-3"
+            className="h-9 px-2 sm:h-10 xl:px-3"
             aria-label="New conversation"
             onClick={onNewConversation}
           >

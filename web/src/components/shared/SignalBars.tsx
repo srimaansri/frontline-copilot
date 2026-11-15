@@ -7,7 +7,8 @@ export interface SignalBarsProps {
   level: number;
   /** The bar being worked on (0 to 3), which pulses. */
   seeking?: number;
-  size?: "sm" | "md";
+  /** 16px beside a label, 24px on a card, 36px as a diagram. */
+  size?: "sm" | "md" | "lg";
   /** "live" bars fill with cobalt. "ink" bars are a still diagram. */
   tone?: "live" | "ink";
   className?: string;

@@ -11,9 +11,9 @@ function Waiting() {
       <p className="text-ink-2">The sources and steps show here when the answer is ready.</p>
       <div className="mt-6 grid gap-6">
         {[0, 1, 2, 3].map((row) => (
-          <div key={row} className="flex gap-3.5">
-            <Skeleton className="size-[22px] shrink-0" />
-            <div className="flex-1 space-y-2 pt-0.5">
+          <div key={row} className="flex gap-3">
+            <Skeleton className="size-6 shrink-0" />
+            <div className="grid flex-1 gap-2 pt-0.5">
               <Skeleton className="h-3 w-20" />
               <Skeleton className="h-4 w-3/4" />
             </div>
@@ -43,12 +43,12 @@ export function InspectorPanel({ exchange, tools, highlight }: InspectorPanelPro
   return (
     <aside
       aria-label="Sources and steps for the selected answer"
-      className="flex w-[24rem] shrink-0 animate-fade flex-col border-l border-line bg-sunken xl:w-[27.5rem]"
+      className="flex w-96 shrink-0 animate-fade flex-col border-l border-line bg-sunken xl:w-110"
     >
       <div className="scroll-area min-h-0 flex-1 px-6 pt-6 pb-8">
         {exchange !== null && (
           <div className="mb-6">
-            <p className="text-label font-bold tracking-[0.01em] text-ink-2">Agent asked</p>
+            <p className="cue">Agent asked</p>
             <p className="mt-1 line-clamp-2 text-meta text-ink-2">{exchange.question}</p>
           </div>
         )}

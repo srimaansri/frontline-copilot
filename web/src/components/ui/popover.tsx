@@ -11,6 +11,14 @@ export function PopoverTrigger(props: ComponentProps<typeof PopoverPrimitive.Tri
   return <PopoverPrimitive.Trigger {...props} />;
 }
 
+const PANEL =
+  "w-84 max-w-[calc(100vw-1.5rem)] rounded-box frame border-ink bg-surface p-5 text-ink shadow-pop";
+
+/** A popover's panel on its own, not floating. The gallery shows popover content in it. */
+export function PopoverPanel({ className, ...props }: ComponentProps<"div">) {
+  return <div className={cn(PANEL, className)} {...props} />;
+}
+
 export function PopoverContent({
   className,
   align = "end",
@@ -24,11 +32,7 @@ export function PopoverContent({
         align={align}
         sideOffset={sideOffset}
         collisionPadding={collisionPadding}
-        className={cn(
-          "z-50 w-84 max-w-[calc(100vw-1.5rem)] rounded-box border-[1.5px] border-ink bg-surface p-5 text-ink",
-          "animate-pop shadow-pop",
-          className,
-        )}
+        className={cn("z-50 animate-pop", PANEL, className)}
         {...props}
       />
     </PopoverPrimitive.Portal>

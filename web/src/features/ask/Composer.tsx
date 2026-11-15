@@ -14,11 +14,13 @@ export interface ComposerProps {
   onSend: (question: string) => boolean;
   /** True while an answer is on its way. Typing still works; sending does not. */
   waiting: boolean;
+  /** Text to start with. Only the component gallery sets it, to show the box in use. */
+  initialValue?: string;
 }
 
 /** The question box. Enter sends, Shift+Enter starts a new line. */
-export function Composer({ inputRef, onSend, waiting }: ComposerProps) {
-  const [value, setValue] = useState("");
+export function Composer({ inputRef, onSend, waiting, initialValue = "" }: ComposerProps) {
+  const [value, setValue] = useState(initialValue);
   const inputId = useId();
   const hintId = useId();
   const canSend = !waiting && value.trim() !== "";
@@ -53,8 +55,8 @@ export function Composer({ inputRef, onSend, waiting }: ComposerProps) {
         send();
       }}
     >
-      {/* The focus ring is drawn on the box, since the text area has no edge of its own. */}
-      <div className="flex items-end gap-3 rounded-box border-[1.5px] border-line-strong bg-surface py-3 pr-3 pl-5 transition-colors duration-150 focus-within:border-ink has-[textarea:focus-visible]:outline-2 has-[textarea:focus-visible]:outline-offset-2 has-[textarea:focus-visible]:outline-brand-text">
+      {/* The box is the field. Its one focus ring is drawn by the `field` class. */}
+      <div className="field flex items-end gap-3 py-3 pr-3 pl-5">
         <label htmlFor={inputId} className="sr-only">
           Your question
         </label>
@@ -70,13 +72,13 @@ export function Composer({ inputRef, onSend, waiting }: ComposerProps) {
             setValue(event.target.value);
           }}
           onKeyDown={onKeyDown}
-          className="scrollbar-quiet min-h-11 flex-1 resize-none bg-transparent py-2 text-read text-ink focus-visible:outline-none"
+          className="scrollbar-quiet min-h-11 flex-1 resize-none bg-transparent py-2 text-read text-ink"
         />
         <button
           type="submit"
           aria-label={waiting ? "Waiting for the answer" : "Send question"}
           disabled={!canSend}
-          className="grid size-11 shrink-0 place-items-center rounded-box bg-brand text-on-brand transition-[filter,opacity] duration-150 hover:brightness-110 disabled:pointer-events-none disabled:opacity-50"
+          className="grid size-11 shrink-0 place-items-center rounded-box bg-brand text-on-brand transition-colors hover:bg-brand-strong active:bg-brand-press disabled:pointer-events-none disabled:opacity-50"
         >
           <SendIcon size={24} />
         </button>
