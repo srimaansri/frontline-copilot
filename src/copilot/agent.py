@@ -243,6 +243,11 @@ class Copilot:
         return self._chat_model
 
     @property
+    def redactor(self) -> Redactor:
+        """The redactor this copilot applies to questions, for callers that show its result."""
+        return self._get_redactor()
+
+    @property
     def tools(self) -> Tools:
         """The tools this copilot uses, for callers that need one directly, such as the app."""
         return self._get_tools()

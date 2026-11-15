@@ -52,11 +52,14 @@ eval = [
     # CI prints the resolved versions as a notice on each run.
     'pyarrow<20; python_version < "3.12"',
 ]
-# The Streamlit interface (app/).
+# The web interface: a REST API (api/) that also serves the built front end (web/).
+# The Streamlit page in app/ is the earlier interface.
 app = [
     "frontline-copilot[rag]",
+    "fastapi==0.163.0",
     "python-dotenv==1.2.4",
     "streamlit==1.67.0",
+    "uvicorn==0.54.0",
 ]
 # The MCP server (mcp_server/). databricks-langchain already brings the SDK in;
 # pinned here because the server imports it directly.
@@ -70,7 +73,7 @@ models = [
     "en_core_web_md @ https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.8.0/en_core_web_md-3.8.0-py3-none-any.whl",
 ]
 dev = [
-    "frontline-copilot[data,eval,mcp]",
+    "frontline-copilot[app,data,eval,mcp]",
     # Small pipeline for unit tests, so CI does not download the default one.
     "en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
     "mypy==2.4.1",
@@ -111,7 +114,7 @@ select = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["copilot", "data_gen", "eval", "mcp_server"]
+known-first-party = ["api", "copilot", "data_gen", "eval", "mcp_server"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
