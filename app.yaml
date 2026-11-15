@@ -1,9 +1,11 @@
 # Databricks Apps configuration. It sits at the repository root so the deployed
-# source includes src/copilot, which the page imports.
-command: ['streamlit', 'run', 'app/app.py']
+# source includes api/ (the REST API), src/copilot (the agent the API calls) and
+# web/dist (the built interface the API serves at "/").
+#
+# No host or port is given: Databricks Apps sets UVICORN_HOST and UVICORN_PORT,
+# and uvicorn reads them.
+command: ['uvicorn', 'api.main:app']
 env:
-  - name: 'STREAMLIT_GATHER_USAGE_STATS'
-    value: 'false'
   # Set from the app's resources, never typed in here.
   - name: 'SQL_WAREHOUSE_ID'
     valueFrom: 'sql-warehouse'
