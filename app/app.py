@@ -64,7 +64,12 @@ def get_copilot() -> tuple[Copilot, Settings, bool]:
     if settings.mlflow_experiment:
         try:
             mlflow.set_tracking_uri("databricks")
-            mlflow.set_experiment(settings.mlflow_experiment)
+            # Locally this is a workspace path. On Databricks Apps the experiment is
+            # an app resource and arrives as its numeric id.
+            if settings.mlflow_experiment.isdigit():
+                mlflow.set_experiment(experiment_id=settings.mlflow_experiment)
+            else:
+                mlflow.set_experiment(settings.mlflow_experiment)
             tracing = True
         except Exception:
             # The app still answers without a tracking server; it only loses traces.
