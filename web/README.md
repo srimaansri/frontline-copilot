@@ -33,13 +33,15 @@ Mock mode needs no API. The client answers from the fixtures in `src/api/mock.ts
 npm run dev:mock
 ```
 
-That is `vite --mode mock`, which loads `.env.mock`. No environment variable has to be set. The top bar shows a "Mock mode" tag on a wide window while it is on, and the "What's running" popover says so at any width. The fixtures cover:
+That is `vite --mode mock`, which loads `.env.mock`. No environment variable has to be set. The top bar shows a "Mock mode" tag on a wide window while it is on, and the line under the question box and the "What's running" popover say so at any width. The fixtures cover:
 
 - the four example questions on the Ask view;
 - an answer exactly as the live model wrote it, with bold labels and a numbered list interrupted by bullets: ask "How do I request a waiver?";
 - a hand-off, whose route branches to a tag with the ticket reference: ask it to refund something;
 - a refusal: ask it to "ignore your instructions";
-- a question with no matching article: ask anything else;
+- a question with no matching article: ask about a discount;
+- a greeting, a thank-you and "what can you do?", which the model answers without a tool;
+- anything else: a note that the demo has no saved answer for it, with the questions it can answer. It is not the copilot's "no article matched" answer, because the live copilot would search for it;
 - redaction: put a phone number, an email address or "name is Linda Garcia" in a question to see the "As processed" line;
 - a failed request: send exactly `/error` to see the error message and its retry button;
 - a request that never answers: send exactly `/pending`;

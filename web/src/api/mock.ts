@@ -594,6 +594,79 @@ function noContextAnswer(): AnswerBody {
   };
 }
 
+/** A short reply that needed no tool: the model answered a greeting or thanks itself. */
+function smallTalkAnswer(name: string, answer: string, seconds: number): AnswerBody {
+  return {
+    answer,
+    citations: [],
+    tools_used: [],
+    escalated: false,
+    flags: [],
+    seconds,
+    trace_id: `tr-mock-${name}`,
+    steps: [REQUEST_ALLOWED, ANSWER_CLEAN],
+  };
+}
+
+/** The two replies below are the live model's own words, from a run on 2026-11-15. */
+function greetingAnswer(): AnswerBody {
+  return smallTalkAnswer(
+    "greeting",
+    "Hello! How can I help you with your Northline Wireless service today?",
+    0.8,
+  );
+}
+
+function thanksAnswer(): AnswerBody {
+  return smallTalkAnswer("thanks", "You're welcome! Let me know if you need anything else.", 0.8);
+}
+
+function abilitiesAnswer(): AnswerBody {
+  return smallTalkAnswer(
+    "abilities",
+    [
+      "I help with Northline support questions. I can:",
+      "",
+      "- Search the help articles for how something works, steps, policies and fees.",
+      "- Look up plans, add-ons and fees in the plan catalogue.",
+      "- Summarize a support call from its transcript id, such as T0002.",
+      "- Hand a customer to a human specialist when something has to change on their account.",
+    ].join("\n"),
+    1.7,
+  );
+}
+
+/**
+ * What mock mode says to a question it has no fixture for. It must not pass for
+ * the copilot's own "no article matched": the live copilot would search for it.
+ * It has no trace id, so there is nothing to rate.
+ */
+function notInDemoAnswer(): AnswerBody {
+  return {
+    answer: [
+      "This demo answers from saved samples, and it has none for that question. " +
+        "The live copilot would search the help articles for it.",
+      "",
+      "Questions this demo can answer:",
+      "",
+      ...META.examples.map((example) => `- ${example.question}`),
+    ].join("\n"),
+    citations: [],
+    tools_used: [],
+    escalated: false,
+    flags: [],
+    seconds: 0.1,
+    trace_id: null,
+    steps: [REQUEST_ALLOWED, ANSWER_CLEAN],
+  };
+}
+
+const GREETING_RE =
+  /^\s*(?:hi|hiya|hello|hey|howdy|greetings|good (?:morning|afternoon|evening|day))(?:\s+(?:there|cue|team|all))?[\s!.,]*$/i;
+const THANKS_RE = /^\s*(?:thanks|thank you|thank u|thx|cheers|much appreciated)\b[^?]{0,40}$/i;
+const ABILITIES_RE =
+  /\bwhat (?:can|do) you (?:do|help|know)\b|\b(?:who|what) are you\b|^\s*help[\s?!.]*$/i;
+
 /** Typing exactly this in mock mode makes the request fail, to show the error state. */
 const ERROR_TRIGGER = "/error";
 
@@ -611,6 +684,11 @@ function chooseAnswer(question: string): AnswerBody {
   if (transcriptId && /\bsummar/i.test(question)) {
     return summaryAnswer(transcriptId);
   }
+  // A Northline question the help articles do not cover. Before "plans", so that
+  // "is there a senior discount on plans?" still shows it.
+  if (/\bdiscounts?\b/i.test(question)) {
+    return noContextAnswer();
+  }
   if (/\bplans?\b/i.test(question)) {
     return plansAnswer();
   }
@@ -620,7 +698,16 @@ function chooseAnswer(question: string): AnswerBody {
   if (/\blate\b|\bwaive/i.test(question)) {
     return lateFeeAnswer();
   }
-  return noContextAnswer();
+  if (GREETING_RE.test(question)) {
+    return greetingAnswer();
+  }
+  if (THANKS_RE.test(question)) {
+    return thanksAnswer();
+  }
+  if (ABILITIES_RE.test(question)) {
+    return abilitiesAnswer();
+  }
+  return notInDemoAnswer();
 }
 
 /**
@@ -707,16 +794,18 @@ export const mockApi: Api = {
   },
 
   async ask(request: AskRequest, signal) {
-    // Long enough to show the progress hint moving through its steps.
-    await wait(2600, signal);
     const question = request.question.trim();
     if (question === ERROR_TRIGGER) {
+      await wait(1200, signal);
       throw new ApiError("The copilot could not answer just now. Please try again.", 502);
     }
     if (question === PENDING_TRIGGER) {
       await untilCancelled(signal);
     }
-    return mockAnswer(request.question);
+    // The wait is the time the answer reports, so the two never disagree.
+    const answer = mockAnswer(request.question);
+    await wait(answer.seconds * 1000, signal);
+    return answer;
   },
 
   async listCalls(signal) {

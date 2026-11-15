@@ -1,5 +1,6 @@
 import { useId, useLayoutEffect, useState, type KeyboardEvent, type RefObject } from "react";
 
+import { USE_MOCK } from "@/api/client";
 import { SendIcon } from "@/components/icons/glyphs";
 
 import { MAX_QUESTION_CHARS } from "./useConversation";
@@ -87,6 +88,10 @@ export function Composer({ inputRef, onSend, waiting, initialValue = "" }: Compo
         {/* A touch screen has no Shift+Enter, and the line costs a row of a small screen. */}
         <span className="pointer-coarse:hidden">Enter to send, Shift+Enter for a new line. </span>
         Personal details are replaced before a question is processed or logged.
+        {/* The top bar's "Mock mode" tag is hidden on a narrow window. This is shown at any width. */}
+        {USE_MOCK && (
+          <span className="font-semibold text-ink-2"> Mock mode: answers are saved samples.</span>
+        )}
       </p>
     </form>
   );
