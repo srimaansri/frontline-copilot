@@ -107,7 +107,7 @@ export function TokensSection() {
       ))}
       <Row label="faces">
         <div className="grid gap-3">
-          <p className="display-title">Bricolage Grotesque: display</p>
+          <p className="display-title">Schibsted Grotesk: display</p>
           <p className="text-read">Atkinson Hyperlegible Next: text. Il1 O0 B8 5S rn m</p>
           <p className="font-mono text-read font-semibold">
             Atkinson Hyperlegible Mono: codes. ESC-B695DE84 T0002

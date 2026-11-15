@@ -132,7 +132,7 @@ src/
 
 ## Notes
 
-- Fonts (Bricolage Grotesque, Atkinson Hyperlegible Next and Atkinson Hyperlegible Mono) are bundled from npm. Nothing is loaded from a CDN, and there is no analytics.
+- Fonts (Schibsted Grotesk, Atkinson Hyperlegible Next and Atkinson Hyperlegible Mono) are bundled from npm. Nothing is loaded from a CDN, and there is no analytics.
 - The theme follows the system setting on the first visit. A choice made with the toggle is kept in `localStorage`.
 - Answers are rendered from Markdown with `react-markdown`. Raw HTML in an answer is shown as text and never run.
 - Dependencies are pinned to exact versions. Keep `package-lock.json` committed.

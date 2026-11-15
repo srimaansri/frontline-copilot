@@ -106,3 +106,20 @@ In the interface the copilot is called **Cue**. The project and the repository k
 - It starts with the letter the mark already draws.
 
 Where it appears: the name in the top bar, the line over each answer, "What Cue did" over the steps, and the browser tab. Running text still says "the copilot" where it means the kind of thing, as in "the copilot cannot change an account".
+
+## The type
+
+The first identity used Bricolage Grotesque for display, Atkinson Hyperlegible Next for text and Atkinson Hyperlegible Mono for data. That was a reasoned choice but nothing had been set against it, so the faces were put through the same process as the mark. The sheets are in [type](type).
+
+**Round one: eight whole sets on the screens** ([specimens.html](type/specimens.html)). Each set drew the same pieces of the interface at the sizes in use: the top bar, the headline, an answer with highlighted facts, a step, a placeholder, a hand-off tag. The sets: the current one, Red Hat (Display, Text, Mono), Funnel (Display, Sans) with Spline Sans Mono, Schibsted Grotesk with the Atkinson pair, Archivo set wide with Source Sans 3 and Source Code Pro, Host Grotesk with Martian Mono, Familjen Grotesk with Inclusive Sans, and Instrument Sans with Hanken Grotesk and Geist Mono.
+
+The last line of every panel was the test that matters most here: `Il1| O0o 5S 8B rn m`. An agent reads fees, phone numbers and references aloud, so a text face in which a capital I, a small l and a 1 look alike is the wrong face however good it looks. Red Hat Text, Funnel Sans, Host Grotesk and Hanken Grotesk fail it.
+
+**Round two: the three jobs taken apart** ([round2.html](type/round2.html)).
+
+- **Display.** Six faces beside the mark at 22, 30, 46 and 64: Bricolage Grotesque, Schibsted Grotesk, Archivo at 112% width, Funnel Display, Radio Canada Big and Gabarito. **Schibsted Grotesk** was chosen. Its letters are wide and even, close to the proportions of the mark, so "Cue" and the mark read as one piece. It is sturdy without being loud, which leaves the character to the mark and the highlighter. Bricolage has more grain, but its narrow, uneven letters sat less well beside the new mark, and it has become a common choice for new interfaces. Archivo set wide looked the most like a carrier, and took a third more room for every title.
+- **Text.** Atkinson Hyperlegible Next against IBM Plex Sans, Source Sans 3, Reddit Sans, Ubuntu Sans and Inclusive Sans, and then against IBM Plex in the running app. **Atkinson Hyperlegible Next stays.** It is the only one that separates every look-alike pair, it reads larger and more open at 18px, and it is less often seen. Its one cost is that its zero is always slashed, which looks technical in "10 days". IBM Plex Sans was the real alternative: a plain zero and a clear I, l and 1. In the app it made the screens tidier and more anonymous, and it brings another company to mind.
+- **Data.** Atkinson Hyperlegible Mono against IBM Plex Mono, Spline Sans Mono, Red Hat Mono, Geist Mono and Martian Mono. **Atkinson Hyperlegible Mono stays**: it shares its letterforms and its zero with the text face, so a reference set inside a sentence does not look like a different voice.
+
+The result is one change: the display face. The sizes, weights and tracking are in [web/DESIGN.md](../web/DESIGN.md) under "Type".
+

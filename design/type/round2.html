@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Type candidates, round two</title>
+<script>
+const FAMILIES = [
+  'Bricolage+Grotesque:opsz,wght@12..96,200..800',
+  'Atkinson+Hyperlegible+Next:ital,wght@0,200..800;1,200..800',
+  'Atkinson+Hyperlegible+Mono:wght@200..800',
+  'Schibsted+Grotesk:wght@400..900',
+  'Archivo:wdth,wght@62..125,100..900',
+  'Funnel+Display:wght@300..800',
+  'Radio+Canada+Big:wght@400..700',
+  'Gabarito:wght@400..900',
+  'IBM+Plex+Sans:wght@400;600;700',
+  'Source+Sans+3:wght@200..900',
+  'Reddit+Sans:wght@200..900',
+  'Ubuntu+Sans:wght@100..800',
+  'Inclusive+Sans:wght@300..700',
+  'IBM+Plex+Mono:wght@400;600;700',
+  'Martian+Mono:wdth,wght@75..112.5,100..800',
+  'Spline+Sans+Mono:wght@300..700',
+  'Red+Hat+Mono:wght@300..700',
+  'Geist+Mono:wght@100..900',
+];
+for (const spec of FAMILIES) {
+  const l = document.createElement('link');
+  l.rel = 'stylesheet';
+  l.href = `https://fonts.googleapis.com/css2?family=${spec}&display=block`;
+  document.head.appendChild(l);
+}
+</script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; padding:28px 28px 60px; background:#fff; color:#0f1833; font:14px/1.45 "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing:antialiased; }
+  body > h1 { font-size:26px; margin:0 0 6px; }
+  body > h2 { font-size:19px; margin:34px 0 4px; border-top:2px solid #0f1833; padding-top:12px; }
+  body > p { max-width:84ch; margin:0 0 14px; color:#38425f; }
+  .grid { display:grid; gap:12px; }
+  .g3 { grid-template-columns:repeat(3, 1fr); }
+  .g2 { grid-template-columns:repeat(2, 1fr); }
+  .card { background:#f2f4fa; padding:18px 20px 20px; color:#0f1833; min-width:0; }
+  .card.dark { background:#111b3d; color:#edf1fc; }
+  .card > small { display:block; font:600 12px/1.3 "Segoe UI", sans-serif; color:#586384; margin-bottom:12px; }
+  .card.dark > small { color:#98a4c8; }
+  .lock { display:flex; align-items:center; gap:8px; }
+  .lock.big { gap:16px; margin:14px 0 18px; }
+  .n22 { font-size:22px; line-height:1.2; font-weight:700; letter-spacing:-0.01em; }
+  .n30 { font-size:30px; line-height:1.1; font-weight:700; letter-spacing:-0.012em; margin:14px 0 0; }
+  .n46 { font-size:46px; line-height:1.06; font-weight:650; letter-spacing:-0.012em; margin:14px 0 10px; }
+  .n64 { font-size:64px; line-height:1; font-weight:700; letter-spacing:-0.02em; }
+  .txt { font-family:"Atkinson Hyperlegible Next", sans-serif; font-size:18px; line-height:1.55; color:#38425f; margin:0; }
+  .row30 { display:flex; gap:28px; align-items:baseline; flex-wrap:wrap; }
+
+  .read { font-size:18px; line-height:1.62; margin:0 0 12px; }
+  .hi { color:#0f1833; font-weight:700; padding:0.1em 0.3em 0.06em; margin:0 -0.04em; background:#d9f23e; border-radius:2px 7px 3px 6px / 7px 3px 6px 2px; }
+  .ui { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:12px; }
+  .cue { font-size:12.5px; font-weight:700; letter-spacing:0.01em; color:#38425f; }
+  .dark .cue { color:#c2cae4; }
+  .btn { font-size:15.5px; font-weight:700; background:#0f1833; color:#fff; padding:8px 14px; border-radius:3px; }
+  .dark .btn { background:#edf1fc; color:#111b3d; }
+  .meta { font-size:14px; color:#38425f; }
+  .dark .meta { color:#c2cae4; }
+  .status { font-size:12.5px; font-weight:700; letter-spacing:0.07em; color:#8a2f7b; }
+  .dark .status { color:#e79ad8; }
+  .test { font-size:18px; margin-top:12px; border-top:1px solid #c9d1e3; padding-top:10px; }
+  .dark .test { border-color:#2f3e6c; }
+
+  .mono-row { display:grid; grid-template-columns:150px 1fr; gap:6px 16px; align-items:baseline; font-family:"Atkinson Hyperlegible Next", sans-serif; }
+  .mono-row b { font:600 12px/1.3 "Segoe UI", sans-serif; color:#586384; }
+  .m14 { font-size:14px; color:#38425f; }
+  .ph { font-size:0.8em; font-weight:600; letter-spacing:0.02em; background:#0f1833; color:#f2f4fa; padding:0.16em 0.5em 0.12em; border-radius:1px; }
+  .cite { display:inline-grid; place-items:center; width:24px; height:24px; vertical-align:2px; font-size:12.5px; font-weight:700; line-height:1; color:#1d43d8; border:1.5px solid #1d43d8; border-radius:2px; }
+</style>
+</head>
+<body>
+<h1>Type candidates, round two</h1>
+<p>Round one put eight whole sets on the screens. This round takes the three jobs apart: the display face against the mark, the text face that is read aloud, and the data face for references and numbers. Everything else is held still: the text beside each display face is Atkinson Hyperlegible Next.</p>
+
+<h2>1. Display face: the name, the titles, the headline</h2>
+<p>At the three display sizes in use: 22 (the name in the top bar), 30 (view titles), 46 (the headline), and the name at 64 beside the mark.</p>
+<div class="grid g2" id="display"></div>
+
+<h2>2. Text face: what the agent reads aloud</h2>
+<p>18px with the highlighter, then the small sizes: a 12.5px cue, a 14px detail, a 15.5px button, a status word. The last line is the confusable characters.</p>
+<div class="grid g3" id="text"></div>
+
+<h2>3. Data face: references, placeholders, counts</h2>
+<p>Each beside Atkinson Hyperlegible Next at 18px, as in an answer.</p>
+<div class="card" id="mono"></div>
+
+<script>
+const MARK = (px, head = '#1D43D8', eye = '#0F1833') => `<svg width="${px}" height="${px}" viewBox="0 0 32 32" aria-hidden="true" style="flex:none"><path fill="${head}" d="M9 3H23L29 9H12A3 3 0 0 0 9 12V20A3 3 0 0 0 12 23H29A6 6 0 0 1 23 29H9A6 6 0 0 1 3 23V9A6 6 0 0 1 9 3Z"/><rect x="13" y="12" width="4" height="8" rx="1" fill="${eye}"/><rect x="21" y="12" width="4" height="8" rx="1" fill="${eye}"/></svg>`;
+
+const DISPLAY = [
+  ['Bricolage Grotesque (as it was)', "'Bricolage Grotesque'", ''],
+  ['Schibsted Grotesk (chosen)', "'Schibsted Grotesk'", ''],
+  ['Archivo, 112% wide', "'Archivo'", 'font-stretch:112%;'],
+  ['Funnel Display', "'Funnel Display'", ''],
+  ['Radio Canada Big', "'Radio Canada Big'", ''],
+  ['Gabarito', "'Gabarito'", ''],
+];
+document.getElementById('display').innerHTML = DISPLAY.map(([name, fam, extra]) => `
+  <div class="card"><small>${name}</small>
+    <div style="font-family:${fam},sans-serif;${extra}">
+      <div class="lock">${MARK(32)}<span class="n22">Cue</span></div>
+      <div class="lock big">${MARK(64)}<span class="n64">Cue</span></div>
+      <div class="n46">What does the customer need?</div>
+    </div>
+    <p class="txt">Ask a support question, look up a plan, or summarize a call.</p>
+    <div class="row30" style="font-family:${fam},sans-serif;${extra}"><span class="n30">Calls</span><span class="n30">Sources</span><span class="n30">What Cue did</span><span class="n22" style="margin-left:auto">T0002 · Billing</span></div>
+  </div>`).join('');
+
+const TEXT = [
+  ['Atkinson Hyperlegible Next (kept)', "'Atkinson Hyperlegible Next'"],
+  ['IBM Plex Sans', "'IBM Plex Sans'"],
+  ['Source Sans 3', "'Source Sans 3'"],
+  ['Reddit Sans', "'Reddit Sans'"],
+  ['Ubuntu Sans', "'Ubuntu Sans'"],
+  ['Inclusive Sans', "'Inclusive Sans'"],
+];
+const textCard = ([name, fam], dark) => `
+  <div class="card ${dark ? 'dark' : ''}" style="font-family:${fam},sans-serif"><small>${name}</small>
+    <p class="read">The Late Payment Fee is <span class="hi">$5</span>. It is added when a bill is more than 10 days past its due date. A payment arrangement adds up to 14 extra days to pay.</p>
+    <p class="read">Call support at <span class="hi">611</span> from a Northline phone, or <span class="hi">1-800-555-0199</span> from any phone. The Value 25 plan is $25.00 a month with 5 GB of data.</p>
+    <div class="ui"><span class="cue">Request check</span><span class="status">WARNING</span><span class="meta">The copilot cannot change or look up a customer's account.</span></div>
+    <div class="ui"><span class="btn">Sources and steps</span><span class="meta">3 of 120 calls · 2 sources</span></div>
+    <div class="test">Il1| O0o 5S 8B rn m cl &nbsp; 0O 1l I1</div>
+  </div>`;
+document.getElementById('text').innerHTML = TEXT.map(t => textCard(t, false)).join('') + textCard(TEXT[0], true) + textCard(TEXT[2], true) + textCard(TEXT[1], true);
+
+const MONO = [
+  ['Atkinson Hyperlegible Mono (kept)', "'Atkinson Hyperlegible Mono'"],
+  ['IBM Plex Mono', "'IBM Plex Mono'"],
+  ['Spline Sans Mono', "'Spline Sans Mono'"],
+  ['Red Hat Mono', "'Red Hat Mono'"],
+  ['Geist Mono', "'Geist Mono'"],
+  ['Martian Mono, 87% wide', "'Martian Mono'", 'font-stretch:87.5%;font-size:0.9em;'],
+];
+document.getElementById('mono').innerHTML = `<div class="mono-row">` + MONO.map(([name, fam, extra = '']) => `
+  <b>${name}</b>
+  <div style="font-size:18px;line-height:1.9">Your reference is <span class="hi" style="font-family:${fam},monospace;${extra}font-size:0.92em">ESC-4F2A91C7</span>. Her name is <span class="ph" style="font-family:${fam},monospace;${extra}">PERSON_1</span> and her number is <span class="ph" style="font-family:${fam},monospace;${extra}">PHONE_NUMBER_1</span> <span class="cite" style="font-family:${fam},monospace">1</span> <span class="m14" style="font-family:${fam},monospace;${extra}">2.4 seconds · 6 steps · help.northline.example · T0002 · 0O 1lI</span></div>`).join('') + `</div>`;
+</script>
+</body>
+</html>

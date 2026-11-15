@@ -50,8 +50,8 @@ Three faces, bundled from `@fontsource-variable` packages, latin subset only (`s
 
 | Face | Role | Why |
 | --- | --- | --- |
-| Bricolage Grotesque, 700 (650 for the headline) | Display: the headline, view titles, section titles, the product name. Never for anything read aloud. | A grotesque with ink traps and slightly uneven curves, drawn from printed matter. It gives a console a voice with some grain in it, like the header on a printed call script. |
-| Atkinson Hyperlegible Next, 400 / 600 / 700 | Text: everything read or operated. | Drawn for low-vision readers, with look-alike characters pulled apart. Agents read fees and phone numbers aloud from it, and a 1 mistaken for an l is a wrong number given to a customer. |
+| Schibsted Grotesk, 700 | Display: the headline, view titles, section titles, the product name. Never for anything read aloud. | A sturdy grotesque drawn for a news publisher's headlines. Its wide, even letters have the proportions of the mark, so the name sits beside the mark as one piece, and it is calm enough to leave the character to the mark and the highlighter. |
+| Atkinson Hyperlegible Next, 400 / 600 / 700 | Text: everything read or operated. | Drawn for low-vision readers, with look-alike characters pulled apart. Agents read fees and phone numbers aloud from it, and a 1 mistaken for an l is a wrong number given to a customer. Its zero is always slashed; there is no plain one. That is accepted on purpose: every figure on these screens is one somebody may read out. |
 | Atkinson Hyperlegible Mono, 400 / 600 / 700 | Codes and readouts, never words: placeholders, call ids, references, citation numerals, list numerals, timings, counts. | The same skeleton as the text face at a fixed width, so a reference can be read out character by character without losing your place. |
 
 One scale. Nothing is set outside it.
@@ -67,7 +67,8 @@ One scale. Nothing is set outside it.
 | `text-head` | 46px | The empty-state headline |
 
 - Headings use `text-wrap: balance`.
-- Display type is set with three classes and nowhere else: `display-title` (700, tracking -0.01em), `display-view` (700, -0.012em) and `display-head` (650, -0.012em). The face has an optical-size axis, which the browser sets from the font size, so the headline is already drawn tighter than the titles; the tracking only trims that. At 46px the 700 weight closes up the counters, so the headline is a shade lighter.
+- Display type is set with three classes and nowhere else: `display-title` (700, tracking -0.012em), `display-view` (700, -0.018em) and `display-head` (700, -0.024em). The face has no optical-size axis, so the tracking does that work: the larger the size, the tighter it is set.
+- The faces were chosen by comparison, not by habit: eight sets on the real screens, then the three jobs taken apart. The sheets and the reasons are in [design/type](../design/type).
 - On a phone the headline drops to `text-view`, a call's category to `text-title`, and the product name to `text-read`, so the top bar fits on one row. That is the only place the display face is set below 22px.
 
 ## Motifs

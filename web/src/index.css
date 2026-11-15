@@ -187,7 +187,7 @@
 }
 
 @theme {
-  --font-display: "Bricolage Grotesque Variable", "Atkinson Hyperlegible Next Variable", sans-serif;
+  --font-display: "Schibsted Grotesk Variable", "Atkinson Hyperlegible Next Variable", sans-serif;
   --font-sans: "Atkinson Hyperlegible Next Variable", Verdana, sans-serif;
   --font-mono: "Atkinson Hyperlegible Mono Variable", ui-monospace, Consolas, monospace;
 
@@ -941,17 +941,17 @@
 }
 
 /*
- * Display type: Bricolage Grotesque at the three display sizes. The weight
- * and the tracking are set here once, per size, and nowhere else. The face
- * has an optical-size axis, which the browser sets from the font size, so the
- * larger sizes are already drawn tighter; the tracking only trims that.
+ * Display type: Schibsted Grotesk at the three display sizes. The weight and
+ * the tracking are set here once, per size, and nowhere else. The face has no
+ * optical-size axis, so the tracking does that work: the larger the size, the
+ * tighter it is set.
  */
 @utility display-title {
   font-family: var(--font-display);
   font-size: var(--text-title);
   line-height: 1.2;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.012em;
 }
 
 @utility display-view {
@@ -959,16 +959,15 @@
   font-size: var(--text-view);
   line-height: 1.1;
   font-weight: 700;
-  letter-spacing: -0.012em;
+  letter-spacing: -0.018em;
 }
 
-/* The headline is a shade lighter than the smaller sizes: at 46px, 700 closes up the counters. */
 @utility display-head {
   font-family: var(--font-display);
   font-size: var(--text-head);
   line-height: 1.06;
-  font-weight: 650;
-  letter-spacing: -0.012em;
+  font-weight: 700;
+  letter-spacing: -0.024em;
 }
 
 /* A cue: the small bold label over a block, such as "Agent", "Privacy" or "Intent". */
