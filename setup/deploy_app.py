@@ -173,6 +173,10 @@ def main() -> None:
 
     if "--no-deploy" in sys.argv:
         return
+    # Free Edition stops an app 24 hours after it starts, and a stopped app cannot be deployed to.
+    if compute != apps.ComputeState.ACTIVE:
+        print("starting the app's compute (a few minutes)", flush=True)
+        client.apps.start(APP_NAME).result()
     print("deploying", flush=True)
     started = time.time()
     deployment = client.apps.deploy(
