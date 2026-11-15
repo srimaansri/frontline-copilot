@@ -45,12 +45,19 @@ eval = [
     "python-dotenv==1.2.4",
     "ragas==0.4.4",
 ]
+# The MCP server (mcp_server/). databricks-langchain already brings the SDK in;
+# pinned here because the server imports it directly.
+mcp = [
+    "frontline-copilot[rag]",
+    "mcp==1.30.0",
+    "python-dotenv==1.2.4",
+]
 # The spaCy pipeline the redactor uses by default. Models are not on PyPI.
 models = [
     "en_core_web_md @ https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.8.0/en_core_web_md-3.8.0-py3-none-any.whl",
 ]
 dev = [
-    "frontline-copilot[data,eval]",
+    "frontline-copilot[data,eval,mcp]",
     # Small pipeline for unit tests, so CI does not download the default one.
     "en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
     "mypy==2.4.1",
@@ -91,7 +98,7 @@ select = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["copilot", "data_gen", "eval"]
+known-first-party = ["copilot", "data_gen", "eval", "mcp_server"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
