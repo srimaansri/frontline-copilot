@@ -320,8 +320,8 @@ The job and bundle that were optional here are now how the pipeline runs (see th
 `pydantic-settings` class merging `.env` and `config/settings.yaml`: endpoints, index name, `top_k=5`, `query_type="hybrid"|"ann"`, `min_retrieval_score`, reading-level target, chunk config. Precedence: environment variables, then `.env`, then `settings.yaml`, then defaults. No credential is required to load settings (see §3 on auth).
 
 ### 7.2 Retriever
-- Wrap `AISearchClient().get_index(index_name=...).similarity_search(query_text=..., columns=[...], num_results=top_k, filters={"chunk_config": ...}, query_type=...)`. Pass `query_type="hybrid"` for hybrid and omit the argument for ANN, as the docs do.
-- Decorate with `@mlflow.trace(span_type="RETRIEVER")` and return `list[mlflow.entities.Document]` (page_content + metadata incl. url, title, chunk_id) so MLflow retrieval judges work.
+- Query through the Databricks SDK: `WorkspaceClient().vector_search_indexes.query_index(index_name=..., columns=[...], query_text=..., num_results=top_k, filters_json=json.dumps({"chunk_config": ...}), query_type="ANN"|"HYBRID")`. The plan first said `AISearchClient().get_index(...).similarity_search(...)`. That client builds the index in pipeline step 04, but for queries from a laptop it refuses the OAuth sign-in a CLI profile gives and wants a token or a service principal. The SDK resolves auth the same way everywhere, which is the project rule.
+- Open an MLflow span of type `RETRIEVER` by hand and set its output to a list of `mlflow.entities.Document` (page_content + metadata incl. `doc_uri`, title, chunk_id) so MLflow retrieval judges work. The span is opened by hand, not with `@mlflow.trace`, so its recorded inputs are chosen explicitly.
 - Optional filter by `section`.
 
 ### 7.3 LLM
@@ -446,6 +446,10 @@ Judge model: `JUDGE_ENDPOINT`, a Databricks-hosted model that is **not** the cop
 - `mlflow.genai.evaluate(data=eval_set, predict_fn=run_copilot_wrapper, scorers=[...])`, tagged with prompt version, chunk config, query type, model, judge model, git SHA.
 - Writes `eval/results/<date>_<tag>.json` + appends a row to `eval/results/SUMMARY.md` (means per scorer, per category, **with the row count next to every rate**).
 - Quota discipline: always run `--limit 5` first, then one full pass at a time. A full pass that dies halfway on the daily quota costs a day.
+- Throttling, measured on Free Edition: MLflow's defaults (ten rows and ten judges at once) get HTTP 429 from the judge endpoint. The runner sets one row at a time, two judges at once and two judge calls a second. Six judges at once was no faster (53 seconds a row against 55) and had rejected calls, so the limit is the workspace cap on the judge model. A 22-row pass takes about 24 minutes.
+- Rows are matched to traces by an `eval_id` tag, because the question on a trace is the redacted one.
+- `--save` refuses to run from a dirty working tree, and the report records the git SHA, the evaluation set's hash, the prompt version and the library versions.
+- A run in which any row has no recorded answer stops without saving.
 - With about 40 rows, differences of a few points are noise. Report them as they are and make no significance claims.
 
 ### 9.4 The experiment (required)
