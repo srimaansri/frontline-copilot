@@ -1,0 +1,11 @@
+# Databricks Apps configuration. It sits at the repository root so the deployed
+# source includes src/copilot, which the page imports.
+command: ['streamlit', 'run', 'app/app.py']
+env:
+  - name: 'STREAMLIT_GATHER_USAGE_STATS'
+    value: 'false'
+  # Set from the app's resources, never typed in here.
+  - name: 'SQL_WAREHOUSE_ID'
+    valueFrom: 'sql-warehouse'
+  - name: 'MLFLOW_EXPERIMENT'
+    valueFrom: 'mlflow-experiment'

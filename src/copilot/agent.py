@@ -242,6 +242,11 @@ class Copilot:
             self._chat_model = build_chat_model(self.settings)
         return self._chat_model
 
+    @property
+    def tools(self) -> Tools:
+        """The tools this copilot uses, for callers that need one directly, such as the app."""
+        return self._get_tools()
+
     def _get_tools(self) -> Tools:
         if self._tools is None:
             self._tools = Tools(
