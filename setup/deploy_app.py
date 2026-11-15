@@ -142,6 +142,20 @@ def upload(client: WorkspaceClient, source_path: str, files: list[Path]) -> None
         )
 
 
+def wait_for_deployment(client: WorkspaceClient, timeout_seconds: int = 900) -> apps.App:
+    """Wait until the app has no deployment in progress, and return the app."""
+    deadline = time.time() + timeout_seconds
+    while True:
+        app = client.apps.get(APP_NAME)
+        active = app.active_deployment
+        in_progress = active is not None and (
+            active.status is None or active.status.state == apps.AppDeploymentState.IN_PROGRESS
+        )
+        if (app.pending_deployment is None and not in_progress) or time.time() > deadline:
+            return app
+        time.sleep(10)
+
+
 def main() -> None:
     load_dotenv(ROOT / ".env")
     settings = load_settings()
@@ -173,24 +187,27 @@ def main() -> None:
 
     if "--no-deploy" in sys.argv:
         return
-    # Free Edition stops an app 24 hours after it starts, and a stopped app cannot be deployed to.
-    if compute != apps.ComputeState.ACTIVE:
-        print("starting the app's compute (a few minutes)", flush=True)
-        client.apps.start(APP_NAME).result()
-    print("deploying", flush=True)
     started = time.time()
-    deployment = client.apps.deploy(
-        APP_NAME, apps.AppDeployment(source_code_path=source_path)
-    ).result()
-    status = deployment.status
+    if compute != apps.ComputeState.ACTIVE:
+        # Free Edition stops an app 24 hours after it starts. A stopped app refuses a
+        # deployment, and starting it deploys what is in its source folder anyway.
+        print("starting the app, which deploys the uploaded source (a few minutes)", flush=True)
+        client.apps.start(APP_NAME).result()
+    else:
+        print("deploying", flush=True)
+        client.apps.deploy(APP_NAME, apps.AppDeployment(source_code_path=source_path)).result()
+    app = wait_for_deployment(client)
+    deployment = app.active_deployment
+    status = deployment.status if deployment else None
     print(
         f"deployment: {status.state if status else None} | "
         f"{status.message if status else None} | {time.time() - started:.0f}s"
     )
-    app = client.apps.get(APP_NAME)
     if app.app_status:
         print(f"app status: {app.app_status.state} | {app.app_status.message}")
     print(f"url: {app.url}")
+    if status is None or status.state != apps.AppDeploymentState.SUCCEEDED:
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

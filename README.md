@@ -6,6 +6,10 @@
 
 An AI copilot for frontline support agents at a wireless carrier, built end to end on **Databricks Free Edition**. An agent asks a question in plain words and gets a short, plain-language answer with cited help articles, a plan lookup grounded in SQL, a summary of a redacted call transcript, or a hand-off to a human when the request needs real account access.
 
+[![The copilot answering a billing question. The answer highlights the facts to say out loud and numbers its sources; a side rail lists the two sources and the six steps taken.](docs/img/cue-answer.png)](https://srimaansri.github.io/frontline-copilot/)
+
+**See it in a browser:** <https://srimaansri.github.io/frontline-copilot/> is a public demo of the interface. It runs in mock mode: it answers from sample responses built into the page, calls no server, and says "Mock mode" in its top bar. The picture above is from it. The live app, which calls the real agent, runs on Databricks Apps and needs a sign-in to the workspace; see [Try it](#try-it).
+
 ## Status
 
 This repo is being built milestone by milestone. Every number here comes from a real run, with its date and git SHA, and the full reports are in [eval/results](eval/results).
@@ -17,7 +21,7 @@ This repo is being built milestone by milestone. Every number here comes from a 
 | M2 | Databricks pipelines: bronze, silver, gold, quality checks | Done |
 | M3 | Retrieval-augmented answers and the first evaluation | Done |
 | M4 | Agent with tools, guardrails, escalation | Done |
-| M5 | Streamlit app, MCP server | Both run locally against the live workspace. The MCP Docker image builds and starts. The app is deployed on Databricks Apps, where it builds and starts; a signed-in check of the deployed page is still to do |
+| M5 | App, MCP server | Both run locally against the live workspace. The MCP Docker image builds and starts. The app is deployed on Databricks Apps and answers there (checked 2026-11-15, see [Try it](#try-it)). It began as a Streamlit page and is now a REST API with a React front end |
 | M6 | Results, model and data cards, responsible-AI notes | Done: [model card](docs/MODEL_CARD.md), [data card](docs/DATA_CARD.md), [responsible-AI notes](docs/RESPONSIBLE_AI.md) |
 
 The full specification is in [PLAN.md](PLAN.md).
@@ -140,19 +144,43 @@ All 40 evaluation rows, with the default setting (A, vector search), prompt v3, 
 
 ## Try it
 
-**The app.** A Streamlit page with a chat tab (answer, sources, tools used, guardrail notes, thumbs feedback saved on the MLflow trace) and a call-summary tab that shows the summary next to the redacted transcript. Large type and strong contrast.
+**The app.** A web interface in which the copilot is called Cue. It has two views:
 
-```bash
-pip install -e ".[dev,models,app]"
-```
+- **Ask.** A conversation. Each answer highlights the facts to say out loud, numbers its sources, and shows the route of steps the copilot took: the privacy check, the request check, the lookup and the answer checks. A question that held personal details is shown again as it was processed, with the details replaced. A request that needs a person shows the hand-off and its reference. Thumbs feedback is saved on the MLflow trace.
+- **Calls.** The redacted call transcripts, with a summary on request shown beside the transcript.
 
-```bash
-streamlit run app/app.py
-```
+![A hand-off in the dark theme. The agent's question held a name and a phone number; the line under it shows them replaced by placeholders, and the route of steps branches to a tag that says a person has the request.](docs/img/cue-hand-off.png)
 
-It needs a Databricks workspace set up as in [PLAN.md](PLAN.md) section 3.
+It is a REST API ([api/main.py](api/main.py), FastAPI) that calls the same agent code the evaluation measures, and a front end in [web](web) (React, TypeScript, Vite, Tailwind) that the API serves. The look is specified in [web/DESIGN.md](web/DESIGN.md), and the mockups and decisions behind it are in [design](design). Both pictures on this page are from mock mode, so the answers in them are samples, not model output.
 
-On Databricks Apps the same page runs from `app.yaml` at the repository root, as the app's own service principal. Its access is declared as app resources and is the minimum it needs: use of the SQL warehouse, query on the chat and embedding endpoints, edit on the MLflow experiment, read on the plan table, the redacted transcripts and the search index, and write on the hand-off table. It has no access to the unredacted tables. It was deployed on 2026-11-14 and builds and starts there. Free Edition stops an app 24 hours after each start, so there is no permanent public link.
+Three ways to open it:
+
+1. **The public demo**, with no setup: <https://srimaansri.github.io/frontline-copilot/>. Mock mode, as described at the top. The four example questions work, and so do a hand-off ("refund..."), a refusal ("ignore your instructions") and the Calls view (calls `T0001` and `T0002` have a transcript and a summary).
+2. **Mock mode on your machine**, with Node and no Databricks workspace:
+
+   ```bash
+   cd web && npm install && npm run dev:mock
+   ```
+
+3. **The real thing**, against a Databricks workspace set up as in [PLAN.md](PLAN.md) section 3:
+
+   ```bash
+   pip install -e ".[dev,models]"
+   ```
+
+   ```bash
+   cd web && npm install && npm run build && cd ..
+   ```
+
+   ```bash
+   uvicorn api.main:app --port 8000
+   ```
+
+   Then open `http://localhost:8000`.
+
+On Databricks Apps the same app runs from `app.yaml` at the repository root, as the app's own service principal, and `python setup/deploy_app.py` deploys it. Its access is declared as app resources and is the minimum it needs: use of the SQL warehouse, query on the chat and embedding endpoints, edit on the MLflow experiment, read on the plan table, the redacted transcripts and the search index, and write on the hand-off table. It has no access to the unredacted tables.
+
+The deployed app was checked on 2026-11-15, at commit `192eea2`, by calling it through its own address with a workspace sign-in: it served the page, answered a help-article question with a citation and an MLflow trace, and listed the 200 calls. Nobody has yet clicked through the deployed page in a browser. Free Edition stops an app 24 hours after each start and the app needs a workspace sign-in, which is why the public link above is the mock demo and not the live app.
 
 **The MCP server.** The same four tools, for another assistant to call. See [mcp_server/README.md](mcp_server/README.md).
 
@@ -190,7 +218,7 @@ python -m eval.redaction_eval --challenge
 
 ## What it is built with
 
-Unity Catalog, Delta Lake and PySpark for the data pipeline. Databricks AI Search for retrieval. An open-weight LLM served by the Databricks Foundation Model APIs. MLflow 3 for tracing and evaluation, with RAGAS. LangGraph for the agent. Presidio and spaCy for PII redaction. Streamlit on Databricks Apps for the interface, and an MCP server so other assistants can call the same tools.
+Unity Catalog, Delta Lake and PySpark for the data pipeline. Databricks AI Search for retrieval. An open-weight LLM served by the Databricks Foundation Model APIs. MLflow 3 for tracing and evaluation, with RAGAS. LangGraph for the agent. Presidio and spaCy for PII redaction. A FastAPI REST API and a React, TypeScript and Tailwind front end on Databricks Apps for the interface, and an MCP server so other assistants can call the same tools.
 
 ## Development
 
@@ -225,6 +253,14 @@ mypy src/
 ```bash
 pytest --cov=src/copilot
 ```
+
+The web interface has its own checks, which CI also runs:
+
+```bash
+cd web && npm ci && npm run typecheck && npm run lint && npm run build
+```
+
+`npm run lint` includes a contrast check of every colour pair in both themes.
 
 Configuration comes from `config/settings.yaml`, overridden by a local `.env` (copy `.env.example`) and by environment variables. Nothing secret is committed.
 

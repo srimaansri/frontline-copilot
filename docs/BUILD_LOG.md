@@ -439,3 +439,62 @@ The evaluation refuses to start from a dirty folder and stamps its result with t
 **M4 acceptance** (PLAN.md §12): all four tools working, the hand-off path, input and output guards, routing tests passing, the default setting evaluated on all 40 rows. All met.
 
 **M5 acceptance** (PLAN.md §12): Streamlit app deployed as a Databricks App; MCP server working from Claude Code over stdio and in Docker. Mostly met: the app is deployed and starts, the MCP server works over stdio from a client and starts in Docker. Still open: a signed-in check of the deployed app, and registering the server with Claude Code itself. See "Not done".
+
+## 2026-11-15 — The web interface, its deployment and a public demo
+
+**Tool:** Claude Code.
+
+**Asked:** replace the Streamlit page with a designed web interface, off Streamlit, with its own colours and icons and not a default look; mock several directions and choose; give the copilot a name; compare typefaces and choose; review spacing and motion as a final pass; then deploy it and host it where people can see it. This reverses the instruction recorded in the entry above ("keep Streamlit, add no REST API or JavaScript front end"). That instruction put the milestones first. With them done, the interface was reopened.
+
+**What it built**
+
+- `api/main.py`: a REST API (FastAPI) over the same `copilot.agent` and `copilot.tools` code the evaluation calls. It also serves the built front end. `src/copilot/steps.py` turns an answer into the list of steps the interface draws.
+- `web/`: the front end, in React, TypeScript, Vite and Tailwind. Two views, Ask and Calls. A mock mode answers from fixtures with no server, and a component gallery draws every component in every state from the real component code.
+- `web/DESIGN.md`: the design rules as written rules: colour tokens, type, spacing, shape, motion, states. `web/scripts/check-contrast.mjs` checks every colour pair in use against WCAG in both themes and is part of `npm run lint`.
+- `design/`: the mockups that were compared and the reasons for each choice.
+- `setup/deploy_app.py`: the deployment to Databricks Apps. `app.yaml` now runs `uvicorn api.main:app`.
+- `.github/workflows/pages.yml`: publishes the mock build to GitHub Pages. CI has a `web` job (type check, lint with the contrast check, build).
+- Removed: `app/app.py`, `.streamlit/`, and the `streamlit` dependency.
+
+**Decisions**
+
+- **One interface.** The Streamlit page was removed, not kept beside the new one. Two interfaces would have meant two things to keep correct.
+- **The API is a thin layer.** Every endpoint calls the code the evaluation measured, so the interface cannot show something that was not evaluated.
+- **The direction, "Signal and Script".** Three directions were mocked and one chosen: cobalt on cool neutrals, a midnight-navy dark theme, a highlighter that marks only the facts an agent says out loud, a cut corner that marks only what the copilot wrote, and status shown by shape as well as colour. No decorative gradients and no shadows on cards.
+- **The mark.** Twelve candidates in three families, five finalists tried in use, one chosen ("Aside") and refined in three passes. It has not been checked against registered trademarks.
+- **The name.** In the interface the copilot is called Cue. The project, the repository and the Python package keep the name Frontline Copilot.
+- **The type.** Eight sets were compared on real pieces of the interface, then the three jobs separately. Schibsted Grotesk for headings. Atkinson Hyperlegible Next and Mono were kept for reading and data: of the faces compared, only that one separates every look-alike character, which matters when an agent reads a phone number aloud. Its zero is always slashed; that cost was accepted.
+- **The public demo is the mock build.** The Databricks app needs a workspace sign-in, and Free Edition stops it after 24 hours. A public page that called the real agent would also put the workspace's daily quota in anyone's hands. The Pages site calls no server and says "Mock mode" in its top bar.
+- **The built front end is not committed.** The deploy script builds it and uploads it. It always builds first, because a mock build lands in the same folder.
+
+**Docs that differed from the plan**
+
+- The plan's `app.yaml` command was for Streamlit. For a FastAPI app the Databricks Apps docs (read 2026-11-15) list `UVICORN_HOST` and `UVICORN_PORT` among the variables the platform sets, so the command is `uvicorn api.main:app` with no host or port. Sources: [Databricks Apps environment](https://docs.databricks.com/aws/en/dev-tools/databricks-apps/system-env), [app runtime configuration](https://docs.databricks.com/aws/en/dev-tools/databricks-apps/app-runtime), [deploy an app](https://docs.databricks.com/aws/en/dev-tools/databricks-apps/deploy). PLAN.md section 8.1 was rewritten.
+
+**Things that went wrong on the way**
+
+- **The first deployment was refused.** Free Edition had stopped the app, and a stopped app cannot be deployed to. The script now starts it first.
+- **The second was refused too.** Starting a stopped app deploys the source folder by itself, and a second deployment cannot begin while one is in progress. The script now treats the start as the deployment and waits for it.
+- **Two motion bugs survived until the final review.** Switching to Calls and back replayed the entrance animation of the whole conversation, and on a change of theme the buttons changed colour a moment after the page. Both were found by sampling the running page, not by looking at pictures.
+- **Still pictures misled twice.** Headless screenshots caught the page in the middle of an animation or a scroll and looked like defects. Each was checked in a live browser before anything was changed.
+- **Three review agents never reported.** They were started on screenshots of every screen and were cut off. The final review was done in one pass instead, and none of their findings exist.
+
+**Checked, with dates**
+
+- 2026-11-15, commit `192eea2`: the deployed app was called through its own address with a workspace sign-in. It served the page, answered "How much is the late payment fee, and can it be waived?" with one citation, five steps and an MLflow trace, and listed 200 calls. This closes the open item in the entry above about the app's sign-in as a service principal and its access to the index.
+- 2026-11-15: the contrast check passes for all 112 pairs (56 pairs in two themes).
+- The interface was reviewed at 375, 768, 1024, 1280, 1440 and 1920 pixels wide in both themes.
+
+**Not done**
+
+- Nobody has clicked through the deployed page in a browser while signed in. The check above went through the API.
+- Windows high-contrast mode was not tested. The outline of an answer card and the highlighter are drawn as backgrounds, which that mode removes.
+- The front end has no unit tests. It has a type check, a linter, the contrast check and the gallery.
+- No demo video. No `eval.yml` gate. No hand check of the judge.
+
+**For me to review**
+
+- The README's new "Try it" section and the two pictures, which are from mock mode and say so.
+- Whether a public page that calls the real agent is worth its cost. It would need a host for the API, a secret for a service principal, and a limit on use.
+- `tests/test_chunking.py` is still mine to write with Copilot.
+

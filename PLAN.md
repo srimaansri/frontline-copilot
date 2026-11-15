@@ -64,14 +64,14 @@ A frontline support agent at a wireless carrier, talking to an older customer on
                                           │ Foundation Model API (open-weight LLM + embeddings)  │
                                           │ MLflow Experiment: traces, eval runs                 │
                                           │                                                      │
-                                          │ Databricks App (Streamlit) ── src/copilot (agent)    │
+                                          │ Databricks App: web/ ── api/ ── src/copilot (agent)  │
                                           └──────────────────────────────────────────────────────┘
  ┌───────────────────────────────┐
  │ mcp_server/ (Docker)          │── calls the same tool functions via Databricks SDK
  └───────────────────────────────┘
 ```
 
-**Key decision:** the Streamlit app imports the agent in-process (no separate model serving endpoint). Free Edition limits concurrent endpoints, and the AI Search endpoint already uses one. Deploying the agent as a serving endpoint is a stretch goal.
+**Key decision:** the app imports the agent in-process (no separate model serving endpoint). Free Edition limits concurrent endpoints, and the AI Search endpoint already uses one. Deploying the agent as a serving endpoint is a stretch goal.
 
 **Naming:** Databricks renamed Vector Search to **AI Search**. The Python package is `databricks-ai-search` (`from databricks.ai_search.client import AISearchClient`). The old `databricks-vectorsearch` package is a shim that emits a deprecation warning; do not use it. REST paths still say `vector-search`.
 
@@ -174,8 +174,10 @@ frontline-copilot/
 │   ├── guardrails.py            # input/output checks
 │   ├── agent.py                 # LangGraph graph
 │   └── schemas.py               # pydantic models for tool I/O and answers
-├── app/
-│   └── app.py                   # Streamlit (app.yaml and the app's dependency file live at the repo root)
+├── api/
+│   └── main.py                  # FastAPI: the REST API, which also serves web/dist (app.yaml and requirements.txt live at the repo root)
+├── web/                         # the interface: React, TypeScript, Vite, Tailwind (web/README.md, web/DESIGN.md)
+├── design/                      # the mockups and the decisions behind the interface
 ├── mcp_server/
 │   ├── server.py
 │   ├── Dockerfile
@@ -390,16 +392,22 @@ START → input_guard ─(account action / high-risk)→ escalate_node → outpu
 
 ## 8. Interfaces
 
-### 8.1 Streamlit Databricks App (`app/`)
-- Chat page: message history, answer, collapsible "Sources" with titles + links, badges for tools used / escalated / guardrail flags, latency.
-- "Call summary" tab: dropdown of transcript IDs → structured summary card. Show the **redacted** transcript next to it (proves redaction).
-- Sidebar: model name, prompt version, index/chunk config, link to the MLflow experiment.
-- Feedback 👍/👎 per answer → `mlflow.log_feedback` on the trace (or write to `ops.feedback`).
-- Accessibility: large default font (CSS), high contrast, plain wording on buttons.
-- `app.yaml` per Databricks Apps docs, **at the repo root** with `command: ['streamlit', 'run', 'app/app.py']`, so the deployed source includes `src/copilot`. Env vars come from app resources via `valueFrom` (SQL warehouse, serving endpoints, index); no hard-coded tokens. Free Edition allows up to 3 apps.
-- The app runs as its own **service principal**. M5 includes a grants checklist for it: `USE CATALOG` / `USE SCHEMA`; `SELECT` on `gold.plans`, `silver.transcripts_redacted` and the index; `MODIFY` on `ops.escalations` (and `ops.feedback`); query on the chat and embedding endpoints; use of the SQL warehouse; edit on the MLflow experiment.
+### 8.1 Web app on Databricks Apps (`api/` + `web/`)
+
+*Changed on 2026-11-15. The plan was a Streamlit page in `app/`, and M5 shipped one. It was replaced by a REST API and a React front end, and the Streamlit page was removed so there is one interface. The reasons and the record are in `docs/BUILD_LOG.md`.*
+
+- `api/main.py` (FastAPI) is a thin layer over `copilot.agent` and `copilot.tools`: `/api/ask`, `/api/calls`, `/api/calls/{id}`, `/api/calls/{id}/summary`, `/api/feedback`, `/api/meta`, `/api/health`. It serves the built front end (`web/dist`) at `/`. The interface therefore shows exactly what the evaluation measured.
+- `web/` is the front end: React, TypeScript, Vite and Tailwind. In the interface the copilot is called **Cue**. Two views:
+  - **Ask**: the conversation. Each answer shows its sources and the route of steps the copilot took (privacy, request check, lookup, answer check), with the question as it was processed after redaction, the tool used, the time taken and thumbs feedback.
+  - **Calls**: the redacted transcripts, with a structured summary on request, shown beside the transcript (which proves the redaction).
+- "What's running" shows the model name, the prompt version, the search setting and whether tracing is on.
+- Feedback 👍/👎 per answer → `mlflow.log_feedback` on the trace.
+- Accessibility: 18px reading size, a face chosen for look-alike characters, contrast checked by a script for every colour pair in both themes (`npm run check:contrast`), full keyboard use, `prefers-reduced-motion` respected. The design rules are in `web/DESIGN.md`.
+- `app.yaml` per the Databricks Apps docs, **at the repo root**, with `command: ['uvicorn', 'api.main:app']`. Databricks Apps sets `UVICORN_HOST` and `UVICORN_PORT`. Env vars come from app resources via `valueFrom`; no hard-coded tokens. Free Edition allows up to 3 apps.
+- Deployment is `python setup/deploy_app.py`: it makes a production build of `web/`, uploads it with the tracked source and deploys. The built files are not committed.
+- The app runs as its own **service principal**. Its grants: `USE CATALOG` / `USE SCHEMA`; `SELECT` on `gold.plans`, `silver.transcripts_redacted` and the index; `MODIFY` on `ops.escalations`; query on the chat and embedding endpoints; use of the SQL warehouse; edit on the MLflow experiment.
 - App compute is 2 vCPU / 6 GB. Guardrails load Presidio + spaCy in the app, so use `en_core_web_md` or smaller there and check memory.
-- Free Edition stops an app 24 hours after each start or deploy. The README leads with the video and says the live app is restarted on request.
+- Free Edition stops an app 24 hours after each start or deploy, and the app needs a workspace sign-in. So there is also a **public demo** on GitHub Pages (`.github/workflows/pages.yml`): the same interface built in mock mode, which answers from built-in fixtures and calls no server.
 - Footer disclaimer (see §5.1).
 
 ### 8.2 MCP server (`mcp_server/`)
@@ -525,10 +533,10 @@ Dated entries: what I asked Claude Code to do, what it produced, what I changed 
 | M2 | Databricks pipelines | Thu | setup SQL run; data uploaded; 01–05 run green on serverless; `gold.kb_chunks` with CDF; quality checks pass with zero PII leaks |
 | M3 | RAG + eval | Fri | AI Search index ONLINE; `run_copilot` answers KB questions with citations; traces visible in MLflow with no raw PII in inputs; eval set reviewed; the three runs of §9.4 evaluated on the `kb` rows; results committed |
 | M4 | Agent + guardrails | Sat | All 4 tools working; escalation path; input/output guards; agent routing tests pass; winning config re-evaluated on the full 40-row set |
-| M5 | App + MCP | Sat | Streamlit app deployed as Databricks App; MCP server works from Claude Code via stdio and in Docker |
+| M5 | App + MCP | Sat | App deployed as a Databricks App (first as a Streamlit page, replaced on 2026-11-15 by the web app of §8.1); MCP server works from Claude Code via stdio and in Docker |
 | M6 | Docs + polish | Sun+ | README with real results + demo video; model/data cards; RESPONSIBLE_AI; BUILD_LOG; eval.yml gate |
 | S-AWS | Stretch: AWS Bedrock provider | after M6 | `LLM_PROVIDER=databricks\|bedrock` switch in `config.py` / `llm.py`; an open-weight chat model served by Bedrock; Bedrock Guardrails as an extra output check alongside `check_output`; one eval comparison table, Databricks vs Bedrock, with quality scores, latency p50/p95 and cost per query, all from real runs |
-| S | Stretch | later | Agent as UC-registered model + serving endpoint; Asset Bundle; React/JS frontend; reranker |
+| S | Stretch | later | Agent as UC-registered model + serving endpoint; Asset Bundle; reranker. (The React front end was built: §8.1.) |
 
 **S-AWS notes.** Verify Bedrock model IDs, the Converse API tool-calling support of the chosen model, and the Guardrails API against current AWS docs before starting. Cost per query is computed from logged token counts and the published per-token prices on the run date, with the price source cited. Retrieval stays on Databricks AI Search for both providers so the comparison isolates the model. AWS credentials come from the standard AWS credential chain, never from the repo.
 

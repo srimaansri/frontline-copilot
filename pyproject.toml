@@ -53,12 +53,10 @@ eval = [
     'pyarrow<20; python_version < "3.12"',
 ]
 # The web interface: a REST API (api/) that also serves the built front end (web/).
-# The Streamlit page in app/ is the earlier interface.
 app = [
     "frontline-copilot[rag]",
     "fastapi==0.163.0",
     "python-dotenv==1.2.4",
-    "streamlit==1.67.0",
     "uvicorn==0.54.0",
 ]
 # The MCP server (mcp_server/). databricks-langchain already brings the SDK in;
@@ -121,9 +119,6 @@ convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101", "D"]
-# A Streamlit page is a script: it calls main() at import and catches broad errors so
-# one failed lookup shows a message in place of a stack trace.
-"app/**" = ["BLE001"]
 # Seeded `random` is the point of the generators; it is not used for security.
 "data_gen/**" = ["S311"]
 # Databricks notebooks: `spark` and `dbutils` are injected globals (F821), cells are
