@@ -20,7 +20,7 @@ export function Tooltip({ label, children }: TooltipProps) {
         <TooltipPrimitive.Content
           sideOffset={6}
           collisionPadding={8}
-          className="z-50 animate-fade rounded-md bg-fg px-2.5 py-1.5 text-xs font-medium text-bg"
+          className="z-50 animate-fade rounded-box bg-ink px-2.5 py-1.5 text-label font-semibold text-surface shadow-pop"
         >
           {label}
         </TooltipPrimitive.Content>

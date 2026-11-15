@@ -3,8 +3,7 @@ import Markdown, { type Components, type Options } from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import type { Citation } from "@/api/types";
-import { PlaceholderChip } from "@/components/shared/PlaceholderText";
-import { cn } from "@/lib/cn";
+import { RedactionBar } from "@/components/shared/PlaceholderText";
 import {
   CITATION_HREF_PREFIX,
   PLACEHOLDER_CLASS,
@@ -31,14 +30,9 @@ function CitationChip({ citation }: { citation: Citation }) {
       type="button"
       aria-label={`Show source ${citation.number}: ${citation.title}`}
       aria-pressed={active}
+      data-active={active}
       onClick={() => context?.onCite(citation.number)}
-      className={cn(
-        "mx-px inline-flex h-[1.9em] min-w-[1.9em] -translate-y-[0.12em] items-center justify-center rounded-full px-[0.5em]",
-        "align-baseline text-[0.66em] leading-none font-semibold tabular-nums transition-colors duration-150",
-        active
-          ? "bg-accent text-accent-fg"
-          : "bg-accent-soft text-accent-soft-fg hover:bg-accent hover:text-accent-fg",
-      )}
+      className="cite mx-0.5"
     >
       {citation.number}
     </button>
@@ -55,12 +49,7 @@ function AnswerLink({ href, children }: ComponentProps<"a">) {
     }
   }
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="font-medium text-accent underline decoration-accent/40 underline-offset-[3px] hover:decoration-accent"
-    >
+    <a href={href} target="_blank" rel="noopener noreferrer">
       {children}
       <span className="sr-only"> (opens in a new tab)</span>
     </a>
@@ -69,7 +58,7 @@ function AnswerLink({ href, children }: ComponentProps<"a">) {
 
 function AnswerCode({ className, children }: ComponentProps<"code">) {
   if (className === PLACEHOLDER_CLASS && typeof children === "string") {
-    return <PlaceholderChip name={children} />;
+    return <RedactionBar name={children} />;
   }
   return <code className={className}>{children}</code>;
 }
@@ -82,9 +71,24 @@ function AnswerTable({ children }: ComponentProps<"table">) {
   );
 }
 
+/**
+ * A numbered list. Its numerals are drawn by a CSS counter, so that they can be
+ * set in mono. A list that carries on after an interruption arrives with a
+ * `start`, and the counter has to be told, or it would begin again at 1.
+ */
+function AnswerOrderedList({ start, className, children }: ComponentProps<"ol">) {
+  const style = start === undefined ? undefined : { counterReset: `step ${start - 1}` };
+  return (
+    <ol start={start} className={className} style={style}>
+      {children}
+    </ol>
+  );
+}
+
 const COMPONENTS: Components = {
   a: AnswerLink,
   code: AnswerCode,
+  ol: AnswerOrderedList,
   table: AnswerTable,
 };
 
@@ -92,18 +96,22 @@ export interface AnswerMarkdownProps {
   /** The answer as Markdown. Raw HTML in it is shown as text, never run. */
   markdown: string;
   citations: readonly Citation[];
+  /** Ticket references the answer may quote. They are highlighted as facts to read aloud. */
+  references: readonly string[];
   /** The citation whose source is highlighted, if any. */
   activeCitation: number | null;
   onCite: (number: number) => void;
 }
 
 /**
- * An answer, rendered from Markdown. Citation markers such as [1] become chips
- * that point at their source, and placeholders become chips too.
+ * An answer, set like a call script. Bold text is run over with the
+ * highlighter, citation markers such as [1] become chips that point at their
+ * source, and placeholders become redaction bars.
  */
 export function AnswerMarkdown({
   markdown,
   citations,
+  references,
   activeCitation,
   onCite,
 }: AnswerMarkdownProps) {
@@ -111,14 +119,17 @@ export function AnswerMarkdown({
   const rendered = useMemo(() => {
     const remarkPlugins: NonNullable<Options["remarkPlugins"]> = [
       remarkGfm,
-      [remarkAnnotations, { citationNumbers: citations.map((citation) => citation.number) }],
+      [
+        remarkAnnotations,
+        { citationNumbers: citations.map((citation) => citation.number), references },
+      ],
     ];
     return (
       <Markdown remarkPlugins={remarkPlugins} components={COMPONENTS}>
         {markdown}
       </Markdown>
     );
-  }, [markdown, citations]);
+  }, [markdown, citations, references]);
   const context = useMemo<CitationContextValue>(
     () => ({ citations, activeCitation, onCite }),
     [citations, activeCitation, onCite],

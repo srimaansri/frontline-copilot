@@ -1,13 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="8" fill="#0b6e8f"/>
-  <g transform="translate(4 4)">
-    <line x1="12" y1="2.5" x2="12" y2="6" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
-    <circle cx="12" cy="2.5" r="1.4" fill="#fff"/>
-    <rect x="4" y="6" width="16" height="13" rx="4" fill="#fff"/>
-    <circle cx="9" cy="12" r="1.8" fill="#0b6e8f"/>
-    <circle cx="15" cy="12" r="1.8" fill="#0b6e8f"/>
-    <rect x="9" y="15.2" width="6" height="1.6" rx="0.8" fill="#0b6e8f"/>
-    <rect x="1.5" y="10" width="2" height="5" rx="1" fill="#fff"/>
-    <rect x="20.5" y="10" width="2" height="5" rx="1" fill="#fff"/>
-  </g>
+  <!-- The brand mark from src/components/icons/CopilotMark.tsx, with the colour tokens written in. -->
+  <style>
+    .head { fill: #1d43d8; }
+    .aerial { fill: none; stroke: #1d43d8; stroke-width: 1.8; }
+    .tip { fill: #1d43d8; }
+    .eye { fill: #d9f23e; }
+    .mouth { fill: none; stroke: #ffffff; stroke-width: 1.5; }
+    @media (prefers-color-scheme: dark) {
+      .head { fill: #4868f5; }
+      .aerial { stroke: #9db1ff; }
+      .tip { fill: #9db1ff; }
+    }
+  </style>
+  <path class="aerial" d="M9.5 14v-3.4"/>
+  <path class="aerial" d="M9.5 4.3h1.9l2.7 2.7v1.9"/>
+  <path class="aerial" d="M9.5.9h3.3l4.7 4.7v3.3"/>
+  <rect class="tip" x="7.8" y="7.2" width="3.4" height="3.4"/>
+  <path class="head" d="M3 14h17l9 9v7H3z"/>
+  <rect class="eye" x="8" y="19" width="3.8" height="4.4"/>
+  <rect class="eye" x="16.2" y="19" width="3.8" height="4.4"/>
+  <path class="mouth" d="M9.8 25.8l1.3 1.3h5.8l1.3-1.3"/>
 </svg>

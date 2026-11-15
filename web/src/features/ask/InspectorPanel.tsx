@@ -8,14 +8,12 @@ import type { Exchange } from "./useConversation";
 function Waiting() {
   return (
     <div>
-      <p className="text-sm leading-relaxed text-fg-subtle">
-        The sources and steps show here when the answer is ready.
-      </p>
-      <div className="mt-6 space-y-6">
+      <p className="text-ink-2">The sources and steps show here when the answer is ready.</p>
+      <div className="mt-6 grid gap-6">
         {[0, 1, 2, 3].map((row) => (
           <div key={row} className="flex gap-3.5">
-            <Skeleton className="size-8 shrink-0 rounded-full" />
-            <div className="flex-1 space-y-2 pt-1">
+            <Skeleton className="size-[22px] shrink-0" />
+            <div className="flex-1 space-y-2 pt-0.5">
               <Skeleton className="h-3 w-20" />
               <Skeleton className="h-4 w-3/4" />
             </div>
@@ -27,7 +25,7 @@ function Waiting() {
 }
 
 function Note({ children }: { children: string }) {
-  return <p className="text-sm leading-relaxed text-fg-subtle">{children}</p>;
+  return <p className="text-ink-2">{children}</p>;
 }
 
 export interface InspectorPanelProps {
@@ -37,20 +35,23 @@ export interface InspectorPanelProps {
   highlight: SourceHighlight | null;
 }
 
-/** The right-hand panel on wide screens: the sources and steps of the selected answer. */
+/**
+ * The copilot's side rail on wide screens: the sources and steps of the
+ * selected answer, on the sunken tone that marks the copilot's own working.
+ */
 export function InspectorPanel({ exchange, tools, highlight }: InspectorPanelProps) {
   return (
     <aside
-      aria-label="Sources and steps"
-      className="flex w-[23rem] shrink-0 animate-fade flex-col border-l bg-surface xl:w-[26rem]"
+      aria-label="Sources and steps for the selected answer"
+      className="flex w-[24rem] shrink-0 animate-fade flex-col border-l border-line bg-sunken xl:w-[27.5rem]"
     >
-      <div className="shrink-0 border-b px-6 py-4">
-        <h2 className="text-sm font-semibold text-fg">Sources and steps</h2>
-        <p className="mt-1 line-clamp-2 text-sm leading-snug text-fg-subtle">
-          {exchange ? exchange.question : "No answer is selected."}
-        </p>
-      </div>
-      <div className="scroll-area min-h-0 flex-1 px-6 py-6">
+      <div className="scroll-area min-h-0 flex-1 px-6 pt-6 pb-8">
+        {exchange !== null && (
+          <div className="mb-6">
+            <p className="text-label font-bold tracking-[0.01em] text-ink-2">Agent asked</p>
+            <p className="mt-1 line-clamp-2 text-meta text-ink-2">{exchange.question}</p>
+          </div>
+        )}
         {exchange === null && <Note>Choose an answer to see its sources and steps.</Note>}
         {exchange?.status === "pending" && <Waiting />}
         {exchange?.status === "error" && (

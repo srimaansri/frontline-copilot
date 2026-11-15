@@ -60,6 +60,8 @@ export interface Step {
   detail: string;
   status: StepStatus;
   tool: string | null;
+  /** The ticket reference on the hand-off step, such as "ESC-B695DE84". Null on every other step. */
+  reference: string | null;
 }
 
 export interface AskResponse {

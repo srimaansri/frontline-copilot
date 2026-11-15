@@ -1,23 +1,17 @@
-import { cn } from "@/lib/cn";
 import { splitPlaceholders } from "@/lib/placeholders";
 
-export interface PlaceholderChipProps {
+export interface RedactionBarProps {
   /** The placeholder's name without angle brackets, such as PHONE_NUMBER_1. */
   name: string;
-  className?: string;
 }
 
-/** A placeholder that stands where a personal detail was removed. */
-export function PlaceholderChip({ name, className }: PlaceholderChipProps) {
+/**
+ * A redaction bar: a personal detail was here and was removed. It is the only
+ * place where running text is set light on ink.
+ */
+export function RedactionBar({ name }: RedactionBarProps) {
   return (
-    <code
-      title="A placeholder for a personal detail"
-      className={cn(
-        "placeholder-chip mx-0.5 inline-block rounded-sm border bg-surface-muted px-1.5 py-px align-baseline",
-        "font-mono text-[0.76em] leading-normal font-medium whitespace-nowrap text-fg-muted",
-        className,
-      )}
-    >
+    <code className="ph" title="A personal detail was removed here">
       {name}
     </code>
   );
@@ -25,18 +19,16 @@ export function PlaceholderChip({ name, className }: PlaceholderChipProps) {
 
 export interface PlaceholderTextProps {
   text: string;
-  /** Extra classes for each chip, for example on a coloured background. */
-  chipClassName?: string;
 }
 
-/** Redacted text, with each placeholder such as <PERSON_1> shown as a chip. */
-export function PlaceholderText({ text, chipClassName }: PlaceholderTextProps) {
+/** Redacted text, with each placeholder such as <PERSON_1> shown as a redaction bar. */
+export function PlaceholderText({ text }: PlaceholderTextProps) {
   return (
     <>
       {splitPlaceholders(text).map((part, index) =>
         part.kind === "placeholder" ? (
           // The parts of one text never reorder, so the position is a stable key.
-          <PlaceholderChip key={index} name={part.name} className={chipClassName} />
+          <RedactionBar key={index} name={part.name} />
         ) : (
           part.value
         ),

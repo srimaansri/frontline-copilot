@@ -1,9 +1,9 @@
-import { ChevronDown, Headset, PanelRight, Timer } from "lucide-react";
+import { useMemo } from "react";
 
 import type { ToolInfo } from "@/api/types";
-import { BrandMark } from "@/components/shared/BrandMark";
+import { ChevronDownIcon, HandoffIcon, PanelIcon } from "@/components/icons/glyphs";
+import { Byline, Sim } from "@/components/shared/Sim";
 import { ToolIcon } from "@/components/shared/ToolIcon";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { formatSeconds } from "@/lib/format";
@@ -15,11 +15,9 @@ import type { AnsweredExchange } from "./useConversation";
 
 function HandOffBanner() {
   return (
-    <div className="mt-5 flex items-start gap-3 rounded-lg border border-warning/30 bg-warning-soft px-4 py-3 text-warning">
-      <Headset aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
-      <p className="text-base leading-relaxed font-medium">
-        This needs a person. A hand-off was opened.
-      </p>
+    <div className="mt-2 flex items-center gap-2.5 rounded-box border border-warn bg-warn-tint px-4 py-[11px] font-semibold text-ink">
+      <HandoffIcon className="text-warn" />
+      This needs a person. A hand-off was opened.
     </div>
   );
 }
@@ -38,7 +36,10 @@ export interface AnswerCardProps {
   onToggleDetails: () => void;
 }
 
-/** One answer: the text, a hand-off banner if one was opened, and what went into it. */
+/**
+ * One answer. The card with the cut corner holds only what the copilot wrote.
+ * The hand-off banner and the row of tools, timing and feedback sit under it.
+ */
 export function AnswerCard({
   exchange,
   tools,
@@ -50,70 +51,70 @@ export function AnswerCard({
   onToggleDetails,
 }: AnswerCardProps) {
   const { response } = exchange;
+  // The hand-off reference, if there is one, is a fact the agent reads out.
+  const references = useMemo(
+    () => response.steps.flatMap((step) => (step.reference ? [step.reference] : [])),
+    [response.steps],
+  );
   return (
-    <div
-      className={cn(
-        "rounded-xl border bg-surface transition-[border-color,box-shadow] duration-200",
-        selected && sidePanel && "border-accent/60 shadow-[0_0_0_3px_var(--accent-soft)]",
-      )}
-    >
-      <div className="px-5 pt-5 sm:px-6">
-        <div className="mb-3.5 flex items-center gap-2.5">
-          <BrandMark className="size-6 rounded-md" />
-          <p className="text-sm font-semibold text-fg">Copilot</p>
-        </div>
+    <div>
+      <Sim selected={selected && sidePanel} bodyClassName="px-5 pt-5 pb-6 sm:px-[30px] sm:pb-7">
+        <Byline className="mb-3" />
         <AnswerMarkdown
           markdown={response.answer}
           citations={response.citations}
+          references={references}
           activeCitation={activeCitation}
           onCite={onCite}
         />
-        {response.escalated && <HandOffBanner />}
-      </div>
+      </Sim>
 
-      <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 border-t px-5 py-2.5 sm:px-6">
+      {response.escalated && <HandOffBanner />}
+
+      <div className="mt-2.5 flex flex-wrap items-center gap-x-3.5 gap-y-2">
         {response.tools_used.length > 0 && (
           <ul aria-label="Used for this answer" className="flex flex-wrap items-center gap-1.5">
             {response.tools_used.map((name) => (
-              <li key={name} className="flex">
-                <Badge tone="accent">
-                  <ToolIcon name={name} />
-                  {toolLabel(tools, name)}
-                </Badge>
+              <li
+                key={name}
+                className="inline-flex h-[30px] items-center gap-[7px] rounded-box border border-line-strong bg-surface pr-2.5 pl-2 text-meta font-semibold text-ink-2"
+              >
+                <ToolIcon name={name} size={16} />
+                {toolLabel(tools, name)}
               </li>
             ))}
           </ul>
         )}
-        <p className="inline-flex items-center gap-1.5 text-xs text-fg-subtle">
-          <Timer aria-hidden="true" className="size-3.5" />
+        <p className="font-mono text-meta text-ink-2">
           <span className="sr-only">Answered in </span>
           {formatSeconds(response.seconds)}
         </p>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
           {response.trace_id !== null && <FeedbackButtons traceId={response.trace_id} />}
           {sidePanel ? (
             <Button
-              variant="ghost"
               size="sm"
+              className="h-9"
+              // Ink fill: these are the details on show in the side rail.
+              variant={selected ? "on" : "outline"}
               aria-pressed={selected}
               onClick={onToggleDetails}
-              className={cn(selected && "bg-accent-soft text-accent-soft-fg hover:bg-accent-soft")}
             >
-              <PanelRight aria-hidden="true" />
+              <PanelIcon size={16} />
               Sources and steps
             </Button>
           ) : (
             <Button
-              variant="ghost"
               size="sm"
+              className="h-9 pr-2 pl-3"
               aria-expanded={selected}
               aria-controls={detailsId}
               onClick={onToggleDetails}
             >
               Sources and steps
-              <ChevronDown
-                aria-hidden="true"
+              <ChevronDownIcon
+                size={16}
                 className={cn("transition-transform duration-200", selected && "rotate-180")}
               />
             </Button>

@@ -1,9 +1,9 @@
-import { Check, ThumbsDown, ThumbsUp } from "lucide-react";
 import { useState } from "react";
 
 import { api, errorMessage } from "@/api/client";
+import { ThumbDownIcon, ThumbUpIcon } from "@/components/icons/glyphs";
+import { StatusLabel } from "@/components/icons/StatusStamp";
 import { IconButton } from "@/components/ui/icon-button";
-import { cn } from "@/lib/cn";
 
 type FeedbackState =
   | { status: "idle" }
@@ -36,37 +36,39 @@ export function FeedbackButtons({ traceId }: FeedbackButtonsProps) {
   const chosen = locked ? state.helpful : null;
 
   return (
-    <div className="flex items-center gap-1">
-      <span aria-live="polite" className="mr-1 text-xs text-fg-subtle">
+    <div className="flex items-center gap-1.5">
+      <span aria-live="polite" className="mr-1 text-meta">
         {state.status === "saved" && (
-          <span className="inline-flex animate-fade items-center gap-1 font-medium text-ok">
-            <Check aria-hidden="true" className="size-3.5" />
+          <StatusLabel status="ok" className="animate-fade">
             Saved
-          </span>
+          </StatusLabel>
         )}
-        {state.status === "error" && <span className="text-fg-muted">{state.message}</span>}
+        {state.status === "error" && <span className="text-ink-2">{state.message}</span>}
       </span>
       <IconButton
         label="Helpful"
+        // Ink fill: this is the vote that was cast.
+        variant={chosen === true ? "on" : "outline"}
         aria-pressed={chosen === true}
         disabled={locked}
+        className={chosen === true ? "disabled:opacity-100" : undefined}
         onClick={() => {
           vote(true);
         }}
-        className={cn("size-8", chosen === true && "bg-accent-soft text-accent-soft-fg disabled:opacity-100")}
       >
-        <ThumbsUp aria-hidden="true" />
+        <ThumbUpIcon />
       </IconButton>
       <IconButton
         label="Not helpful"
+        variant={chosen === false ? "on" : "outline"}
         aria-pressed={chosen === false}
         disabled={locked}
+        className={chosen === false ? "disabled:opacity-100" : undefined}
         onClick={() => {
           vote(false);
         }}
-        className={cn("size-8", chosen === false && "bg-accent-soft text-accent-soft-fg disabled:opacity-100")}
       >
-        <ThumbsDown aria-hidden="true" />
+        <ThumbDownIcon />
       </IconButton>
     </div>
   );

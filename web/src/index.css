@@ -1,105 +1,155 @@
 @import "tailwindcss";
+@import "./fonts.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
- * Colour tokens. One accent (teal) and a set of cool neutrals, plus four status
- * colours for the step timeline. Every text/background pair below meets WCAG AA.
+ * "Signal and Script". The design rules are written down in web/DESIGN.md;
+ * this file is where they are implemented. Components never name a colour, a
+ * font size or a radius directly: they use the tokens declared here.
+ *
+ * Every neutral leans toward cobalt. There is no pure grey.
  */
 :root {
   color-scheme: light;
 
-  --bg: #f6f8fa;
-  --surface: #ffffff;
-  --surface-muted: #f0f4f7;
-  --border: #dde4ea;
-  --border-strong: #c5d0d9;
+  --paper: #f2f4fa; /* app background */
+  --surface: #ffffff; /* cards, bars, inputs */
+  --sunken: #e8ecf6; /* the copilot's side rail, an agent's question */
+  --line: #c9d1e3; /* hairlines */
+  --line-strong: #7482a8; /* control borders, the route; 3:1 on every background */
+  --edge: #0f1833; /* outline of anything the copilot wrote */
+  --ink: #0f1833;
+  --ink-2: #38425f;
+  --ink-3: #586384;
+  --brand: #1d43d8; /* cobalt: fills */
+  --brand-text: #1d43d8; /* cobalt: links, chips, icons on a surface */
+  --brand-tint: #e1e8fc;
+  --on-brand: #ffffff;
+  --hi: #d9f23e; /* the highlighter. One job only. */
+  --hi-ink: #0f1833;
+  --redact: #0f1833; /* redaction bar */
+  --on-redact: #f2f4fa;
+  --ok: #0b6b47;
+  --ok-tint: #ddf2e6;
+  --notice: #8a2f7b;
+  --notice-tint: #f6e4f1;
+  --warn: #8a5300;
+  --warn-tint: #fbefd3;
+  --block: #b3261e;
+  --block-tint: #fbe4e1;
+  --knock: #ffffff; /* glyph knocked out of a status shape */
+  --pop-shadow: 0 10px 28px rgb(15 24 51 / 0.16);
 
-  --fg: #16202b;
-  --fg-muted: #44535f;
-  --fg-subtle: #5d6c79;
-
-  --accent: #0b6e8f;
-  --accent-hover: #095c78;
-  --accent-fg: #ffffff;
-  --accent-soft: #e3f1f6;
-  --accent-soft-fg: #085a75;
-
-  --ok: #17734a;
-  --ok-soft: #e5f4ec;
-  --notice: #1c5fb0;
-  --notice-soft: #e6f0fb;
-  --warning: #8f5200;
-  --warning-soft: #fdf1da;
-  --blocked: #b3261e;
-  --blocked-soft: #fdecea;
+  --cut: 26px; /* the SIM chamfer */
 }
 
+/* A smaller cut on a phone, where a card is narrow. */
+@media (max-width: 40rem) {
+  :root {
+    --cut: 20px;
+  }
+}
+
+/* Midnight navy, not near-black, and not an inversion of the light theme. */
 .dark {
   color-scheme: dark;
 
-  --bg: #0d1317;
-  --surface: #141b21;
-  --surface-muted: #1a232b;
-  --border: #25313a;
-  --border-strong: #36454f;
-
-  --fg: #e7edf2;
-  --fg-muted: #b1bfca;
-  --fg-subtle: #8c9dab;
-
-  --accent: #56bcd9;
-  --accent-hover: #74cbe4;
-  --accent-fg: #06222c;
-  --accent-soft: #11313c;
-  --accent-soft-fg: #93d8ee;
-
-  --ok: #62cf93;
-  --ok-soft: #11301f;
-  --notice: #82b7f5;
-  --notice-soft: #132a42;
-  --warning: #efb556;
-  --warning-soft: #38290d;
-  --blocked: #f48d84;
-  --blocked-soft: #3c1815;
+  --paper: #111b3d;
+  --surface: #1a2650;
+  --sunken: #0c1330;
+  --line: #2f3e6c;
+  --line-strong: #6878aa;
+  --edge: #8e9ccb;
+  --ink: #edf1fc;
+  --ink-2: #c2cae4;
+  --ink-3: #98a4c8;
+  --brand: #4868f5;
+  --brand-text: #9db1ff;
+  --brand-tint: #24346e;
+  --on-brand: #ffffff;
+  --hi: #d9f23e;
+  --hi-ink: #0f1833;
+  --redact: #c2cae4;
+  --on-redact: #111b3d;
+  --ok: #5fd3a0;
+  --ok-tint: #10382e;
+  --notice: #e79ad8;
+  --notice-tint: #3a1c3d;
+  --warn: #f2b950;
+  --warn-tint: #3d2e0e;
+  --block: #ff8f85;
+  --block-tint: #46191b;
+  --knock: #111b3d;
+  --pop-shadow: 0 10px 28px rgb(4 8 24 / 0.5);
 }
 
 @theme inline {
-  --color-bg: var(--bg);
+  /* Only the tokens above exist as colours. Tailwind's own palette is removed. */
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-paper: var(--paper);
   --color-surface: var(--surface);
-  --color-surface-muted: var(--surface-muted);
-  --color-border: var(--border);
-  --color-border-strong: var(--border-strong);
-  --color-fg: var(--fg);
-  --color-fg-muted: var(--fg-muted);
-  --color-fg-subtle: var(--fg-subtle);
-  --color-accent: var(--accent);
-  --color-accent-hover: var(--accent-hover);
-  --color-accent-fg: var(--accent-fg);
-  --color-accent-soft: var(--accent-soft);
-  --color-accent-soft-fg: var(--accent-soft-fg);
+  --color-sunken: var(--sunken);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-edge: var(--edge);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-brand: var(--brand);
+  --color-brand-text: var(--brand-text);
+  --color-brand-tint: var(--brand-tint);
+  --color-on-brand: var(--on-brand);
+  --color-hi: var(--hi);
+  --color-hi-ink: var(--hi-ink);
+  --color-redact: var(--redact);
+  --color-on-redact: var(--on-redact);
   --color-ok: var(--ok);
-  --color-ok-soft: var(--ok-soft);
+  --color-ok-tint: var(--ok-tint);
   --color-notice: var(--notice);
-  --color-notice-soft: var(--notice-soft);
-  --color-warning: var(--warning);
-  --color-warning-soft: var(--warning-soft);
-  --color-blocked: var(--blocked);
-  --color-blocked-soft: var(--blocked-soft);
+  --color-notice-tint: var(--notice-tint);
+  --color-warn: var(--warn);
+  --color-warn-tint: var(--warn-tint);
+  --color-block: var(--block);
+  --color-block-tint: var(--block-tint);
 
-  --font-sans:
-    "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-mono:
-    "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  /* Only popovers and tooltips cast a shadow. */
+  --shadow-*: initial;
+  --shadow-pop: var(--pop-shadow);
+}
 
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+@theme {
+  --font-display: "Bricolage Grotesque Variable", "Atkinson Hyperlegible Next Variable", sans-serif;
+  --font-sans: "Atkinson Hyperlegible Next Variable", Verdana, sans-serif;
+  --font-mono: "Atkinson Hyperlegible Mono Variable", ui-monospace, Consolas, monospace;
+
+  /* One type scale. Nothing is set outside it. */
+  --text-*: initial;
+  --text-label: 0.78125rem; /* 12.5px: cues, captions */
+  --text-label--line-height: 1.35;
+  --text-meta: 0.875rem; /* 14px: details, readouts */
+  --text-meta--line-height: 1.45;
+  --text-ui: 0.96875rem; /* 15.5px: controls */
+  --text-ui--line-height: 1.45;
+  --text-read: 1.125rem; /* 18px: everything read aloud */
+  --text-read--line-height: 1.55;
+  --text-title: 1.375rem; /* 22px: section titles */
+  --text-title--line-height: 1.2;
+  --text-view: 1.875rem; /* 30px: view titles */
+  --text-view--line-height: 1.1;
+  --text-head: 2.875rem; /* 46px: the headline */
+  --text-head--line-height: 1.04;
+
+  /* One radius for controls and people's words. Chips are a shade tighter. */
+  --radius-*: initial;
+  --radius-box: 3px;
+  --radius-chip: 2px;
 
   --animate-rise: rise 240ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
   --animate-fade: fade 200ms ease-out both;
-  --animate-pop: pop 160ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-pop: pop 140ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 
   @keyframes rise {
     from {
@@ -124,11 +174,11 @@
   @keyframes pop {
     from {
       opacity: 0;
-      transform: scale(0.97);
+      transform: translateY(-3px);
     }
     to {
       opacity: 1;
-      transform: scale(1);
+      transform: translateY(0);
     }
   }
 }
@@ -136,7 +186,6 @@
 @layer base {
   html {
     font-family: var(--font-sans);
-    font-feature-settings: "cv11", "ss03";
     -webkit-text-size-adjust: 100%;
   }
 
@@ -147,10 +196,10 @@
   }
 
   body {
-    background-color: var(--bg);
-    color: var(--fg);
-    font-size: 1rem;
-    line-height: 1.5;
+    background-color: var(--paper);
+    color: var(--ink);
+    font-size: var(--text-ui);
+    line-height: 1.45;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -158,18 +207,30 @@
   *,
   ::before,
   ::after {
-    border-color: var(--border);
+    border-color: var(--line);
   }
 
-  /* One focus ring everywhere, shown for keyboard focus only. */
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
+  }
+
+  /* One focus ring everywhere: cobalt, 2px, set off by 2px. Keyboard focus only. */
   :focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--brand-text);
     outline-offset: 2px;
   }
 
   ::selection {
-    background-color: var(--accent-soft);
-    color: var(--accent-soft-fg);
+    background-color: var(--brand-tint);
+    color: var(--ink);
+  }
+
+  ::placeholder {
+    color: var(--ink-3);
+    opacity: 1;
   }
 
   button:not(:disabled),
@@ -190,143 +251,487 @@
 }
 
 @layer components {
+  /* ---------------------------------------------------------------------------
+   * The SIM chamfer: only for what the copilot wrote.
+   * The outer box is the outline, the inner box is the card. Both are clipped,
+   * so the outline stays visible along the cut. Nothing here casts a shadow,
+   * which the clip would remove anyway.
+   * ------------------------------------------------------------------------- */
+  .sim {
+    --bw: 1.5px;
+    padding: var(--bw);
+    background: var(--edge);
+    clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, 0 100%);
+  }
+
+  .sim > .sim-body {
+    /* The inner cut is shorter by the border width times (sqrt 2 - 1). */
+    --in: calc(var(--cut) - var(--bw) * 0.586);
+    background: var(--surface);
+    clip-path: polygon(0 0, calc(100% - var(--in)) 0, 100% var(--in), 100% 100%, 0 100%);
+  }
+
+  /* The answer whose sources and steps are on show has a heavier outline. */
+  .sim[data-selected="true"] {
+    --bw: 3px;
+  }
+
+  /* ---------------------------------------------------------------------------
+   * Signal bars: the copilot's own state. Four bars, four stages.
+   * ------------------------------------------------------------------------- */
+  .bars {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 24px;
+    flex: none;
+  }
+
+  .bars > span {
+    display: block;
+    width: 6px;
+    background: var(--line-strong);
+  }
+
+  .bars > span:nth-child(1) {
+    height: 37.5%;
+  }
+
+  .bars > span:nth-child(2) {
+    height: 58.3%;
+  }
+
+  .bars > span:nth-child(3) {
+    height: 79.2%;
+  }
+
+  .bars > span:nth-child(4) {
+    height: 100%;
+  }
+
+  .bars > span[data-state="on"] {
+    background: var(--brand-text);
+  }
+
+  .bars > span[data-state="now"] {
+    animation: seek 1s ease-in-out infinite alternate;
+  }
+
+  .bars[data-size="sm"] {
+    height: 16px;
+    gap: 2px;
+  }
+
+  .bars[data-size="sm"] > span {
+    width: 4px;
+  }
+
+  /* The explainer on the empty state: the same bars, still and in ink. */
+  .bars[data-tone="ink"] > span {
+    background: var(--ink-2);
+  }
+
+  @keyframes seek {
+    from {
+      background: var(--line-strong);
+    }
+    to {
+      background: var(--brand-text);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bars > span[data-state="now"] {
+      animation: none;
+      background: linear-gradient(to top, var(--brand-text) 50%, var(--line-strong) 50%);
+    }
+  }
+
+  /* ---------------------------------------------------------------------------
+   * The two pen marks.
+   * ------------------------------------------------------------------------- */
+
   /*
-   * An answer rendered from Markdown. The size is deliberately large: answers
-   * are read aloud to customers, often from a distance.
+   * Highlighter: "say this out loud". Only inside text the copilot wrote, and
+   * only on bold that is a fact. The renderer decides which bold that is (see
+   * lib/boldKind.ts) and marks it "fact". Other bold is plain.
    */
+  .answer strong {
+    font-weight: 700;
+  }
+
+  /* A heading-like lead-in, such as "How to request a waiver". */
+  .answer strong.label {
+    color: var(--ink-2);
+  }
+
+  .hi,
+  .answer strong.fact {
+    color: var(--hi-ink);
+    font-weight: 700;
+    padding: 0.1em 0.3em 0.06em;
+    margin: 0 -0.04em;
+    background: linear-gradient(
+      179.3deg,
+      transparent 5%,
+      var(--hi) 6%,
+      var(--hi) 94%,
+      transparent 95%
+    );
+    border-radius: 2px 7px 3px 6px / 7px 3px 6px 2px;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+
+  /* Redaction bar: a personal detail was here and was removed. */
+  .ph {
+    font-family: var(--font-mono);
+    font-size: 0.8em;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    background: var(--redact);
+    color: var(--on-redact);
+    padding: 0.16em 0.5em 0.12em;
+    border-radius: 1px;
+    white-space: nowrap;
+  }
+
+  /* In the agent's own question, a detail that was replaced before processing. */
+  .pii {
+    text-decoration: underline;
+    text-decoration-color: var(--notice);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 5px;
+  }
+
+  /* Citation chip: this claim has a source. The same square sits on the source. */
+  .cite {
+    display: inline-grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    flex: none;
+    vertical-align: 2px;
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    font-weight: 700;
+    line-height: 1;
+    color: var(--brand-text);
+    border: 1.5px solid var(--brand-text);
+    border-radius: var(--radius-chip);
+    background: var(--surface);
+    transition:
+      background-color 120ms,
+      color 120ms;
+  }
+
+  button.cite:hover,
+  .cite[data-active="true"] {
+    background: var(--brand);
+    border-color: var(--brand);
+    color: var(--on-brand);
+  }
+
+  /* ---------------------------------------------------------------------------
+   * An answer, rendered from Markdown. Reading size, generous leading: answers
+   * are read aloud to customers.
+   * ------------------------------------------------------------------------- */
   .answer {
-    font-size: 1.125rem;
-    line-height: 1.7;
-    color: var(--fg);
+    font-size: var(--text-read);
+    line-height: 1.62;
+    color: var(--ink);
     /* Not "anywhere": that would let table columns shrink to one letter wide. */
     overflow-wrap: break-word;
   }
 
   .answer > * + * {
-    margin-top: 0.9em;
+    margin-top: 12px;
   }
 
   .answer h1,
   .answer h2,
   .answer h3,
   .answer h4 {
-    font-weight: 650;
-    line-height: 1.3;
-    letter-spacing: -0.01em;
-    margin-top: 1.4em;
-  }
-
-  .answer h1 {
-    font-size: 1.3em;
-  }
-
-  .answer h2 {
-    font-size: 1.18em;
-  }
-
-  .answer h3,
-  .answer h4 {
-    font-size: 1.05em;
+    font-weight: 700;
+    line-height: 1.35;
+    margin-top: 20px;
   }
 
   .answer > :first-child {
     margin-top: 0;
   }
 
-  .answer strong {
-    font-weight: 650;
-  }
-
-  .answer ul,
-  .answer ol {
-    padding-left: 1.5em;
-  }
-
+  .answer ol,
   .answer ul {
-    list-style: disc;
+    display: grid;
+    gap: 8px;
   }
 
   .answer ol {
-    list-style: decimal;
+    counter-reset: step;
   }
 
-  .answer li + li,
-  .answer li > ul,
-  .answer li > ol {
-    margin-top: 0.35em;
+  .answer li {
+    position: relative;
+    padding-left: 30px;
   }
 
-  .answer li::marker {
-    color: var(--fg-subtle);
-    font-variant-numeric: tabular-nums;
+  .answer li > ol,
+  .answer li > ul {
+    margin-top: 8px;
   }
 
-  .answer blockquote {
-    border-left: 3px solid var(--border-strong);
-    padding-left: 1em;
-    color: var(--fg-muted);
+  .answer ol > li {
+    counter-increment: step;
+  }
+
+  .answer ol > li::before {
+    content: counter(step) ".";
+    position: absolute;
+    left: 0;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--ink-3);
+  }
+
+  /*
+   * Bullets that interrupt a numbered list belong to the step above them, and
+   * the list that carries on after them (it has a `start`) is the same set of
+   * steps. So the three sit as close as the items of one list, and the bullets
+   * are set in under the step's text.
+   */
+  .answer ol + ul {
+    margin-top: 8px;
+    padding-left: 30px;
+  }
+
+  .answer ul + ol[start],
+  .answer ol + ol[start] {
+    margin-top: 8px;
+  }
+
+  .answer ul > li::before {
+    content: "";
+    position: absolute;
+    left: 8px;
+    top: 0.62em;
+    width: 6px;
+    height: 6px;
+    background: var(--ink-3);
+  }
+
+  /* A line for the agent to say, set off like a line in a script. */
+  .answer blockquote,
+  .answer .script-line {
+    margin-top: 6px;
+    padding: 2px 0 2px 18px;
+    border-left: 3px solid var(--edge);
+  }
+
+  /* A label over what follows: "What to tell the customer:", "How to request a waiver". */
+  .answer .script-label {
+    font-size: var(--text-ui);
+    font-weight: 700;
+    color: var(--ink-2);
+  }
+
+  .answer > .script-label {
+    margin-top: 18px;
+  }
+
+  .answer .ref {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+  }
+
+  /* A fact read out as one thing, such as a phone number, never breaks across lines. */
+  .answer .ref,
+  .answer .keep {
+    white-space: nowrap;
   }
 
   .answer hr {
     border: 0;
-    border-top: 1px solid var(--border);
-    margin: 1.4em 0;
+    border-top: 1px solid var(--line);
+    margin: 18px 0;
+  }
+
+  .answer a:not(.cite) {
+    color: var(--brand-text);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
   }
 
   .answer pre {
-    background-color: var(--surface-muted);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: 0.75em 1em;
+    background-color: var(--sunken);
+    border-radius: var(--radius-box);
+    padding: 12px 16px;
     overflow-x: auto;
-    font-size: 0.85em;
+    font-family: var(--font-mono);
+    font-size: var(--text-meta);
     line-height: 1.55;
   }
 
-  .answer :not(pre) > code:not(.placeholder-chip) {
-    background-color: var(--surface-muted);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
+  .answer :not(pre) > code:not(.ph) {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    background-color: var(--sunken);
+    border-radius: var(--radius-chip);
     padding: 0.08em 0.35em;
-    font-size: 0.85em;
   }
 
   .answer .table-scroll {
     overflow-x: auto;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-box);
   }
 
   .answer table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.92em;
+    font-size: var(--text-ui);
     line-height: 1.45;
   }
 
   .answer th,
   .answer td {
-    padding: 0.6em 0.9em;
+    padding: 10px 14px;
     text-align: left;
     vertical-align: top;
   }
 
   .answer th {
-    background-color: var(--surface-muted);
-    color: var(--fg-muted);
-    font-weight: 600;
+    background-color: var(--sunken);
+    color: var(--ink-2);
+    font-size: var(--text-label);
+    font-weight: 700;
     white-space: nowrap;
   }
 
-  .answer tr + tr td,
-  .answer thead + tbody td {
-    border-top: 1px solid var(--border);
+  .answer tbody tr td {
+    border-top: 1px solid var(--line);
+  }
+
+  /* ---------------------------------------------------------------------------
+   * The route: what the copilot did, as one line with a station per step.
+   * A solid leg was done by the copilot. The dashed leg passes to a person.
+   * The route is drawn in line colours; the status shapes carry the colour.
+   * ------------------------------------------------------------------------- */
+  .route {
+    --stamp: 22px;
+    --rail: 2px;
+    --branch: 28px; /* how far the hand-off steps aside, and so how far it drops */
+  }
+
+  .stn {
+    position: relative;
+    padding-bottom: 20px;
+  }
+
+  .stn:last-child {
+    padding-bottom: 0;
+  }
+
+  /* The main line runs behind the stamps, from the first to the last. */
+  .stn::before {
+    content: "";
+    position: absolute;
+    left: calc((var(--stamp) - var(--rail)) / 2);
+    top: 0;
+    bottom: 0;
+    width: var(--rail);
+    background: var(--line-strong);
+  }
+
+  .stn:first-child::before {
+    top: calc(var(--stamp) / 2);
+  }
+
+  .stn:last-child::before {
+    bottom: auto;
+    height: calc(var(--stamp) / 2);
+  }
+
+  .stn:only-child::before,
+  .stn[data-branch="true"]:last-child::before {
+    display: none;
+  }
+
+  .stn-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--stamp) minmax(0, 1fr) auto;
+    column-gap: 14px;
+  }
+
+  .stn-stamp {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* The hand-off leaves the main line at 45 degrees. */
+  .stn[data-branch="true"] {
+    padding-top: var(--branch);
+  }
+
+  .stn[data-branch="true"] > .stn-row,
+  .stn[data-branch="true"] > .stn-tag {
+    margin-left: var(--branch);
+  }
+
+  .stn-diag {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: calc(var(--branch) + var(--stamp));
+    height: var(--branch);
+    overflow: visible;
+    fill: none;
+    stroke: var(--line-strong);
+    stroke-width: 2;
+  }
+
+  /* From the hand-off station on, the request is with a person: dashed. */
+  .stn-leg {
+    flex: 1;
+    width: 0;
+    min-height: 12px;
+    border-left: var(--rail) dashed var(--line-strong);
+  }
+
+  .stn-tag {
+    position: relative;
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 8px;
+    padding: 6px 12px 6px 8px;
+    background: var(--ink);
+    color: var(--surface);
+    border-radius: var(--radius-box);
+    font-size: var(--text-label);
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  .legend-line {
+    display: block;
+    width: 26px;
+    flex: none;
+    border-top: 2px solid var(--line-strong);
+  }
+
+  .legend-line[data-leg="dashed"] {
+    border-top-style: dashed;
   }
 }
 
 @utility scrollbar-quiet {
   scrollbar-width: thin;
-  scrollbar-color: var(--border-strong) transparent;
+  scrollbar-color: var(--line-strong) transparent;
 }
 
 /*
@@ -338,5 +743,5 @@
   position: relative;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: var(--border-strong) transparent;
+  scrollbar-color: var(--line-strong) transparent;
 }

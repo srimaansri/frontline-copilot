@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Meta, ToolInfo } from "@/api/types";
 import type { Loadable } from "@/hooks/useLoad";
 import { REDUCED_MOTION, useMediaQuery, WIDE_SCREEN } from "@/hooks/useMediaQuery";
+import { cn } from "@/lib/cn";
 
 import { Composer } from "./Composer";
 import { EmptyState } from "./EmptyState";
@@ -25,7 +26,7 @@ export interface AskViewProps {
 
 /**
  * The Ask view: the conversation, the question box pinned under it and, on
- * wide screens, a panel with the sources and steps of the selected answer.
+ * wide screens, a side rail with the sources and steps of the selected answer.
  * On narrow screens those sit under the answer instead.
  */
 export function AskView({ meta, onRetryMeta }: AskViewProps) {
@@ -40,6 +41,7 @@ export function AskView({ meta, onRetryMeta }: AskViewProps) {
   const latest = exchanges.at(-1);
   const latestId = latest?.id;
   const latestStatus = latest?.status;
+  const empty = exchanges.length === 0;
 
   // Start with the cursor in the question box, on first load and after "New conversation".
   // Not on touch screens, where that would open the on-screen keyboard unasked.
@@ -80,7 +82,7 @@ export function AskView({ meta, onRetryMeta }: AskViewProps) {
   };
 
   const toggleDetails = (exchangeId: string) => {
-    // The side panel always shows something. Under an answer, the details can be closed.
+    // The side rail always shows something. Under an answer, the details can be closed.
     setSelectedId((current) => (!sidePanel && current === exchangeId ? null : exchangeId));
   };
 
@@ -95,6 +97,11 @@ export function AskView({ meta, onRetryMeta }: AskViewProps) {
     announcement = "The question could not be answered.";
   }
 
+  // The conversation and the question box share one column and one left edge.
+  const column = empty
+    ? "mx-auto w-full max-w-[86rem] px-4 sm:px-6 lg:px-12 xl:px-[72px]"
+    : "mx-auto w-full max-w-[60rem] px-4 sm:px-6 lg:px-12";
+
   return (
     <div className="flex h-full min-h-0">
       <section aria-label="Conversation" className="flex min-w-0 flex-1 flex-col">
@@ -103,10 +110,10 @@ export function AskView({ meta, onRetryMeta }: AskViewProps) {
           {announcement}
         </p>
         <div className="scroll-area min-h-0 flex-1">
-          {exchanges.length === 0 ? (
+          {empty ? (
             <EmptyState meta={meta} onRetryMeta={onRetryMeta} onPick={pick} />
           ) : (
-            <div className="mx-auto max-w-3xl space-y-10 px-4 pt-8 pb-10 sm:px-6">
+            <div className={cn(column, "grid gap-10 pt-8 pb-10")}>
               {exchanges.map((exchange) => (
                 <ExchangeItem
                   key={exchange.id}
@@ -129,14 +136,12 @@ export function AskView({ meta, onRetryMeta }: AskViewProps) {
             </div>
           )}
         </div>
-        <div className="shrink-0 px-4 pt-2 pb-3 sm:px-6">
-          <div className="mx-auto max-w-3xl">
-            <Composer inputRef={composerInput} onSend={submit} waiting={waiting} />
-          </div>
+        <div className={cn(column, "shrink-0 pt-2 pb-4")}>
+          <Composer inputRef={composerInput} onSend={submit} waiting={waiting} />
         </div>
       </section>
 
-      {sidePanel && exchanges.length > 0 && (
+      {sidePanel && !empty && (
         <InspectorPanel
           exchange={selected}
           tools={tools}

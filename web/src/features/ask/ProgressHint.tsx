@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
-
-import { cn } from "@/lib/cn";
+import { CopilotMark } from "@/components/icons/CopilotMark";
+import { SignalBars } from "@/components/shared/SignalBars";
+import { Sim } from "@/components/shared/Sim";
+import { useCycle } from "@/hooks/useCycle";
 
 /** The stages every question goes through. Shown in turn; they are not live progress. */
 const HINTS = [
@@ -13,38 +14,23 @@ const HINTS = [
 const HINT_MILLISECONDS = 1800;
 
 /**
- * Shown while an answer is on its way. It moves through the names of the
- * stages at a steady pace and claims nothing about which one is running.
+ * Shown while an answer is on its way: the copilot's card, with its signal
+ * bars seeking. It moves through the names of the four stages at a steady
+ * pace and starts over, like a phone looking for its network. It claims
+ * nothing about which stage is running.
  */
 export function ProgressHint() {
-  const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setIndex((current) => (current + 1) % HINTS.length);
-    }, HINT_MILLISECONDS);
-    return () => {
-      window.clearInterval(timer);
-    };
-  }, []);
-
+  const index = useCycle(HINTS.length, HINT_MILLISECONDS);
   return (
-    <div role="status" className="flex items-center gap-4 rounded-xl border bg-surface px-5 py-4">
+    <div role="status" className="flex">
       <span className="sr-only">Working on the answer.</span>
-      <span aria-hidden="true" className="flex shrink-0 items-center gap-1">
-        {HINTS.map((hint, position) => (
-          <span
-            key={hint}
-            className={cn(
-              "h-1.5 rounded-full transition-all duration-500 ease-out",
-              position === index ? "w-6 bg-accent" : "w-1.5 bg-border-strong",
-            )}
-          />
-        ))}
-      </span>
-      <span key={index} aria-hidden="true" className="animate-fade text-base text-fg-muted">
-        {HINTS[index]}
-      </span>
+      <Sim cut={16} bodyClassName="flex items-center gap-3.5 py-3.5 pr-9 pl-[18px] text-read">
+        <CopilotMark size={18} />
+        <SignalBars level={index} seeking={index} />
+        <span key={index} aria-hidden="true" className="animate-fade">
+          {HINTS[index]}
+        </span>
+      </Sim>
     </div>
   );
 }

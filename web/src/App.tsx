@@ -37,10 +37,10 @@ export function App() {
 
   return (
     <TooltipProvider>
-      <div className="flex h-dvh flex-col overflow-clip bg-bg text-fg">
+      <div className="flex h-dvh flex-col overflow-clip bg-paper text-ink">
         <a
           href="#main"
-          className="sr-only z-50 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-fg focus-visible:not-sr-only focus-visible:absolute focus-visible:top-2 focus-visible:left-2"
+          className="sr-only z-50 rounded-box bg-ink px-4 py-2 text-meta font-semibold text-surface focus-visible:not-sr-only focus-visible:absolute focus-visible:top-2 focus-visible:left-2"
         >
           Skip to the main content
         </a>

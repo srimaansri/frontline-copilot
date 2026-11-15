@@ -1,9 +1,9 @@
-import { ArrowLeft, PhoneCall } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
 import { api, errorMessage } from "@/api/client";
 import type { CallListItem, CallSummary } from "@/api/types";
+import { BackIcon, CallsIcon, PrivacyIcon } from "@/components/icons/glyphs";
 import { IconButton } from "@/components/ui/icon-button";
 import { useLoad, type Loadable } from "@/hooks/useLoad";
 import { EXTRA_WIDE_SCREEN, useMediaQuery } from "@/hooks/useMediaQuery";
@@ -12,7 +12,7 @@ import { humanize } from "@/lib/format";
 
 import { CallList } from "./CallList";
 import { callRowId } from "./callRowId";
-import { ResolutionBadge } from "./ResolutionBadge";
+import { CallStatus } from "./CallStatus";
 import { SummaryPanel } from "./SummaryPanel";
 import { TranscriptPanel } from "./TranscriptPanel";
 
@@ -53,26 +53,39 @@ function CallDetail({ call, summary, onSummarize, onBack }: CallDetailProps) {
 
   return (
     <>
-      <header className="flex shrink-0 items-center gap-2 border-b bg-surface px-4 py-3 sm:px-6">
-        <IconButton ref={backButton} label="Back to calls" className="-ml-2 lg:hidden" onClick={onBack}>
-          <ArrowLeft aria-hidden="true" />
-        </IconButton>
-        <h2 className="flex min-w-0 flex-1 items-baseline gap-2.5 text-base font-semibold text-fg">
-          <span className="font-mono text-[0.9375rem]">{transcriptId}</span>
-          <span className="truncate font-normal text-fg-muted">{humanize(call.category)}</span>
-        </h2>
-        <ResolutionBadge resolution={call.resolution} />
+      <header className="shrink-0 border-b border-line px-4 pt-5 pb-[18px] sm:px-8 sm:pt-6">
+        <div className="flex flex-wrap items-center gap-x-3.5 gap-y-2">
+          <IconButton ref={backButton} label="Back to calls" className="lg:hidden" onClick={onBack}>
+            <BackIcon />
+          </IconButton>
+          <h2 className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3.5">
+            <span className="font-mono text-read font-semibold text-ink-2 sm:text-title">
+              {transcriptId}
+            </span>
+            <span className="font-display text-title font-bold tracking-[-0.02em] break-words text-ink sm:text-view">
+              {humanize(call.category)}
+            </span>
+          </h2>
+          <CallStatus resolution={call.resolution} />
+        </div>
+        <p className="mt-2.5 flex gap-2 text-meta text-ink-2">
+          <PrivacyIcon size={16} className="mt-0.5" />
+          Personal details were replaced with placeholders before this was saved.
+        </p>
       </header>
 
       <div className="scroll-area flex min-h-0 flex-1 flex-col xl:flex-row xl:overflow-hidden">
         {!threeColumns && (
-          <div className="shrink-0 border-b bg-surface px-4 py-4 sm:px-6">{summaryPanel}</div>
+          <div className="shrink-0 border-b border-line bg-sunken px-4 py-5 sm:px-8">
+            {summaryPanel}
+          </div>
         )}
         <div className="min-w-0 flex-1 xl:scroll-area">
           <TranscriptPanel transcript={transcript} onRetry={reload} />
         </div>
         {threeColumns && (
-          <aside className="scroll-area w-[24rem] shrink-0 border-l bg-surface px-6 py-5">
+          // The copilot's side rail, on the sunken tone.
+          <aside className="scroll-area w-[25.25rem] shrink-0 border-l border-line bg-sunken p-6">
             {summaryPanel}
           </aside>
         )}
@@ -83,15 +96,12 @@ function CallDetail({ call, summary, onSummarize, onBack }: CallDetailProps) {
 
 function NothingSelected() {
   return (
-    <div className="flex h-full flex-col items-center justify-center px-6 text-center">
-      <span
-        aria-hidden="true"
-        className="flex size-12 items-center justify-center rounded-xl bg-surface-muted text-fg-subtle"
-      >
-        <PhoneCall className="size-5" />
-      </span>
-      <p className="mt-4 text-lg font-medium text-fg">Choose a call to read it</p>
-      <p className="mt-1.5 max-w-sm text-[0.9375rem] leading-relaxed text-fg-muted">
+    <div className="px-8 pt-16">
+      <CallsIcon size={32} className="text-ink-3" />
+      <p className="mt-4 font-display text-title font-bold tracking-[-0.01em] text-ink">
+        Choose a call to read it
+      </p>
+      <p className="mt-2 max-w-sm text-ink-2">
         Each transcript can be summarized: what the call was about, the customer&apos;s mood and the
         next step.
       </p>
@@ -144,7 +154,7 @@ export function CallsView() {
       <h1 className="sr-only">Calls</h1>
       <div
         className={cn(
-          "w-full shrink-0 flex-col border-r bg-surface lg:flex lg:w-[21rem]",
+          "w-full shrink-0 flex-col border-r border-line bg-surface lg:flex lg:w-[22rem] xl:w-[24.25rem]",
           selected ? "hidden" : "flex",
         )}
       >

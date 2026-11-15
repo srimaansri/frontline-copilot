@@ -23,6 +23,9 @@ import type {
 
 const HELP = "https://help.northline.example/articles";
 
+/** The ticket the hand-off fixture opens. It is in the answer and on the hand-off step. */
+const HANDOFF_REFERENCE = "ESC-4F2A91C7";
+
 const META: Meta = {
   app_name: "Frontline Copilot",
   carrier: "Northline Wireless",
@@ -218,6 +221,7 @@ const NO_PERSONAL_DETAILS: Step = {
   detail: "The question was checked before anything was logged.",
   status: "ok",
   tool: null,
+  reference: null,
 };
 
 const REQUEST_ALLOWED: Step = {
@@ -226,6 +230,7 @@ const REQUEST_ALLOWED: Step = {
   detail: "Not an account change and not an attempt to override the instructions.",
   status: "ok",
   tool: null,
+  reference: null,
 };
 
 const CITATIONS_CHECKED: Step = {
@@ -234,6 +239,7 @@ const CITATIONS_CHECKED: Step = {
   detail: "Every citation points to a retrieved source.",
   status: "ok",
   tool: null,
+  reference: null,
 };
 
 const ANSWER_CLEAN: Step = {
@@ -242,9 +248,10 @@ const ANSWER_CLEAN: Step = {
   detail: "Checked against the sources the answer was written from.",
   status: "ok",
   tool: null,
+  reference: null,
 };
 
-// --- Redaction of the typed question (phone numbers and email addresses only) -------------
+// --- Redaction of the typed question (a stated name, phone numbers, email addresses) ---------
 
 interface Redacted {
   text: string;
@@ -253,6 +260,11 @@ interface Redacted {
 }
 
 const DETAIL_PATTERNS: readonly { kind: string; name: string; pattern: RegExp }[] = [
+  {
+    kind: "PERSON",
+    name: "a name",
+    pattern: /(?<=\bname is )[A-Z][a-z]+(?: [A-Z][a-z]+)?/g,
+  },
   { kind: "EMAIL_ADDRESS", name: "an email address", pattern: /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g },
   {
     kind: "PHONE_NUMBER",
@@ -298,6 +310,7 @@ function redactQuestion(question: string): Redacted {
       } replaced before the question was processed or logged.`,
       status: "notice",
       tool: null,
+      reference: null,
     },
   };
 }
@@ -310,6 +323,51 @@ type AnswerBody = Omit<AskResponse, "question_as_processed" | "steps" | "guardra
   /** The steps after the redaction step. */
   steps: Step[];
 };
+
+/**
+ * An answer exactly as the live model wrote it, kept because it differs from a
+ * tidy fixture in two ways the renderer has to handle. Bold is used for a
+ * heading-like label and for a stray "or" as well as for facts, and the
+ * numbered list is interrupted by bullets, so its second half arrives as a
+ * separate list that starts at 3.
+ */
+function waiverStepsAnswer(): AnswerBody {
+  return {
+    answer: [
+      "The late-payment fee is **$5**. You can ask for a one-time waiver of that fee.",
+      "",
+      "**How to request a waiver**",
+      "",
+      "1. Have your account number and the bill with the fee handy.",
+      "2. Call Northline support:",
+      "- Dial **611** from your Northline phone, **or**",
+      "- Call **1-800-555-0199** from any phone.",
+      "3. Tell the representative you want a **one-time waiver** of the $5 late-payment fee.",
+      "4. The billing team will review your request and, if approved, remove the fee from your bill.",
+      "",
+      "(Details from the help article [1])",
+    ].join("\n"),
+    citations: [{ number: 1, title: "Late payment fee", url: `${HELP}/late-payment-fee` }],
+    tools_used: ["search_kb"],
+    escalated: false,
+    flags: [],
+    seconds: 2.9,
+    trace_id: "tr-mock-waiver-steps",
+    steps: [
+      REQUEST_ALLOWED,
+      {
+        stage: "tool",
+        title: "Searched the help articles",
+        detail: "1 source cited.",
+        status: "ok",
+        tool: "search_kb",
+        reference: null,
+      },
+      CITATIONS_CHECKED,
+      ANSWER_CLEAN,
+    ],
+  };
+}
 
 function lateFeeAnswer(): AnswerBody {
   const citations: Citation[] = [
@@ -342,6 +400,7 @@ function lateFeeAnswer(): AnswerBody {
         detail: "2 sources cited.",
         status: "ok",
         tool: "search_kb",
+        reference: null,
       },
       {
         stage: "output_check",
@@ -349,6 +408,7 @@ function lateFeeAnswer(): AnswerBody {
         detail: "The first draft was above the reading target.",
         status: "notice",
         tool: null,
+        reference: null,
       },
       CITATIONS_CHECKED,
       ANSWER_CLEAN,
@@ -383,6 +443,7 @@ function plansAnswer(): AnswerBody {
         detail: "Prices and features come from the catalogue table, not from memory.",
         status: "ok",
         tool: "get_plan_details",
+        reference: null,
       },
       ANSWER_CLEAN,
     ],
@@ -408,6 +469,7 @@ function summaryAnswer(transcriptId: string): AnswerBody {
           detail: "The lookup failed, and the copilot said so.",
           status: "warning",
           tool: "summarize_call",
+          reference: null,
         },
         ANSWER_CLEAN,
       ],
@@ -418,10 +480,10 @@ function summaryAnswer(transcriptId: string): AnswerBody {
     .join(", ");
   return {
     answer: [
-      `**Call ${summary.transcript_id}: ${summary.intent}**`,
+      `Call ${summary.transcript_id} was about: ${summary.intent}.`,
       summary.summary_bullets.map((bullet) => `- ${bullet}`).join("\n"),
-      `**Mood:** ${summary.sentiment}`,
-      `**Next step:** ${summary.next_step}`,
+      `The customer's mood was ${summary.sentiment}.`,
+      `Next step: ${summary.next_step}`,
       `Related: ${related}`,
     ].join("\n\n"),
     citations: summary.related_articles,
@@ -438,6 +500,7 @@ function summaryAnswer(transcriptId: string): AnswerBody {
         detail: "Read from the redacted transcript only.",
         status: "ok",
         tool: "summarize_call",
+        reference: null,
       },
       CITATIONS_CHECKED,
       ANSWER_CLEAN,
@@ -449,7 +512,7 @@ function handOffAnswer(): AnswerBody {
   return {
     answer: [
       "I can't refund, credit or waive a charge myself. This needs a human specialist: the billing team has to handle it.",
-      'What to tell the customer: "I can\'t do this myself, so I\'m passing you to the billing team. Your reference is ESC-4F2A91C7. They will take it from here."',
+      `What to tell the customer: "I can't do this myself, so I'm passing you to the billing team. Your reference is ${HANDOFF_REFERENCE}. They will take it from here."`,
     ].join("\n\n"),
     citations: [],
     tools_used: ["escalate_to_human"],
@@ -464,6 +527,7 @@ function handOffAnswer(): AnswerBody {
         detail: "The copilot cannot change or look up a customer's account.",
         status: "warning",
         tool: null,
+        reference: null,
       },
       {
         stage: "tool",
@@ -471,6 +535,7 @@ function handOffAnswer(): AnswerBody {
         detail: "A ticket was written for a human specialist, with the reason redacted.",
         status: "ok",
         tool: "escalate_to_human",
+        reference: HANDOFF_REFERENCE,
       },
       ANSWER_CLEAN,
     ],
@@ -495,6 +560,7 @@ function refusalAnswer(): AnswerBody {
         detail: "The request tried to change the copilot's instructions. No model was called.",
         status: "blocked",
         tool: null,
+        reference: null,
       },
       ANSWER_CLEAN,
     ],
@@ -519,6 +585,7 @@ function noContextAnswer(): AnswerBody {
         detail: "No article matched.",
         status: "notice",
         tool: "search_kb",
+        reference: null,
       },
       ANSWER_CLEAN,
     ],
@@ -541,6 +608,9 @@ function chooseAnswer(question: string): AnswerBody {
   }
   if (/\bplans?\b/i.test(question)) {
     return plansAnswer();
+  }
+  if (/\bwaiver\b/i.test(question)) {
+    return waiverStepsAnswer();
   }
   if (/\blate\b|\bwaive/i.test(question)) {
     return lateFeeAnswer();

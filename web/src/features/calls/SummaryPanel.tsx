@@ -1,96 +1,119 @@
-import {
-  ExternalLink,
-  Frown,
-  LoaderCircle,
-  Meh,
-  Smile,
-  Sparkles,
-  type LucideIcon,
-} from "lucide-react";
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 import type { CallSummary, Sentiment } from "@/api/types";
+import { CopilotMark } from "@/components/icons/CopilotMark";
+import {
+  ArticlesIcon,
+  CallSummaryIcon,
+  MoodNegativeIcon,
+  MoodNeutralIcon,
+  MoodPositiveIcon,
+} from "@/components/icons/glyphs";
+import type { IconProps } from "@/components/icons/Icon";
 import { ErrorNotice } from "@/components/shared/ErrorNotice";
 import { PlaceholderText } from "@/components/shared/PlaceholderText";
-import { Badge, type BadgeTone } from "@/components/ui/badge";
+import { SignalBars } from "@/components/shared/SignalBars";
+import { Byline, Sim } from "@/components/shared/Sim";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useCycle } from "@/hooks/useCycle";
 import type { Loadable } from "@/hooks/useLoad";
+import { cn } from "@/lib/cn";
 import { humanize } from "@/lib/format";
 
-const SENTIMENTS: Record<Sentiment, { label: string; tone: BadgeTone; icon: LucideIcon }> = {
-  positive: { label: "Positive", tone: "ok", icon: Smile },
-  neutral: { label: "Neutral", tone: "neutral", icon: Meh },
-  negative: { label: "Negative", tone: "blocked", icon: Frown },
+interface Mood {
+  label: string;
+  /** The colour repeats what the face already says. */
+  tone: string;
+  icon: (props: IconProps) => ReactElement;
+}
+
+const MOODS: Record<Sentiment, Mood> = {
+  positive: { label: "Positive", tone: "text-ok", icon: MoodPositiveIcon },
+  neutral: { label: "Neutral", tone: "text-ink-2", icon: MoodNeutralIcon },
+  negative: { label: "Negative", tone: "text-warn", icon: MoodNegativeIcon },
 };
 
-function Overline({ children }: { children: ReactNode }) {
+function Field({ term, children }: { term: string; children: ReactNode }) {
   return (
-    <h4 className="text-[0.6875rem] leading-4 font-semibold tracking-[0.08em] text-fg-subtle uppercase">
-      {children}
-    </h4>
+    <div>
+      <dt className="mb-1 text-label font-bold tracking-[0.01em] text-ink-2">{term}</dt>
+      <dd className="leading-normal text-ink">{children}</dd>
+    </div>
   );
 }
 
 function SummaryCard({ summary }: { summary: CallSummary }) {
-  const sentiment = SENTIMENTS[summary.sentiment];
-  const SentimentIcon = sentiment.icon;
+  const mood = MOODS[summary.sentiment];
+  const MoodIcon = mood.icon;
   return (
-    <div className="mt-4 animate-rise space-y-5">
-      <div>
-        <Overline>Intent</Overline>
-        <p className="mt-1 text-lg leading-snug font-semibold text-fg">
-          <PlaceholderText text={humanize(summary.intent)} />
-        </p>
-        <Badge tone={sentiment.tone} className="mt-2.5">
-          <SentimentIcon aria-hidden="true" />
-          <span className="sr-only">Sentiment: </span>
-          {sentiment.label}
-        </Badge>
-      </div>
-
-      <div>
-        <Overline>What happened</Overline>
-        <ul className="mt-2 space-y-2">
-          {summary.summary_bullets.map((bullet) => (
-            <li key={bullet} className="flex gap-3 text-base leading-relaxed text-fg">
-              <span aria-hidden="true" className="mt-[0.7em] size-1.5 shrink-0 rounded-full bg-accent" />
-              <span className="min-w-0 break-words">
-                <PlaceholderText text={bullet} />
-              </span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div className="rounded-lg border bg-surface-muted px-4 py-3">
-        <Overline>Next step</Overline>
-        <p className="mt-1 text-base leading-relaxed font-medium text-fg">
-          <PlaceholderText text={summary.next_step} />
-        </p>
-      </div>
-
-      {summary.related_articles.length > 0 && (
-        <div>
-          <Overline>Related articles</Overline>
-          <ul className="mt-2 space-y-1.5">
-            {summary.related_articles.map((article) => (
-              <li key={article.number}>
-                <a
-                  href={article.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group inline-flex items-start gap-2 text-[0.9375rem] leading-snug font-medium text-accent underline decoration-accent/40 underline-offset-[3px] hover:decoration-accent"
-                >
-                  {article.title}
-                  <ExternalLink aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
-                  <span className="sr-only">(opens in a new tab)</span>
-                </a>
+    <Sim className="animate-rise" bodyClassName="px-5 pt-5 pb-6 sm:px-6">
+      <Byline />
+      <dl className="mt-4 grid gap-[18px]">
+        <Field term="Intent">
+          <span className="block font-display text-title font-bold tracking-[-0.01em]">
+            <PlaceholderText text={humanize(summary.intent)} />
+          </span>
+        </Field>
+        <Field term="Mood">
+          <span className={cn("inline-flex items-center gap-2 font-bold", mood.tone)}>
+            <MoodIcon size={24} />
+            {mood.label}
+          </span>
+        </Field>
+        <Field term="What happened">
+          <ol className="grid gap-2">
+            {summary.summary_bullets.map((bullet, index) => (
+              <li key={bullet} className="grid grid-cols-[24px_minmax(0,1fr)]">
+                <span aria-hidden="true" className="font-mono font-semibold text-ink-3">
+                  {index + 1}.
+                </span>
+                <span className="break-words">
+                  <PlaceholderText text={bullet} />
+                </span>
               </li>
             ))}
-          </ul>
-        </div>
-      )}
+          </ol>
+        </Field>
+        <Field term="Next step">
+          <PlaceholderText text={summary.next_step} />
+        </Field>
+        {summary.related_articles.length > 0 && (
+          <Field term="Related articles">
+            <ul className="mt-0.5">
+              {summary.related_articles.map((article) => (
+                <li key={article.number} className="border-t border-line first:border-t-0">
+                  <a
+                    href={article.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="grid grid-cols-[20px_minmax(0,1fr)] items-center gap-2.5 py-[9px] font-semibold text-brand-text underline underline-offset-[3px]"
+                  >
+                    <ArticlesIcon />
+                    <span>
+                      {article.title}
+                      <span className="sr-only"> (opens in a new tab)</span>
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </Field>
+        )}
+      </dl>
+    </Sim>
+  );
+}
+
+/** The copilot's card while it writes the summary, with its signal bars seeking. */
+function Summarizing() {
+  const bar = useCycle(4, 900);
+  return (
+    <div role="status" className="flex">
+      <Sim cut={16} bodyClassName="flex items-center gap-3.5 py-3.5 pr-9 pl-[18px] text-read">
+        <CopilotMark size={18} />
+        <SignalBars level={bar} seeking={bar} />
+        Summarizing
+      </Sim>
     </div>
   );
 }
@@ -101,42 +124,32 @@ export interface SummaryPanelProps {
   onSummarize: () => void;
 }
 
-/** A button that asks for a summary of the call, and then the summary. */
+/** A button that asks the copilot for a summary of the call, and then the summary. */
 export function SummaryPanel({ summary, onSummarize }: SummaryPanelProps) {
-  const loading = summary?.status === "loading";
   return (
     <section aria-label="Call summary">
-      <div className="flex min-h-9 items-center justify-between gap-3">
-        <h3 className="text-sm font-semibold text-fg">Summary</h3>
-        {(summary === undefined || loading) && (
-          <Button size="sm" className="h-9" disabled={loading} onClick={onSummarize}>
-            {loading ? (
-              <LoaderCircle aria-hidden="true" className="animate-spin" />
-            ) : (
-              <Sparkles aria-hidden="true" />
-            )}
-            {loading ? "Summarizing" : "Summarize"}
-          </Button>
-        )}
-      </div>
-
+      {summary?.status !== "ready" && (
+        <h3 className="font-display text-title font-bold tracking-[-0.01em] text-ink">Summary</h3>
+      )}
       <div aria-live="polite">
         {summary === undefined && (
-          <p className="mt-2 text-sm leading-relaxed text-fg-subtle">
-            See what the call was about, the customer&apos;s mood and the next step.
-          </p>
+          <>
+            <p className="mt-2 text-ink-2">
+              See what the call was about, the customer&apos;s mood and the next step.
+            </p>
+            <Button variant="primary" className="mt-4" onClick={onSummarize}>
+              <CallSummaryIcon />
+              Summarize
+            </Button>
+          </>
         )}
-        {loading && (
-          <div className="mt-5 space-y-3">
-            <Skeleton className="h-3 w-16" />
-            <Skeleton className="h-5 w-2/3" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-11/12" />
-            <Skeleton className="h-4 w-4/5" />
+        {summary?.status === "loading" && (
+          <div className="mt-4">
+            <Summarizing />
           </div>
         )}
         {summary?.status === "error" && (
-          <ErrorNotice className="mt-3" message={summary.message} onRetry={onSummarize} />
+          <ErrorNotice className="mt-4" message={summary.message} onRetry={onSummarize} />
         )}
         {summary?.status === "ready" && <SummaryCard summary={summary.data} />}
       </div>

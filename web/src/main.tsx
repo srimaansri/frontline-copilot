@@ -1,5 +1,3 @@
-import "@fontsource-variable/inter/wght.css";
-import "@fontsource-variable/jetbrains-mono/wght.css";
 import "./index.css";
 
 import { StrictMode } from "react";
