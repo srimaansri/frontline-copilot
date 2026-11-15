@@ -35,6 +35,33 @@ jobs:
       - name: Install
         run: python -m pip install -e ".[dev]"
 
+      # The two Python versions resolve to different NumPy and pyarrow releases.
+      # This writes what was installed as a notice on the run, so a version
+      # mismatch can be read without opening the log.
+      - name: Report resolved versions
+        run: |
+          python - <<'EOF'
+          from importlib.metadata import PackageNotFoundError, distributions, version
+
+          names = ["numpy", "pyarrow", "pandas", "datasets", "ragas", "databricks-connect", "pyspark"]
+          found = []
+          for name in names:
+              try:
+                  found.append(f"{name}={version(name)}")
+              except PackageNotFoundError:
+                  found.append(f"{name}=absent")
+          caps = sorted(
+              f"{dist.metadata['Name']} {dist.version}: {requirement}"
+              for dist in distributions()
+              for requirement in dist.requires or []
+              if requirement.replace(" ", "").lower().startswith("numpy")
+              and "<2" in requirement.replace(" ", "").replace("<2.", "<x.")
+              and "extra" not in requirement
+          )
+          print("::notice title=Resolved versions::" + ", ".join(found))
+          print("::notice title=Packages that keep NumPy below 2::" + ("; ".join(caps) or "none"))
+          EOF
+
       - name: Lint
         run: ruff check .
 

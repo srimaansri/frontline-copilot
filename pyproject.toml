@@ -44,6 +44,12 @@ eval = [
     "frontline-copilot[rag]",
     "python-dotenv==1.2.4",
     "ragas==0.4.4",
+    # RAGAS imports pyarrow through `datasets`. On Python 3.11 the Databricks
+    # libraries resolve to releases that keep NumPy below 2, and recent pyarrow
+    # refuses to import with NumPy 1.x ("pyarrow requires NumPy 2.0 or newer").
+    # pyarrow does not declare that, so pip cannot see the conflict. On 3.12
+    # everything is on NumPy 2 and no cap is needed.
+    'pyarrow<20; python_version < "3.12"',
 ]
 # The Streamlit interface (app/).
 app = [
