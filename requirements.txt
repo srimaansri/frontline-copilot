@@ -1,0 +1,3 @@
+# Installed by Databricks Apps before the app starts. Local development uses
+# `pip install -e ".[dev,models,app]"` instead.
+.[app,models]

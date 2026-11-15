@@ -656,3 +656,10 @@ def test_get_copilot_is_cached(monkeypatch: pytest.MonkeyPatch) -> None:
     assert get_copilot() is get_copilot()
 
     get_copilot.cache_clear()
+
+
+def test_the_tools_are_available_to_callers_such_as_the_app(redactor: Redactor) -> None:
+    copilot = make_copilot(redactor, FakeModel("unused"))
+
+    assert copilot.tools is copilot.tools
+    assert isinstance(copilot.tools, Tools)
