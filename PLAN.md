@@ -376,6 +376,10 @@ START → input_guard ─(account action / high-risk)→ escalate_node → outpu
                                    └→ output_guard → END
 ```
 - `agent` node: LLM with `search_kb`, `get_plan_details`, `summarize_call`, `escalate_to_human` bound.
+- Tool schemas are written by hand in the OpenAI function format and kept flat. The serving endpoint accepts no `anyOf` or `pattern`, which a schema generated from optional Python types would contain.
+- The model is not offered `search_kb`'s `section` filter. In a live run it chose the wrong section and concluded that no article existed. The Python function keeps the argument.
+- `input_guard` routes by plain rules: `escalate` for a request to act on or read from one customer's account, `refuse` for an attempt to override the instructions, `agent` otherwise. The first two cost no model call.
+- Spans are opened by hand (`AGENT`, `CHAT_MODEL`, `TOOL`, `RETRIEVER`) and autologging is not used, so what a trace records is decided in one place.
 - Hard cap on iterations; on cap, answer with what it has + suggest escalation.
 - Public entry point: `run_copilot(question: str, history: list | None = None) -> CopilotAnswer`. App, eval, and tests all call this one function.
 - **Redact before tracing.** MLflow autologging records the graph's input on the root span before any node runs, so redaction inside `input_guard` would be too late. `run_copilot` redacts the question (and history) first, in untraced code, and only the redacted text enters the traced graph. `input_guard` then handles intent and injection checks on already-redacted text. A unit test asserts that a question containing a phone number never appears unredacted in the captured trace inputs.
@@ -399,7 +403,7 @@ START → input_guard ─(account action / high-risk)→ escalate_node → outpu
 - Footer disclaimer (see §5.1).
 
 ### 8.2 MCP server (`mcp_server/`)
-- Official `mcp` Python SDK. The current README defines servers with `from mcp.server import MCPServer` and points to a v2 migration guide; older releases use `FastMCP`. At M5, read the docs for the pinned version and use its server class. Expose the four tools from `tools.py` with the same schemas and docstrings. Optionally expose `kb://article/{article_id}` as a resource.
+- Official `mcp` Python SDK, pinned at 1.30.0. That release has `FastMCP` (`from mcp.server.fastmcp import FastMCP`) and no `MCPServer` class, so `FastMCP` is used. The SDK's README describes a newer `MCPServer` class and a v2 migration guide; revisit when the pin moves. Expose the four tools from `tools.py` with the same schemas and docstrings. Optionally expose `kb://article/{article_id}` as a resource.
 - Transports: stdio (for Claude Desktop / Claude Code) and streamable HTTP.
 - `Dockerfile`: slim Python base, non-root user, deps pinned, healthcheck for HTTP mode. Config only via env vars.
 - `mcp_server/README.md`: how to register it with Claude Code (`claude mcp add ...`) and Claude Desktop config JSON; a short screenshot/GIF of Claude using the tools.

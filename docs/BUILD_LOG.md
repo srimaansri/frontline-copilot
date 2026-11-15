@@ -360,3 +360,79 @@ These changes mean the saved results are not comparable with the draft pass. The
 - `tests/test_chunking.py` is still mine to write with Copilot.
 
 **M3 acceptance** (PLAN.md §12): index online; `run_copilot` answers knowledge-base questions with citations; traces in MLflow carry no raw personal data in their inputs; all 40 evaluation rows reviewed; the three runs evaluated on the knowledge-base rows; results committed. All met. The hand check of the judge on 10 rows is not part of this milestone's criteria and is still open.
+
+## 2026-11-14 — M4 and M5: the agent, its guardrails, the app and the MCP server
+
+**Tool:** Claude Code.
+
+**Asked:** keep going while the Milestone 3 evaluation runs were in progress, keep Streamlit, add no REST API or JavaScript front end, and put finishing the planned milestones and a README with real results first.
+
+**What it built**
+
+- `src/copilot/tools.py`: the four tools as plain typed functions, with a SQL runner on the Databricks SDK. Every value a model supplies is a bound parameter.
+- `src/copilot/guardrails.py`: `check_input` (plain rules that route an account request to a hand-off and an instruction-override attempt to a fixed refusal) and `check_output` (one rewrite of a hard answer, then citations, then personal data).
+- `src/copilot/agent.py`: the copilot as a LangGraph graph. `run_copilot` kept its signature, so the app and the evaluation did not change.
+- `src/copilot/readability.py`, `src/copilot/transcripts.py`: reading grade, and reading redacted transcripts for display.
+- `eval/scorers.py`: `escalation_correct`, `tool_choice` and `no_pii_leak`.
+- `mcp_server/`: an MCP server for the four tools, with a Dockerfile.
+- `app/app.py` and `app.yaml`: the Streamlit interface.
+- `docs/MODEL_CARD.md`, `docs/DATA_CARD.md`, `docs/RESPONSIBLE_AI.md`.
+- The table `frontline.ops.escalations`, created in the workspace.
+
+**Result on all 40 rows** (run finished 2026-11-15 00:58 UTC, commit `8624268`, setting A with vector search, prompt v3)
+
+| Kind of question | Rows | Correct | Rules followed | Hand-off right | Right tool | No personal data in the answer |
+|---|---|---|---|---|---|---|
+| Help articles | 22 | 18/21 | 1/1 | 22/22 | 22/22 | 22/22 |
+| Plan lookups | 6 | 6/6 | 1/1 | 6/6 | 5/6 | 6/6 |
+| Call summaries | 4 | 2/3 | 1/1 | 4/4 | 3/3 | 4/4 |
+| Requests that need a person | 5 | not scored | 5/5 | 5/5 | 5/5 | 5/5 |
+| Trick questions | 3 | 1/1 | 3/3 | 3/3 | 1/1 | 3/3 |
+| All | 40 | 27/31 | 11/11 | 40/40 | 36/37 | 40/40 |
+
+Median time to answer 2.5 seconds. 37 of 40 answers at reading grade 8 or below.
+
+**How the work was kept apart from the running evaluation**
+
+The evaluation refuses to start from a dirty folder and stamps its result with the current commit. So this work was done in a second working copy on its own branch (`git worktree`), and merged when the runs had finished.
+
+**Decisions**
+
+- **Tool schemas are written by hand.** The serving endpoint accepts no `anyOf` or `pattern` in a schema, which is what a schema generated from optional Python types contains.
+- **Spans are opened by hand, not by autologging.** What a trace records is then decided in one place, which is what the personal-data rule needs.
+- **Account requests are routed by rules, before the model.** Deterministic, free, and testable. The model can still open a hand-off for what the rules miss.
+- **The answer check keeps what the sources state.** A phone number, price or address written in a retrieved article or a tool result is public and stays in the answer. Anything else the redactor finds is replaced.
+- **MLflow is given redacted questions.** MLflow stores the evaluation dataset with the run, and one row has personal data in its question on purpose. The copilot is still called with the question as written.
+- **FastMCP, not MCPServer.** The plan had noted a newer server class in the MCP SDK's README. The pinned release, 1.30.0, does not have it.
+- **The app is a Streamlit page, as planned.** No REST API and no JavaScript front end were added.
+
+**Things that went wrong on the way**
+
+- **The model picked the wrong section to search.** The search tool offered a section filter. For a voicemail question the model chose "Account", the search returned that section's articles, and the copilot said no article exists. A smoke run on three rows caught it before the 40-row run. The model is no longer offered the filter.
+- **The relevance judge failed correct refusals.** It marks "I can't help with that" as not relevant to a request for a poem. It now runs only where an answer is expected.
+- **The 40-row run lost its report.** It scored every row, then got HTTP 401 while reading its traces back. The report was rebuilt from the same MLflow run with the runner's own functions, and the file says so.
+- **I pushed a commit with one failing test.** The command that ran the checks did not stop on the failure. The test was a new one that loaded the local `.env` and changed settings for later tests; CI has no `.env` and would not have caught it. Fixed in the next commit.
+- A file written by a local test run (`mlflow.db`) was staged by mistake and removed before anything was pushed.
+- GitHub did not start CI jobs for about two hours ("account is locked due to a billing issue"). It cleared without a change to the repository.
+
+**Worth knowing**
+
+- The routing rules were written with the five hand-off rows in view. 5/5 on those rows is not an independent measure.
+- In the 40-row run the judge again marked two answers incorrect that contain every expected fact.
+- Tool calling on the answering model is documented by Databricks as tuned for a single step. Multi-step use worked in every case tried, which is a small sample.
+
+**Not done**
+
+- The app runs locally. It is not deployed to Databricks Apps.
+- The MCP server is unit-tested. It has not been used from Claude Code against the live workspace.
+- No demo video. No `eval.yml` gate. No hand check of the judge.
+
+**For me to review**
+
+- The three new documents in `docs/`, which state what the system does and does not do in my name.
+- The README's reading of the results.
+- `tests/test_chunking.py` is still mine to write with Copilot.
+
+**M4 acceptance** (PLAN.md §12): all four tools working, the hand-off path, input and output guards, routing tests passing, the default setting evaluated on all 40 rows. All met.
+
+**M5 acceptance** (PLAN.md §12): Streamlit app deployed as a Databricks App; MCP server working from Claude Code over stdio and in Docker. Not met yet: see "Not done".
