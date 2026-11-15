@@ -1,0 +1,10 @@
+# Colours for the Streamlit app. Strong contrast on a light background.
+[theme]
+base = "light"
+primaryColor = "#0b6e8f"
+backgroundColor = "#f7f9fb"
+secondaryBackgroundColor = "#e9f0f4"
+textColor = "#16202b"
+
+[browser]
+gatherUsageStats = false
