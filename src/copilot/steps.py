@@ -8,6 +8,7 @@ guardrail flags), so it says nothing the copilot did not record.
 
 from __future__ import annotations
 
+import re
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
@@ -47,6 +48,10 @@ TOOL_STEPS: dict[str, tuple[str, str]] = {
 }
 
 
+# The reference a hand-off ticket is given, as it appears in the answer.
+TICKET_REFERENCE_RE = re.compile(r"ESC-[0-9A-F]{8}")
+
+
 class Step(BaseModel):
     """One thing the copilot did, in the order it did it."""
 
@@ -57,6 +62,9 @@ class Step(BaseModel):
     detail: str
     status: Status
     tool: str | None = None
+    # The ticket reference, on the hand-off step only, so the interface can
+    # show who now has the request.
+    reference: str | None = None
 
 
 def _listed(items: list[str]) -> str:
@@ -144,7 +152,20 @@ def describe_steps(answer: CopilotAnswer) -> list[Step]:
                 detail = f"{cited} source{'' if cited == 1 else 's'} cited."
             else:
                 detail = "Articles were found. The answer cites none of them."
-        steps.append(Step(stage="tool", title=title, detail=detail, status=status, tool=tool))
+        reference = None
+        if tool == "escalate_to_human":
+            found_reference = TICKET_REFERENCE_RE.search(answer.answer)
+            reference = found_reference.group(0) if found_reference else None
+        steps.append(
+            Step(
+                stage="tool",
+                title=title,
+                detail=detail,
+                status=status,
+                tool=tool,
+                reference=reference,
+            )
+        )
 
     if "tool_limit_reached" in names:
         steps.append(

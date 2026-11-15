@@ -135,3 +135,24 @@ def test_every_output_check_that_fired_is_listed() -> None:
     ]
     assert checks["A citation was removed"].status == "warning"
     assert "a phone number" in checks["Personal details kept out of the answer"].detail
+
+
+def test_the_hand_off_step_carries_the_ticket_reference_from_the_answer() -> None:
+    handed_off = CopilotAnswer(
+        answer="This needs a person. Your reference is ESC-B695DE84. They will take it from here.",
+        tools_used=["escalate_to_human"],
+        escalated=True,
+        guardrail_flags=["account_action_requested"],
+    )
+    without_one = CopilotAnswer(answer="Passed on.", tools_used=["escalate_to_human"])
+    searched = CopilotAnswer(answer="See ESC-B695DE84.", tools_used=["search_kb"])
+
+    assert [step.reference for step in describe_steps(handed_off)] == [
+        None,
+        None,
+        "ESC-B695DE84",
+        None,
+    ]
+    assert all(step.reference is None for step in describe_steps(without_one))
+    # Only a hand-off step may carry a reference, whatever the answer text says.
+    assert all(step.reference is None for step in describe_steps(searched))
