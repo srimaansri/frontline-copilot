@@ -46,3 +46,7 @@ mlflow.db
 
 # Local preview configuration for the desktop app
 .claude/launch.json
+
+# Web interface: installed packages and the build output
+web/node_modules/
+web/dist/

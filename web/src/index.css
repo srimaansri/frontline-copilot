@@ -1,0 +1,342 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Colour tokens. One accent (teal) and a set of cool neutrals, plus four status
+ * colours for the step timeline. Every text/background pair below meets WCAG AA.
+ */
+:root {
+  color-scheme: light;
+
+  --bg: #f6f8fa;
+  --surface: #ffffff;
+  --surface-muted: #f0f4f7;
+  --border: #dde4ea;
+  --border-strong: #c5d0d9;
+
+  --fg: #16202b;
+  --fg-muted: #44535f;
+  --fg-subtle: #5d6c79;
+
+  --accent: #0b6e8f;
+  --accent-hover: #095c78;
+  --accent-fg: #ffffff;
+  --accent-soft: #e3f1f6;
+  --accent-soft-fg: #085a75;
+
+  --ok: #17734a;
+  --ok-soft: #e5f4ec;
+  --notice: #1c5fb0;
+  --notice-soft: #e6f0fb;
+  --warning: #8f5200;
+  --warning-soft: #fdf1da;
+  --blocked: #b3261e;
+  --blocked-soft: #fdecea;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --bg: #0d1317;
+  --surface: #141b21;
+  --surface-muted: #1a232b;
+  --border: #25313a;
+  --border-strong: #36454f;
+
+  --fg: #e7edf2;
+  --fg-muted: #b1bfca;
+  --fg-subtle: #8c9dab;
+
+  --accent: #56bcd9;
+  --accent-hover: #74cbe4;
+  --accent-fg: #06222c;
+  --accent-soft: #11313c;
+  --accent-soft-fg: #93d8ee;
+
+  --ok: #62cf93;
+  --ok-soft: #11301f;
+  --notice: #82b7f5;
+  --notice-soft: #132a42;
+  --warning: #efb556;
+  --warning-soft: #38290d;
+  --blocked: #f48d84;
+  --blocked-soft: #3c1815;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-soft-fg: var(--accent-soft-fg);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-notice: var(--notice);
+  --color-notice-soft: var(--notice-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-blocked: var(--blocked);
+  --color-blocked-soft: var(--blocked-soft);
+
+  --font-sans:
+    "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono:
+    "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  --animate-rise: rise 240ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-fade: fade 200ms ease-out both;
+  --animate-pop: pop 160ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes pop {
+    from {
+      opacity: 0;
+      transform: scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss03";
+    -webkit-text-size-adjust: 100%;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--fg);
+    font-size: 1rem;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  *,
+  ::before,
+  ::after {
+    border-color: var(--border);
+  }
+
+  /* One focus ring everywhere, shown for keyboard focus only. */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: var(--accent-soft);
+    color: var(--accent-soft-fg);
+  }
+
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /*
+   * An answer rendered from Markdown. The size is deliberately large: answers
+   * are read aloud to customers, often from a distance.
+   */
+  .answer {
+    font-size: 1.125rem;
+    line-height: 1.7;
+    color: var(--fg);
+    /* Not "anywhere": that would let table columns shrink to one letter wide. */
+    overflow-wrap: break-word;
+  }
+
+  .answer > * + * {
+    margin-top: 0.9em;
+  }
+
+  .answer h1,
+  .answer h2,
+  .answer h3,
+  .answer h4 {
+    font-weight: 650;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    margin-top: 1.4em;
+  }
+
+  .answer h1 {
+    font-size: 1.3em;
+  }
+
+  .answer h2 {
+    font-size: 1.18em;
+  }
+
+  .answer h3,
+  .answer h4 {
+    font-size: 1.05em;
+  }
+
+  .answer > :first-child {
+    margin-top: 0;
+  }
+
+  .answer strong {
+    font-weight: 650;
+  }
+
+  .answer ul,
+  .answer ol {
+    padding-left: 1.5em;
+  }
+
+  .answer ul {
+    list-style: disc;
+  }
+
+  .answer ol {
+    list-style: decimal;
+  }
+
+  .answer li + li,
+  .answer li > ul,
+  .answer li > ol {
+    margin-top: 0.35em;
+  }
+
+  .answer li::marker {
+    color: var(--fg-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .answer blockquote {
+    border-left: 3px solid var(--border-strong);
+    padding-left: 1em;
+    color: var(--fg-muted);
+  }
+
+  .answer hr {
+    border: 0;
+    border-top: 1px solid var(--border);
+    margin: 1.4em 0;
+  }
+
+  .answer pre {
+    background-color: var(--surface-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 0.75em 1em;
+    overflow-x: auto;
+    font-size: 0.85em;
+    line-height: 1.55;
+  }
+
+  .answer :not(pre) > code:not(.placeholder-chip) {
+    background-color: var(--surface-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.08em 0.35em;
+    font-size: 0.85em;
+  }
+
+  .answer .table-scroll {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
+
+  .answer table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92em;
+    line-height: 1.45;
+  }
+
+  .answer th,
+  .answer td {
+    padding: 0.6em 0.9em;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .answer th {
+    background-color: var(--surface-muted);
+    color: var(--fg-muted);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .answer tr + tr td,
+  .answer thead + tbody td {
+    border-top: 1px solid var(--border);
+  }
+}
+
+@utility scrollbar-quiet {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+/*
+ * A vertical scroll container. It is positioned so that visually hidden text
+ * inside it, which is absolutely positioned, scrolls with it. Without that,
+ * such text would add to the height of the page itself.
+ */
+@utility scroll-area {
+  position: relative;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
