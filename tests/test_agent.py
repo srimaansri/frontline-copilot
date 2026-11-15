@@ -203,6 +203,8 @@ def test_tool_schemas_stay_within_what_the_endpoint_accepts() -> None:
 
     assert names == ["search_kb", "get_plan_details", "summarize_call", "escalate_to_human"]
     assert "anyOf" not in as_text
+    # The model is not offered a section filter: it guesses the section wrong.
+    assert list(TOOL_SPECS[0]["function"]["parameters"]["properties"]) == ["query"]
     assert "pattern" not in as_text
     assert all(len(spec["function"]["parameters"]["properties"]) <= 16 for spec in TOOL_SPECS)
 
@@ -251,6 +253,24 @@ def test_a_second_search_continues_the_numbering(redactor: Redactor) -> None:
     assert "already returned" in model.calls[2][-1].content
     assert [c.title for c in answer.citations] == ["Set up AutoPay"]
     assert answer.tools_used == ["search_kb"]
+
+
+def test_a_section_the_model_sends_anyway_is_ignored(redactor: Redactor) -> None:
+    seen: list[dict[str, Any]] = []
+    settings = Settings(_env_file=None)  # type: ignore[call-arg]
+
+    def query(**kwargs: Any) -> tuple[list[str], list[list[Any]]]:
+        seen.append(kwargs["filters"])
+        return NAMES, ROWS
+
+    model = FakeModel(call("search_kb", query="voicemail", section="Account"), "Hold 1 [1].")
+    copilot = Copilot(
+        settings, retriever=Retriever(settings, query), chat_model=model, redactor=redactor
+    )
+
+    copilot.run("How do I set up voicemail?")
+
+    assert seen == [{"chunk_config": settings.chunk_config}]
 
 
 def test_format_sources_numbers_on_from_the_given_number() -> None:

@@ -86,14 +86,10 @@ TOOL_SPECS: list[dict[str, Any]] = [
             "parameters": {
                 "type": "object",
                 "properties": {
+                    # No section filter is offered. In a live run the model guessed
+                    # "Account" for a voicemail question; that section has articles, so
+                    # the search returned them and never looked where the answer was.
                     "query": {"type": "string", "description": "What to look for, in plain words."},
-                    "section": {
-                        "type": "string",
-                        "description": (
-                            "Optional. One of: Billing, Plans, Devices, Account, "
-                            "Troubleshooting, Other. Leave out to search everything."
-                        ),
-                    },
                 },
                 "required": ["query"],
             },
@@ -490,9 +486,8 @@ class Copilot:
         """
         tools = self._get_tools()
         if name == TOOL_SEARCH_KB:
-            hits = tools.search_kb(
-                str(arguments.get("query") or ""), str(arguments.get("section") or "") or None
-            )
+            # Any section the model sends anyway is ignored: all sections are searched.
+            hits = tools.search_kb(str(arguments.get("query") or ""))
             known = {hit.chunk_id for hit in retrieved}
             fresh = [hit for hit in hits if hit.chunk_id not in known]
             first_number = len(retrieved) + 1

@@ -376,7 +376,14 @@ def llm_judges(judge_endpoint: str, *, include_ragas: bool = True) -> list[Score
     model = f"databricks:/{judge_endpoint}"
     judges: list[Scorer] = [
         on_retrieval_rows(RetrievalGroundedness(model=model)),
-        RelevanceToQuery(model=model),
+        # Only where an answer is expected. On a row whose right answer is to decline
+        # (an injection, a poem, an account change), the judge marks the refusal as
+        # not relevant to the request, which is the behaviour the row asks for.
+        run_when(
+            RelevanceToQuery(model=model),
+            lambda expectations: bool(expectations.get("expected_facts")),
+            fields=("inputs", "outputs"),
+        ),
         on_retrieval_rows(RetrievalRelevance(model=model)),
         on_retrieval_rows(RetrievalSufficiency(model=model), fields=("trace", "expectations")),
         when_expected(Correctness(model=model), "expected_facts", "expected_response"),
