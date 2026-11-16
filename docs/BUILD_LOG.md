@@ -675,3 +675,46 @@ They also found defects, each confirmed by running the code before it was change
 **For me to review**
 
 - The stage wording in `STAGE_LABELS` and `TOOL_LABELS` in `src/copilot/agent.py`. It is what an agent reads on every question.
+
+## 2026-11-16 — An outside review, three fixes, and approval before a hand-off
+
+**Tool:** Claude Code.
+
+**Asked:** an outside review of commit `02c7816` rated the project 8 out of 10 as a portfolio piece and about 5 out of 10 for production, with three findings. "Are these true?" Then, twice: do not wait on long runs, build the next thing meanwhile.
+
+**The findings, checked against the code. All three were true.**
+
+1. **A short turn lost the context of the turn before it.** `redact_conversation`, written on 2026-11-15, redacted each turn alone. "What are the last four digits of your Social Security number?" followed by "4821." left the digits in place on their way to the model and the trace. The redactor already handled this for transcripts, and the conversation path did not use it. Fixed: both go through one method, `Redactor.redact_after`.
+2. **Traces and logs got past the redaction in two places.** The model's reply, its tool arguments and its rewrites went onto trace spans as written, before the output check. And the API logged a failure with `logger.exception`, whose message can quote the question, under a comment that said only the type was logged. Fixed: what the model writes is checked before it goes on a span, a tool is called with the checked arguments so the retriever's span is covered, and a failure is logged by kind and line. Tests read a real trace and the log.
+3. **The CI gate accepted a stale evaluation.** It compared the evaluation set's hash and a prompt version. The full run it was passing was from before the router. In progress: every run now records a fingerprint of the agent's code, its settings, the evaluation set and the scorers (`eval/fingerprint.py`), and the gate will fail when the repository's fingerprint differs. That change lands with a fresh full run, not before, or CI would fail on the missing run and not on the code.
+
+**Also built: approval before a hand-off (M9)**
+
+- A hand-off from the rules, the router or the model's own tool is now a draft in the answer: category, urgency, redacted reason, team. Nothing is written.
+- `POST /api/handoffs` writes the hand-off the agent approved and returns the reference and the script. The reason is redacted again there, because the agent may have edited it.
+- The page shows the draft under the answer with the reason, the team and the urgency editable, and two buttons: open it, or don't.
+
+**Decisions**
+
+- **No paused graph.** The plan said LangGraph `interrupt` with a checkpointer. A draft in the answer and a second request do the same job with no server-side state, so there is nothing to host and nothing lost on a restart.
+- **`escalated` now means "a person is needed".** With a draft, no ticket exists yet. The evaluation's hand-off score reads that decision, so it measures what it did before.
+- **The copilot's own tool call is drafted too.** Otherwise the model could still write a ticket by itself, which is the thing approval is for.
+- **A tool is called with checked arguments.** The alternative was to check them only for the trace and pass the tool the original. No tool needs a customer's details to do its work, and one code path is easier to keep right than two.
+- **The answer comes back sooner.** In the live check the insert through the SQL warehouse took 7.8 seconds, inside the answer. It now happens when the agent approves.
+
+**Checked, with dates**
+
+- 2026-11-15, API from this branch against the live workspace: "Refund the $5 late fee on this customer's account. Her number is 480-555-0132." returned a billing draft with the number replaced, in 2.1 seconds, and wrote nothing. "she is moving abroad and wants the line shut off for good, pls sort", which no rule matches, returned a cancellation draft through the router. Approving the second, with a phone number added to the reason by hand, wrote ticket `ESC-29123CC9` with that number replaced; the row was read back from `ops.escalations`.
+- 2026-11-15, the built page in a browser: the draft card appeared, "Open the hand-off" returned `ESC-07305294` and the script.
+- 639 unit tests pass.
+
+**Not done**
+
+- The stricter gate is written and not applied. It needs a fresh full evaluation of the current code first.
+- These changes are on a branch. The 40-row evaluation has not been run on them.
+- `ops.escalations` has three rows from these live checks (`ESC-29123CC9`, `ESC-07305294`, and one from the streaming check). They are test tickets.
+
+**For me to review**
+
+- The wording on the draft card (`web/src/features/ask/HandOffDraftCard.tsx`), and the six team names in it.
+- Whether a declined hand-off should be recorded anywhere. Today it leaves no trace.

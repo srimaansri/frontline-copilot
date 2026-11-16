@@ -69,6 +69,39 @@ export interface Step {
   reference: string | null;
 }
 
+export type Urgency = "low" | "normal" | "high";
+
+/** A hand-off the copilot drafted. Nothing is written until the agent opens it. */
+export interface HandOffDraft {
+  /** "billing", "plan_change", "account_access", "device", "cancellation" or "other". */
+  category: string;
+  urgency: Urgency;
+  /** What is needed, with personal details already replaced. */
+  reason: string;
+  /** Who would pick it up, such as "the billing team". */
+  team: string;
+}
+
+/** What the agent approved, as sent to the server. */
+export interface HandOffRequest {
+  reason: string;
+  category: string;
+  urgency: Urgency;
+}
+
+/** A hand-off that was opened. */
+export interface HandOffTicket {
+  /** The reference to give the customer, such as "ESC-B695DE84". */
+  ticket_id: string;
+  category: string;
+  urgency: Urgency;
+  reason: string;
+  /** What to tell the customer. */
+  agent_script: string;
+  /** False when the ticket could not be written and the transfer must be made by hand. */
+  recorded: boolean;
+}
+
 export interface AskResponse {
   /** Markdown. May contain citation markers such as [1] or [1, 2]. */
   answer: string;
@@ -78,6 +111,8 @@ export interface AskResponse {
   tools_used: string[];
   escalated: boolean;
   guardrail_flags: string[];
+  /** A hand-off waiting for the agent to approve it. Absent or null when there is none. */
+  handoff_draft?: HandOffDraft | null;
   seconds: number;
   trace_id: string | null;
   steps: Step[];
@@ -157,5 +192,7 @@ export interface Api {
   listCalls(signal?: AbortSignal): Promise<CallListItem[]>;
   getCall(transcriptId: string, signal?: AbortSignal): Promise<CallTranscript>;
   summarizeCall(transcriptId: string, signal?: AbortSignal): Promise<CallSummary>;
+  /** Write the hand-off the agent approved. This is the only call that opens a ticket. */
+  openHandOff(request: HandOffRequest, signal?: AbortSignal): Promise<HandOffTicket>;
   sendFeedback(request: FeedbackRequest, signal?: AbortSignal): Promise<FeedbackResponse>;
 }

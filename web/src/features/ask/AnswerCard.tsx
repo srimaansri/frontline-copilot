@@ -6,6 +6,7 @@ import { Byline, Sim } from "@/components/shared/Sim";
 
 import { AnswerFooter } from "./AnswerFooter";
 import { AnswerMarkdown } from "./AnswerMarkdown";
+import { HandOffDraftCard } from "./HandOffDraftCard";
 import type { AnsweredExchange } from "./useConversation";
 
 function HandOffBanner() {
@@ -33,7 +34,8 @@ export interface AnswerCardProps {
 
 /**
  * One answer. The card with the cut corner holds only what the copilot wrote.
- * The hand-off banner and the row of tools, timing and feedback sit under it.
+ * The hand-off, which is the agent's to approve, and the row of tools, timing
+ * and feedback sit under it.
  */
 export function AnswerCard({
   exchange,
@@ -64,7 +66,13 @@ export function AnswerCard({
         />
       </Sim>
 
-      {response.escalated && <HandOffBanner />}
+      {/* A draft waits for the agent. An answer from before drafts, or from a copilot
+          set to write tickets itself, has already opened one. */}
+      {response.handoff_draft ? (
+        <HandOffDraftCard draft={response.handoff_draft} />
+      ) : (
+        response.escalated && <HandOffBanner />
+      )}
 
       <div className="mt-3">
         <AnswerFooter

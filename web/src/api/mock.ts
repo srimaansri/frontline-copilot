@@ -250,6 +250,16 @@ export const mockApi: Api = {
     return summary;
   },
 
+  async openHandOff(_request, signal) {
+    await wait(600, signal);
+    // The demo reaches no server, so it cannot write a ticket, and it does not pretend to.
+    throw new ApiError(
+      "The demo does not open tickets. In the live app this writes the ticket and gives " +
+        "you its reference and what to tell the customer.",
+      503,
+    );
+  },
+
   async sendFeedback(_request, signal) {
     await wait(150, signal);
     // A recording has no trace to attach a rating to, and the page shows no rating buttons.

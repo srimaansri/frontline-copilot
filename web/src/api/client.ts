@@ -8,6 +8,8 @@ import type {
   ErrorBody,
   FeedbackRequest,
   FeedbackResponse,
+  HandOffRequest,
+  HandOffTicket,
   Health,
   Meta,
   StageEvent,
@@ -181,6 +183,8 @@ const httpApi: Api = {
       method: "POST",
       signal,
     }),
+  openHandOff: (body: HandOffRequest, signal) =>
+    request<HandOffTicket>("/handoffs", post(body, signal)),
   sendFeedback: (body: FeedbackRequest, signal) =>
     request<FeedbackResponse>("/feedback", post(body, signal)),
 };
@@ -196,6 +200,7 @@ function mockApi(): Api {
     getCall: async (transcriptId, signal) => (await load()).getCall(transcriptId, signal),
     summarizeCall: async (transcriptId, signal) =>
       (await load()).summarizeCall(transcriptId, signal),
+    openHandOff: async (body, signal) => (await load()).openHandOff(body, signal),
     sendFeedback: async (body, signal) => (await load()).sendFeedback(body, signal),
   };
 }

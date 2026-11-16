@@ -9,6 +9,8 @@ import type {
   CallSummary,
   CallTranscript,
   Citation,
+  HandOffDraft,
+  HandOffTicket,
   Sentiment,
   Step,
 } from "@/api/types";
@@ -67,6 +69,26 @@ export const MULTI_CITED = answered(
   "Can you show me the rules for international roaming?",
 );
 export const PLANS = answered("gallery-plans", "Which plans cost $25 a month or less?");
+
+/** A hand-off as the copilot drafts it, in the shape the API sends. */
+export const HANDOFF_DRAFT: HandOffDraft = {
+  category: "billing",
+  urgency: "normal",
+  reason:
+    "Refund the late fee on this customer's account. Her name is <PERSON_1> and her number is <PHONE_NUMBER_1>.",
+  team: "the billing team",
+};
+
+/** The same hand-off once the agent has opened it. */
+export const HANDOFF_TICKET: HandOffTicket = {
+  ticket_id: "ESC-4F2A91C7",
+  category: "billing",
+  urgency: "normal",
+  reason: HANDOFF_DRAFT.reason,
+  agent_script:
+    "I can't do this myself, so I'm passing you to the billing team. Your reference is ESC-4F2A91C7. They will take it from here.",
+  recorded: true,
+};
 
 /** A route with a warning and a blocked step, made of steps the API really sends. */
 export const ROUTE_WITH_PROBLEMS: Step[] = [
