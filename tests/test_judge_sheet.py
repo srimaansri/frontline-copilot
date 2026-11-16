@@ -364,6 +364,21 @@ def test_a_label_typed_into_the_file_is_read_back(
     assert read_csv(path)[0]["note"] == 'It says "one-time", which is enough.'
 
 
+def test_a_sheet_that_excel_saved_in_the_windows_code_page_is_still_read(
+    tmp_path: Path, rows: list[dict[str, str]]
+) -> None:
+    """Excel's plain "CSV" choice does this. The labels and the keys must survive it."""
+    path = tmp_path / "sheet.csv"
+    write_csv([{**rows[0], "human": "no", "note": "Says £5, not $5."}], path)
+    as_utf8 = path.read_bytes().decode("utf-8-sig")
+
+    path.write_bytes(as_utf8.encode("cp1252"))
+
+    (row,) = read_csv(path)
+    assert (row["key"], row["human"], row["judge_verdict"]) == ("E002:correctness", "no", "no")
+    assert row["note"] == "Says £5, not $5."
+
+
 @pytest.mark.parametrize("start", ["=", "+", "-", "@"])
 def test_text_a_spreadsheet_would_run_as_a_formula_is_made_plain(
     start: str, tmp_path: Path

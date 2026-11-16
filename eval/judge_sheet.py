@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import io
 import json
 import random
 import re
@@ -372,16 +373,26 @@ def write_csv(
 
 
 def read_csv(path: Path) -> list[dict[str, str]]:
-    """Read a sheet back. Cells a spreadsheet left empty come back as empty text."""
-    with path.open(encoding="utf-8-sig", newline="") as handle:
-        return [
-            {
-                str(column): _from_spreadsheet(value or "")
-                for column, value in row.items()
-                if column is not None
-            }
-            for row in csv.DictReader(handle)
-        ]
+    """Read a sheet back. Cells a spreadsheet left empty come back as empty text.
+
+    A sheet is written as UTF-8. Excel's plain "CSV" choice saves it in the
+    Windows code page instead, which turns a few symbols in the answers into
+    question marks and leaves the keys, the verdicts and the labels as they were.
+    Such a file is read too, so that an afternoon of labelling is not lost to it.
+    """
+    data = path.read_bytes()
+    try:
+        text = data.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        text = data.decode("cp1252", errors="replace")
+    return [
+        {
+            str(column): _from_spreadsheet(value or "")
+            for column, value in row.items()
+            if column is not None
+        }
+        for row in csv.DictReader(io.StringIO(text, newline=""))
+    ]
 
 
 # --- the Markdown file ------------------------------------------------------------------------
