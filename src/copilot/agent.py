@@ -68,17 +68,27 @@ FLAG_NO_CONTEXT = "no_context"
 FLAG_TOOL_ERROR = "tool_error"
 FLAG_EMPTY_ANSWER = "empty_answer"
 FLAG_TOOL_LIMIT = "tool_limit_reached"
+FLAG_TOOL_CALLS_SKIPPED = "tool_calls_skipped"
 
 TOOL_SEARCH_KB = "search_kb"
 TOOL_PLAN_DETAILS = "get_plan_details"
 TOOL_SUMMARIZE_CALL = "summarize_call"
 TOOL_ESCALATE = "escalate_to_human"
+# What a tool the model made up is called everywhere outside the model's own
+# conversation. A tool name is text the model wrote. Used as it came, it would go
+# unchecked into a span name, a flag, a step and a progress event.
+UNKNOWN_TOOL = "unknown_tool"
+KNOWN_TOOLS = frozenset({TOOL_SEARCH_KB, TOOL_PLAN_DETAILS, TOOL_SUMMARIZE_CALL, TOOL_ESCALATE})
 
 EMPTY_ANSWER = (
     "I could not put an answer together for this. Please pass the question to a human specialist."
 )
 NO_ARTICLE_FOUND = "No help article matched this search."
 NO_PLAN_FOUND = "No row in the plan catalogue matched."
+TOO_MANY_TOOL_CALLS = (
+    "Tool error: too many tools were asked for in one reply, so this one was not run. "
+    "Answer from the results you have, or ask again for fewer."
+)
 # What the model is told when it asks for a hand-off and the agent has to approve it.
 HAND_OFF_DRAFTED = (
     "The hand-off is drafted and waits for the agent to approve it. It is not open and "
@@ -279,6 +289,17 @@ def _as_number(value: Any) -> float | None:
         return float(value)
     except (TypeError, ValueError):
         return None
+
+
+def _as_flag(value: Any) -> bool | None:
+    """A yes-or-no argument. Models send true, "true" or "True"."""
+    if value is None or value == "":
+        return None
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str) and value.strip().lower() in {"true", "false"}:
+        return value.strip().lower() == "true"
+    raise ToolError("needs_international must be true or false")
 
 
 class Copilot:
@@ -636,7 +657,11 @@ class Copilot:
             span.set_outputs(
                 {
                     "content": self._for_trace(message_text(reply), sources),
-                    "tool_calls": [call["name"] for call in calls],
+                    # A name the model made up is not written out: see UNKNOWN_TOOL.
+                    "tool_calls": [
+                        call["name"] if call["name"] in KNOWN_TOOLS else UNKNOWN_TOOL
+                        for call in calls
+                    ],
                 }
             )
         usage = state["usage"].plus(reply)
@@ -659,10 +684,26 @@ class Copilot:
         escalated = state["escalated"]
         drafts: list[HandOffDraft] = []
         results: list[ToolMessage] = []
-        for call in getattr(state["messages"][-1], "tool_calls", None) or []:
-            name = str(call["name"])
+        limit = self.settings.max_tool_calls_per_round
+        calls = getattr(state["messages"][-1], "tool_calls", None) or []
+        for position, call in enumerate(calls):
+            asked = str(call["name"])
+            name = asked if asked in KNOWN_TOOLS else UNKNOWN_TOOL
+            if position >= limit:
+                # Rounds are limited, and so is one round: a reply that asks for a
+                # hundred searches gets the first few. Every call still needs a
+                # reply, or the conversation is not one the model will accept.
+                if FLAG_TOOL_CALLS_SKIPPED not in flags:
+                    flags.append(FLAG_TOOL_CALLS_SKIPPED)
+                results.append(
+                    ToolMessage(
+                        content=TOO_MANY_TOOL_CALLS, tool_call_id=str(call.get("id")), name=name
+                    )
+                )
+                continue
             arguments = call.get("args") or {}
-            _emit("tool", tool=name)
+            if name != UNKNOWN_TOOL:
+                _emit("tool", tool=name)
             with mlflow.start_span(name=f"tool_{name}", span_type=SpanType.TOOL) as span:
                 # The arguments are written by the model, so they are checked like its
                 # answer, once, before anything else sees them. The tool gets the checked
@@ -675,6 +716,9 @@ class Copilot:
                 }
                 span.set_inputs(dict(arguments))
                 try:
+                    if name == UNKNOWN_TOOL:
+                        # The model is told the name it used, checked like its other text.
+                        raise ToolError(f"There is no tool called {asked[:40]!r}")
                     text, did_escalate = self._call_tool(name, arguments, retrieved, drafts)
                 except ToolError as error:
                     # The message can quote an argument back, so it is checked as well.
@@ -732,11 +776,20 @@ class Copilot:
                 return "These sources were already returned above. Use them.", False
             return format_sources(fresh, first_number), False
         if name == TOOL_PLAN_DETAILS:
-            needs_international = arguments.get("needs_international")
+            # An argument that cannot be read is an error the model is told about.
+            # Dropping it would widen the lookup: "under a price I could not read"
+            # would return every plan as if it were the answer.
+            plan_name = arguments.get("plan_name")
+            if plan_name is not None and not isinstance(plan_name, str):
+                raise ToolError("plan_name must be text, such as the name of one plan")
+            asked_price = arguments.get("max_price")
+            max_price = _as_number(asked_price)
+            if max_price is None and asked_price not in (None, ""):
+                raise ToolError("max_price must be a number, such as 40")
             plans = tools.get_plan_details(
-                str(arguments.get("plan_name") or "") or None,
-                _as_number(arguments.get("max_price")),
-                needs_international if isinstance(needs_international, bool) else None,
+                plan_name or None,
+                max_price,
+                _as_flag(arguments.get("needs_international")),
             )
             if not plans:
                 return NO_PLAN_FOUND, False

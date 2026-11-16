@@ -22,6 +22,7 @@ from copilot.agent import (
     FLAG_NO_CONTEXT,
     FLAG_TOOL_LIMIT,
     NO_ARTICLE_FOUND,
+    TOO_MANY_TOOL_CALLS,
     Copilot,
 )
 from copilot.config import Settings
@@ -225,23 +226,22 @@ def test_without_approval_a_model_failure_after_a_hand_off_leaves_a_ticket_nobod
     assert sql.calls[0][1]["ticket_id"] == ("STRING", "ESC-TEST0001")
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=TimeoutError,
-    reason="Defect: the rewrite into plainer words is optional, but when that model call "
-    "fails the error is not caught (copilot.guardrails.check_output calls simplify with no "
-    "try), so an answer that was already written is thrown away and the request fails. "
-    "A fix would catch the failure in Copilot._simplify or check_output, keep the first "
-    "answer and log the kind of error.",
-)
-def test_a_failed_rewrite_keeps_the_answer_that_was_already_written(redactor: Redactor) -> None:
+def test_a_failed_rewrite_keeps_the_answer_that_was_already_written(
+    redactor: Redactor, caplog: pytest.LogCaptureFixture
+) -> None:
+    """The rewrite into plainer words is optional. Its failure once threw the answer away."""
     model = FailingModel(
-        call("search_kb", query="pay a bill"), HARD, TimeoutError("no reply to the rewrite")
+        call("search_kb", query="pay a bill"), HARD, TimeoutError(f"no reply about {PHONE}")
     )
 
-    answer = make_copilot(redactor, model).run("How do I pay?")
+    with caplog.at_level(logging.DEBUG):
+        answer = make_copilot(redactor, model).run("How do I pay?")
 
     assert answer.answer == HARD
+    assert "rewrite_failed" in answer.guardrail_flags
+    logged = " ".join(record.getMessage() for record in caplog.records)
+    assert "The rewrite failed (TimeoutError)" in logged
+    assert PHONE not in logged
 
 
 # --- the model that answers returns a malformed tool call -------------------------------------
@@ -258,8 +258,9 @@ def test_an_unknown_tool_name_is_reported_to_the_model_which_then_answers(
     assert isinstance(told, ToolMessage)
     assert told.content == "Tool error: There is no tool called 'delete_account'"
     assert answer.answer == "I cannot do that."
-    assert answer.guardrail_flags == ["tool_error:delete_account"]
-    assert answer.tools_used == ["delete_account"]
+    # The name the model made up is told back to it and written nowhere else.
+    assert answer.guardrail_flags == ["tool_error:unknown_tool"]
+    assert answer.tools_used == ["unknown_tool"]
     assert answer.escalated is False
 
 
@@ -272,14 +273,10 @@ def test_a_long_unknown_tool_name_is_cut_in_what_the_model_is_told(redactor: Red
     assert model.calls[1][-1].content == f"Tool error: There is no tool called '{'x' * 40}'"
 
 
-TOOL_NAME_DEFECT = (
-    "Defect: a tool name is text the model wrote, and it is the one thing of the model's "
-    "that is used unchecked. Copilot._run_tools puts a name that is not one of the four "
-    "tools into the span name (tool_<name>), tools_used, the tool_error flag and the stage "
-    "event ('Using <name>'). Only the error message told to the model is redacted. A fix "
-    "would replace an unknown name with a fixed word such as 'unknown_tool' at the top of "
-    "the loop in _run_tools, before any of those uses."
-)
+# A tool name is text the model wrote. It was once the one thing of the model's that
+# was used unchecked: a name that is not one of the four tools went into the span name,
+# tools_used, the tool_error flag and the progress event. It is now replaced by a fixed
+# word everywhere except in what the model is told, which is redacted.
 
 
 def made_up_tool_name(redactor: Redactor) -> tuple[Any, list[dict[str, Any]], FakeModel]:
@@ -300,7 +297,6 @@ def test_personal_data_in_a_made_up_tool_name_is_removed_from_what_the_model_is_
     )
 
 
-@pytest.mark.xfail(strict=True, reason=TOOL_NAME_DEFECT)
 def test_personal_data_in_a_made_up_tool_name_does_not_reach_the_trace(
     redactor: Redactor,
 ) -> None:
@@ -309,7 +305,6 @@ def test_personal_data_in_a_made_up_tool_name_does_not_reach_the_trace(
     assert PHONE not in last_trace().to_json()
 
 
-@pytest.mark.xfail(strict=True, reason=TOOL_NAME_DEFECT)
 def test_personal_data_in_a_made_up_tool_name_does_not_reach_the_answer(
     redactor: Redactor,
 ) -> None:
@@ -318,7 +313,6 @@ def test_personal_data_in_a_made_up_tool_name_does_not_reach_the_answer(
     assert PHONE not in str(answer.model_dump())
 
 
-@pytest.mark.xfail(strict=True, reason=TOOL_NAME_DEFECT)
 def test_personal_data_in_a_made_up_tool_name_does_not_reach_the_progress_events(
     redactor: Redactor,
 ) -> None:
@@ -378,24 +372,53 @@ def test_a_hand_off_with_no_reason_is_still_opened_with_a_fixed_reason(
     assert sql.calls[0][1]["urgency"] == ("STRING", "normal")
 
 
-def test_arguments_of_the_wrong_type_are_coerced_or_ignored_and_never_raise(
-    redactor: Redactor,
+@pytest.mark.parametrize(
+    ("arguments", "told"),
+    [
+        ({"max_price": "cheap"}, "Tool error: max_price must be a number, such as 40"),
+        ({"max_price": True}, "Tool error: max_price must be a number, such as 40"),
+        ({"needs_international": "y"}, "Tool error: needs_international must be true or false"),
+        (
+            {"plan_name": ["Plus 10"]},
+            "Tool error: plan_name must be text, such as the name of one plan",
+        ),
+    ],
+)
+def test_a_plan_argument_that_cannot_be_read_is_an_error_and_does_not_widen_the_lookup(
+    redactor: Redactor, arguments: dict[str, Any], told: str
 ) -> None:
-    sql = FakeSql([], [])
+    """Dropping the argument would return every plan as if it were the answer."""
+    sql = FakeSql([])
+    model = FakeModel(call("get_plan_details", **arguments), "I could not find that.")
+
+    answer = make_copilot(redactor, model, sql=sql).run("Which plans are cheap?")
+
+    assert sql.calls == []
+    assert model.calls[1][-1].content == told
+    assert answer.guardrail_flags == ["tool_error:get_plan_details"]
+
+
+def test_plan_arguments_a_model_sends_as_text_are_read(redactor: Redactor) -> None:
+    sql = FakeSql([])
     model = FakeModel(
-        call("get_plan_details", plan_name=["Plus 10"], max_price="cheap", needs_international="y"),
-        call("summarize_call", transcript_id=7),
+        call("get_plan_details", max_price="40", needs_international="True"),
         "I could not find that.",
     )
 
-    answer = make_copilot(redactor, model, sql=sql).run("How much is Plus 10?")
+    make_copilot(redactor, model, sql=sql).run("Which plans are under $40?")
 
-    # A price that is not a number and a flag that is not true or false are dropped,
-    # which widens the lookup. A name that is a list is searched for as its text.
-    assert sql.calls[0][1]["max_price"] == ("DOUBLE", None)
-    assert sql.calls[0][1]["needs_international"] == ("BOOLEAN", None)
-    assert sql.calls[0][1]["plan_name"] == ("STRING", "['Plus 10']")
-    assert model.calls[2][-1].content.startswith("Tool error: '7' is not a valid transcript id")
+    assert sql.calls[0][1]["max_price"] == ("DOUBLE", "40.0")
+    assert sql.calls[0][1]["needs_international"] == ("BOOLEAN", "true")
+    assert sql.calls[0][1]["plan_name"] == ("STRING", None)
+
+
+def test_a_transcript_id_of_the_wrong_type_is_a_tool_error(redactor: Redactor) -> None:
+    sql = FakeSql([])
+    model = FakeModel(call("summarize_call", transcript_id=7), "I could not find that.")
+
+    answer = make_copilot(redactor, model, sql=sql).run("Summarize call 7")
+
+    assert model.calls[1][-1].content.startswith("Tool error: '7' is not a valid transcript id")
     assert answer.guardrail_flags == ["tool_error:summarize_call"]
 
 
@@ -807,10 +830,10 @@ def test_the_default_round_limit_ends_a_run_well_inside_the_graph_s_own_step_lim
     assert FLAG_TOOL_LIMIT in answer.guardrail_flags
 
 
-def test_the_round_limit_does_not_limit_how_many_tools_one_round_may_ask_for(
+def test_one_round_runs_only_the_first_few_tools_it_asks_for(
     redactor: Redactor,
 ) -> None:
-    """Rounds are capped. The number of tool calls inside one round is not."""
+    """Rounds are capped, and so is the number of tool calls inside one round."""
     searches: list[str] = []
     settings = Settings(_env_file=None, router="rules")  # type: ignore[call-arg]
 
@@ -832,8 +855,13 @@ def test_the_round_limit_does_not_limit_how_many_tools_one_round_may_ask_for(
 
     answer = copilot.run("Late fee?")
 
-    assert len(searches) == 25
+    assert searches == [f"q{n}" for n in range(6)]
+    # Every call gets a reply, or the model would not accept the conversation.
+    results = [message for message in model.calls[1] if isinstance(message, ToolMessage)]
+    assert len(results) == 25
+    assert all(result.content == TOO_MANY_TOOL_CALLS for result in results[6:])
     assert answer.answer == "The late fee is $5 [1]."
+    assert "tool_calls_skipped" in answer.guardrail_flags
 
 
 # --- the copilot's own parts ------------------------------------------------------------------

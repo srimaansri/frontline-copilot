@@ -64,8 +64,15 @@ DISCLAIMER = (
     "Northline Wireless is fictional and all data is synthetic."
 )
 ASK_FAILED = "The copilot could not answer just now. Please try again."
+# How a tool's message starts when the fault is on this side: the model wrote
+# something unreadable, or the warehouse did not answer or is not set up.
+SERVER_FAULTS = ("The model", "The data lookup", "SQL_WAREHOUSE_ID")
 WRAP_UP_FAILED = "The wrap-up could not be drafted just now. Please try again."
 SAVE_FAILED = "The wrap-up could not be saved just now. Please try again."
+CALLS_FAILED = "The calls could not be read just now. Please try again."
+SUMMARY_FAILED = "The summary could not be written just now. Please try again."
+HAND_OFF_FAILED = "The hand-off could not be opened just now. Please try again."
+FEEDBACK_FAILED = "The rating could not be saved just now. Please try again."
 ASSIST_FAILED = "Call assist could not read this turn just now. Please try again."
 TOOLS: tuple[tuple[str, str], ...] = (
     ("search_kb", "Help articles"),
@@ -355,7 +362,13 @@ def create_app(
     @app.get("/api/calls")
     def calls() -> list[dict[str, str]]:
         copilot_now = runtime.copilot
-        return list_transcripts(copilot_now.tools.sql, copilot_now.settings)
+        try:
+            return list_transcripts(copilot_now.tools.sql, copilot_now.settings)
+        except ToolError as error:
+            raise _tool_error(error) from error
+        except Exception as error:
+            _log_failure(error)
+            raise HTTPException(status_code=502, detail=CALLS_FAILED) from error
 
     @app.get("/api/calls/{transcript_id}")
     def call(transcript_id: str) -> dict[str, Any]:
@@ -364,6 +377,9 @@ def create_app(
             turns = get_transcript(copilot_now.tools.sql, copilot_now.settings, transcript_id)
         except ToolError as error:
             raise _tool_error(error) from error
+        except Exception as error:
+            _log_failure(error)
+            raise HTTPException(status_code=502, detail=CALLS_FAILED) from error
         return {"transcript_id": transcript_id.strip().upper(), "turns": turns}
 
     @app.post("/api/calls/{transcript_id}/summary")
@@ -383,6 +399,9 @@ def create_app(
             return result
         except ToolError as error:
             raise _tool_error(error) from error
+        except Exception as error:
+            _log_failure(error)
+            raise HTTPException(status_code=502, detail=SUMMARY_FAILED) from error
 
     @app.post("/api/calls/{transcript_id}/wrapup")
     def wrap_up(transcript_id: str) -> CallWrapUp:
@@ -515,17 +534,26 @@ def create_app(
             return ticket
         except ToolError as error:
             raise _tool_error(error) from error
+        except Exception as error:
+            _log_failure(error)
+            raise HTTPException(status_code=502, detail=HAND_OFF_FAILED) from error
 
     @app.post("/api/feedback")
     def feedback(body: FeedbackRequest) -> dict[str, bool]:
         if not runtime.tracing:
             raise HTTPException(status_code=503, detail="Feedback is off because tracing is off.")
-        mlflow.log_feedback(
-            trace_id=body.trace_id,
-            name="agent_feedback",
-            value=body.helpful,
-            source=AssessmentSource(source_type=AssessmentSourceType.HUMAN, source_id="web-user"),
-        )
+        try:
+            mlflow.log_feedback(
+                trace_id=body.trace_id,
+                name="agent_feedback",
+                value=body.helpful,
+                source=AssessmentSource(
+                    source_type=AssessmentSourceType.HUMAN, source_id="web-user"
+                ),
+            )
+        except Exception as error:
+            _log_failure(error)
+            raise HTTPException(status_code=502, detail=FEEDBACK_FAILED) from error
         return {"saved": True}
 
     if static_dir is not None and static_dir.is_dir():
@@ -565,9 +593,19 @@ def _ask_response(
 
 
 def _tool_error(error: ToolError) -> HTTPException:
-    """A missing transcript is 404. Anything else a tool rejects is the caller's mistake."""
-    status = 404 if str(error).startswith("No transcript") else 400
-    return HTTPException(status_code=status, detail=str(error))
+    """A missing transcript is 404. A fault of the model or the warehouse is 502.
+
+    Anything else a tool rejects is the caller's mistake. A tool's own messages
+    are fixed words and an id, so they are safe to return.
+    """
+    message = str(error)
+    if message.startswith("No transcript"):
+        status = 404
+    elif message.startswith(SERVER_FAULTS):
+        status = 502
+    else:
+        status = 400
+    return HTTPException(status_code=status, detail=message)
 
 
 app = create_app()

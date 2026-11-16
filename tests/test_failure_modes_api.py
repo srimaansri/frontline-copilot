@@ -9,7 +9,6 @@ states the behaviour that would be right and is marked as an expected failure
 with the reason. The fix is not made here.
 """
 
-import json
 import logging
 import time
 from typing import Any
@@ -43,13 +42,10 @@ TRANSCRIPT_ROW = {
     "resolution": "resolved",
     "turns_json": '[{"speaker": "customer", "text": "My bill has a late fee."}]',
 }
-SERVER_ERROR = (
-    "Defect: this endpoint catches ToolError only. Any other error from the warehouse, the "
-    "model or MLflow is unhandled and becomes a 500, and the server then logs the full "
-    "traceback with the error's message, which the handlers of /api/ask and the wrap-up "
-    "endpoints avoid on purpose. A fix would add the same 'except Exception' as those "
-    "handlers: log the kind of error with _log_failure and return a fixed 502 message."
-)
+# These endpoints once caught ToolError only. Any other error from the warehouse, the
+# model or MLflow became a bare 500 and left the application with its message, for the
+# web server to log in full. They now do what /api/ask does: log the kind of error and
+# answer with fixed words.
 
 
 @pytest.fixture(scope="module")
@@ -222,7 +218,7 @@ def test_a_tool_failure_is_a_normal_answer_with_a_warning_on_that_tool_s_step(
     assert MARKER not in logged
 
 
-def test_an_unknown_tool_is_a_normal_answer_with_a_warning_step_named_after_it(
+def test_an_unknown_tool_is_a_normal_answer_with_a_step_that_does_not_repeat_its_name(
     redactor: Redactor,
 ) -> None:
     model = FakeModel(call("delete_account", id="1"), "I cannot do that.")
@@ -231,8 +227,9 @@ def test_an_unknown_tool_is_a_normal_answer_with_a_warning_step_named_after_it(
 
     body = response.json()
     assert response.status_code == 200
-    step = next(step for step in body["steps"] if step["tool"] == "delete_account")
-    assert (step["title"], step["status"]) == ("Used delete_account", "warning")
+    assert "delete_account" not in response.text
+    step = next(step for step in body["steps"] if step["tool"] == "unknown_tool")
+    assert (step["title"], step["status"]) == ("Asked for a tool that does not exist", "notice")
 
 
 def test_a_search_that_finds_nothing_is_a_normal_answer_with_a_step_that_says_so(
@@ -363,17 +360,22 @@ def test_a_hand_off_whose_ticket_cannot_be_written_is_returned_with_a_script_to_
     assert MARKER not in logged
 
 
-@pytest.mark.xfail(strict=True, reason=SERVER_ERROR)
-def test_a_stopped_warehouse_on_the_list_of_calls_is_a_fixed_502(redactor: Redactor) -> None:
-    sql = FakeSql(RuntimeError("warehouse is stopped"))
+def test_a_stopped_warehouse_on_the_list_of_calls_is_a_fixed_502(
+    redactor: Redactor, caplog: pytest.LogCaptureFixture
+) -> None:
+    sql = FakeSql(RuntimeError(f"warehouse stopped during {MARKER}"))
     client = client_for(make_copilot(redactor, FakeModel("unused"), sql=sql))
 
-    response = client.get("/api/calls")
+    with caplog.at_level(logging.DEBUG):
+        response = client.get("/api/calls")
 
     assert response.status_code == 502
+    assert response.json() == {"detail": api_module.CALLS_FAILED}
+    logged = everything_logged(caplog)
+    assert "(RuntimeError at " in logged
+    assert MARKER not in logged
 
 
-@pytest.mark.xfail(strict=True, reason=SERVER_ERROR)
 def test_a_stopped_warehouse_on_one_transcript_is_a_fixed_502(redactor: Redactor) -> None:
     sql = FakeSql(RuntimeError("warehouse is stopped"))
     client = client_for(make_copilot(redactor, FakeModel("unused"), sql=sql))
@@ -383,7 +385,6 @@ def test_a_stopped_warehouse_on_one_transcript_is_a_fixed_502(redactor: Redactor
     assert response.status_code == 502
 
 
-@pytest.mark.xfail(strict=True, reason=SERVER_ERROR)
 def test_a_model_timeout_on_the_call_summary_endpoint_is_a_fixed_502(redactor: Redactor) -> None:
     model = FailingModel(TimeoutError("no reply to the summary"))
     client = client_for(make_copilot(redactor, model, sql=FakeSql([TRANSCRIPT_ROW])))
@@ -393,7 +394,7 @@ def test_a_model_timeout_on_the_call_summary_endpoint_is_a_fixed_502(redactor: R
     assert response.status_code == 502
 
 
-def test_a_summary_the_model_wrote_badly_is_a_400_with_the_tool_s_own_message(
+def test_a_summary_the_model_wrote_badly_is_a_502_with_the_tool_s_own_message(
     redactor: Redactor,
 ) -> None:
     model = FakeModel("The customer called about a late fee.")
@@ -401,8 +402,8 @@ def test_a_summary_the_model_wrote_badly_is_a_400_with_the_tool_s_own_message(
 
     response = client.post("/api/calls/T0002/summary")
 
-    # The model's fault is reported with the status of a bad request from the caller.
-    assert response.status_code == 400
+    # The model's fault is not reported as a bad request from the caller.
+    assert response.status_code == 502
     assert response.json() == {"detail": "The model did not return a JSON object"}
 
 
@@ -422,7 +423,6 @@ def test_a_model_timeout_on_the_wrap_up_endpoint_is_a_fixed_502_logged_by_its_ki
     assert MARKER not in logged
 
 
-@pytest.mark.xfail(strict=True, reason=SERVER_ERROR)
 def test_feedback_that_mlflow_cannot_save_is_a_fixed_502(
     redactor: Redactor, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -437,33 +437,20 @@ def test_feedback_that_mlflow_cannot_save_is_a_fixed_502(
     assert response.status_code == 502
 
 
-def test_today_those_unhandled_errors_are_a_bare_500_that_says_nothing_of_the_cause(
+def test_such_an_error_no_longer_leaves_the_application_for_the_web_server_to_log(
     redactor: Redactor,
 ) -> None:
-    """What the four expected failures above look like now, so the response itself is on record."""
-    sql = FakeSql(RuntimeError(f"warehouse stopped during {MARKER}"))
-    client = client_for(make_copilot(redactor, FakeModel("unused"), sql=sql))
+    """A web server logs an unhandled error with its traceback and message.
 
-    response = client.get("/api/calls")
-
-    assert response.status_code == 500
-    assert response.text == "Internal Server Error"
-    assert MARKER not in response.text
-    assert json.dumps(ASK_FAILED) not in response.text
-
-
-def test_today_such_an_error_reaches_the_web_server_whole_with_its_message(
-    redactor: Redactor,
-) -> None:
-    """The handler does not catch it, so what is logged about it is up to the web server.
-
-    A web server logs an unhandled error with its traceback and message. This
-    test shows only that the error leaves the application with its message.
+    With ``raise_server_exceptions`` on, the test client raises whatever the
+    application did not handle. Nothing is raised, so nothing was left to it.
     """
     sql = FakeSql(RuntimeError(f"warehouse stopped during {MARKER}"))
     app = create_app(
         make_copilot(redactor, FakeModel("unused"), sql=sql), tracing=False, static_dir=None
     )
 
-    with pytest.raises(RuntimeError, match=MARKER):
-        TestClient(app, raise_server_exceptions=True).get("/api/calls")
+    response = TestClient(app, raise_server_exceptions=True).get("/api/calls")
+
+    assert response.status_code == 502
+    assert MARKER not in response.text

@@ -10,6 +10,7 @@ citations are validated, and personal data is removed from it.
 
 from __future__ import annotations
 
+import logging
 import re
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
@@ -19,6 +20,8 @@ from copilot.claims import same_claims, unsupported_claims
 from copilot.readability import reading_grade
 from copilot.redaction import PlaceholderMap, Redactor
 from copilot.text import to_plain_punctuation
+
+logger = logging.getLogger(__name__)
 
 FLAG_PII_IN_QUESTION = "pii_in_question"
 FLAG_INVALID_CITATION = "invalid_citation_removed"
@@ -33,6 +36,8 @@ FLAG_ROUTER_FALLBACK = "router_unavailable"
 FLAG_UNSUPPORTED_CLAIM = "unsupported_claim"
 # A plainer rewrite was thrown away because it changed, dropped or added a figure.
 FLAG_REWRITE_CHANGED_FACTS = "rewrite_changed_facts"
+# The plainer rewrite could not be made, so the first draft was kept.
+FLAG_REWRITE_FAILED = "rewrite_failed"
 
 # An answer is rewritten only when it is well above the target grade, so that
 # an answer a little over the line is not sent round the model a second time.
@@ -462,7 +467,17 @@ def check_output(
     if simplify is not None and text.strip():
         grade = reading_grade(text)
         if grade > target_grade + REWRITE_MARGIN:
-            rewritten = simplify(text).strip()
+            try:
+                rewritten = simplify(text).strip()
+            except Exception as error:
+                # The rewrite is a nicety. An answer that is already written is not
+                # thrown away because a second model call timed out. Only the kind of
+                # error is logged, because its message can quote the answer.
+                logger.warning(
+                    "The rewrite failed (%s); the first draft was kept", type(error).__name__
+                )
+                rewritten = ""
+                flags.append(FLAG_REWRITE_FAILED)
             if rewritten and reading_grade(rewritten) < grade:
                 if same_claims(text, rewritten):
                     text = rewritten
