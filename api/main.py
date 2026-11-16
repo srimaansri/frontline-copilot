@@ -17,6 +17,7 @@ import logging
 import queue
 import threading
 import time
+import traceback
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, Literal
@@ -208,8 +209,7 @@ def create_app(
                 trace_tags={"source": "web"},
             )
         except Exception as error:
-            # The reason may quote the question, so only its type is logged or returned.
-            logger.exception("The copilot failed to answer (%s)", type(error).__name__)
+            _log_failure(error)
             raise HTTPException(status_code=502, detail=ASK_FAILED) from error
         seconds = time.perf_counter() - started
         trace_id = mlflow.get_last_active_trace_id(thread_local=True) if tracing_now else None
@@ -250,8 +250,7 @@ def create_app(
                 response = _ask_response(copilot_now, body, answer, seconds, trace_id)
                 events.put(("answer", response.model_dump()))
             except Exception as error:
-                # The reason may quote the question, so only its type is logged or sent.
-                logger.exception("The copilot failed to answer (%s)", type(error).__name__)
+                _log_failure(error)
                 events.put(("error", {"detail": ASK_FAILED}))
             finally:
                 events.put(None)
@@ -318,6 +317,19 @@ def create_app(
         # Mounted last, so it only receives what no API route matched.
         app.mount("/", StaticFiles(directory=static_dir, html=True), name="web")
     return app
+
+
+def _log_failure(error: BaseException) -> None:
+    """Log that an answer failed: the kind of error and where it was raised. Nothing else.
+
+    An error's message can quote the question, and so can the values a full
+    traceback shows. ``logger.exception`` writes both, which is why it is not
+    used here. The kind of error and the line that raised it are enough to find
+    the cause, and neither can hold a customer's details.
+    """
+    frames = traceback.extract_tb(error.__traceback__)
+    where = f"{Path(frames[-1].filename).name}:{frames[-1].lineno}" if frames else "unknown"
+    logger.error("The copilot failed to answer (%s at %s)", type(error).__name__, where)
 
 
 def _ask_response(

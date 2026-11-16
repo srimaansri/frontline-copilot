@@ -46,6 +46,7 @@ from copilot.guardrails import (
     REFUSAL_ANSWER,
     check_input,
     check_output,
+    redact_answer,
     redact_conversation,
 )
 from copilot.llm import ChatModel, build_chat_model, build_router_model, message_text
@@ -550,10 +551,18 @@ class Copilot:
         else:
             model = self._get_model().bind_tools(TOOL_SPECS)
         with mlflow.start_span(name="generate_answer", span_type=SpanType.CHAT_MODEL) as span:
+            sources = [*(hit.text for hit in state["retrieved"]), *state["sources"]]
             span.set_inputs(
                 {
                     "messages": [
-                        {"role": message.type, "content": message_text(message)}
+                        {
+                            "role": message.type,
+                            # An earlier reply of the model's, in this same answer, is
+                            # its own writing and gets the same check as its output.
+                            "content": self._for_trace(message_text(message), sources)
+                            if message.type == "ai"
+                            else message_text(message),
+                        }
                         for message in messages
                     ],
                     "tools_offered": not out_of_rounds,
@@ -562,7 +571,10 @@ class Copilot:
             reply = model.invoke(messages)
             calls = [] if out_of_rounds else list(getattr(reply, "tool_calls", None) or [])
             span.set_outputs(
-                {"content": message_text(reply), "tool_calls": [call["name"] for call in calls]}
+                {
+                    "content": self._for_trace(message_text(reply), sources),
+                    "tool_calls": [call["name"] for call in calls],
+                }
             )
         if not isinstance(reply, AIMessage):
             reply = AIMessage(message_text(reply))
@@ -587,11 +599,22 @@ class Copilot:
             arguments = call.get("args") or {}
             _emit("tool", tool=name)
             with mlflow.start_span(name=f"tool_{name}", span_type=SpanType.TOOL) as span:
+                # The arguments are written by the model, so they are checked like its
+                # answer, once, before anything else sees them. The tool gets the checked
+                # arguments too: its own spans (the search query, for one) record what it
+                # was given, and no tool needs a customer's details to do its work.
+                known = [*(hit.text for hit in retrieved), *sources]
+                arguments = {
+                    key: self._for_trace(value, known) if isinstance(value, str) else value
+                    for key, value in arguments.items()
+                }
                 span.set_inputs(dict(arguments))
                 try:
                     text, did_escalate = self._call_tool(name, arguments, retrieved)
                 except ToolError as error:
-                    text, did_escalate = f"Tool error: {error}", False
+                    # The message can quote an argument back, so it is checked as well.
+                    text = self._for_trace(f"Tool error: {error}", known)
+                    did_escalate = False
                     flags.append(f"{FLAG_TOOL_ERROR}:{name}")
                 except Exception as error:
                     # A tool that cannot be reached must not end the answer: the model is
@@ -689,7 +712,7 @@ class Copilot:
             redactor=self._get_redactor(),
             sources=sources,
             target_grade=self.settings.reading_grade_target,
-            simplify=self._simplify if from_model else None,
+            simplify=(lambda text: self._simplify(text, sources)) if from_model else None,
             # A fixed reply (a hand-off, a refusal) is not the model's, so it is not checked.
             evidence=evidence if from_model else None,
         )
@@ -708,14 +731,29 @@ class Copilot:
             "evidence": evidence,
         }
 
-    def _simplify(self, text: str) -> str:
+    def _simplify(self, text: str, sources: Sequence[str]) -> str:
         _emit("simplify")
         with mlflow.start_span(name="simplify_answer", span_type=SpanType.CHAT_MODEL) as span:
-            span.set_inputs({"answer": text})
+            span.set_inputs({"answer": self._for_trace(text, sources)})
             reply = self._get_model().invoke([SystemMessage(SIMPLIFY_PROMPT), HumanMessage(text)])
             rewritten = message_text(reply)
-            span.set_outputs(rewritten)
+            span.set_outputs(self._for_trace(rewritten, sources))
         return rewritten
+
+    def _for_trace(self, text: str, sources: Sequence[str]) -> str:
+        """Text the model wrote, made safe to put on a trace.
+
+        Everything the model is given is redacted, but it can still write out
+        something that is or looks like personal data: a value it pieced
+        together, or one it made up. The output guard removes that from the
+        answer the agent sees. A span is written earlier, while the answer is
+        still a draft, so the same check is applied to whatever of the model's
+        goes on a span: its replies, its tool arguments and its rewrites.
+        What the sources state openly, such as the support number, is kept.
+        """
+        if not text.strip():
+            return text
+        return redact_answer(text, self._get_redactor(), sources).text
 
 
 @lru_cache(maxsize=1)

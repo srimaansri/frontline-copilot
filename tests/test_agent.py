@@ -851,6 +851,63 @@ def test_personal_data_in_history_never_reaches_the_model(redactor: Redactor) ->
     assert PHONE not in str(model.calls)
 
 
+def test_a_short_reply_is_redacted_with_the_turn_before_it(redactor: Redactor) -> None:
+    """On its own "4821." is a number. After a question about a Social Security number it is not."""
+    model = FakeModel("Thanks. I can't look up an account, so pass this to a specialist.")
+    history = [
+        {
+            "role": "assistant",
+            "content": "What are the last four digits of the customer's Social Security number?",
+        }
+    ]
+
+    answer = make_copilot(redactor, model).run("4821.", history)
+
+    (messages,) = model.calls
+    assert "4821" not in str(messages)
+    assert messages[-1].content == "<SSN_LAST4_1>."
+    assert answer.question_as_processed == "<SSN_LAST4_1>."
+    assert answer.guardrail_flags == ["pii_in_question:SSN_LAST4"]
+    assert "4821" not in last_trace().to_json()
+
+
+def test_a_short_turn_earlier_in_the_conversation_is_redacted_the_same_way(
+    redactor: Redactor,
+) -> None:
+    model = FakeModel("It is $5.")
+    history = [
+        {"role": "user", "content": "What are the last four of the social?"},
+        {"role": "user", "content": "4821."},
+    ]
+
+    make_copilot(redactor, model).run("How much is the late fee?", history)
+
+    (messages,) = model.calls
+    assert "4821" not in str(messages)
+    assert messages[2].content == "<SSN_LAST4_1>."
+
+
+def test_what_the_model_writes_is_checked_before_it_goes_on_a_trace(redactor: Redactor) -> None:
+    """The model is given redacted text, but it can still write a number of its own."""
+    model = FakeModel(
+        call("search_kb", query=f"late fee for the customer at {PHONE}"),
+        f"The late fee is $5 [1]. Call the customer back on {PHONE}.",
+    )
+    copilot = make_copilot(redactor, model)
+
+    answer = copilot.run("How much is the late fee?")
+
+    assert PHONE not in answer.answer
+    recorded = last_trace().to_json()
+    # Not in the model's reply, not in the tool's arguments, not in the search it ran.
+    assert PHONE not in recorded
+    spans = {span.name: span for span in last_trace().data.spans}
+    assert "<PHONE_NUMBER_1>" in spans["tool_search_kb"].inputs["query"]
+    assert "<PHONE_NUMBER_1>" in str(spans["search_kb"].inputs)
+    # The support number is in the article, so the trace may keep it.
+    assert "$5" in recorded
+
+
 def test_personal_data_never_reaches_the_trace(redactor: Redactor) -> None:
     question = f"Customer Linda at {PHONE}, linda@example.com, asks about the late fee."
     model = FakeModel(call("search_kb", query="late fee"), "It is $5 [1].")

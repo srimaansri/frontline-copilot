@@ -216,6 +216,28 @@ def test_the_stream_reports_the_trace_id_from_the_thread_that_answered(
     assert events_in(response.text)[-1][1]["trace_id"] == "tr-9"
 
 
+@pytest.mark.parametrize("path", ["/api/ask", "/api/ask/stream"])
+def test_a_failure_is_logged_by_its_kind_and_place_and_nothing_else(
+    path: str, caplog: pytest.LogCaptureFixture
+) -> None:
+    """An error's message can quote the question. Neither it nor a traceback is logged."""
+    secret = f"model failed on a question from the customer at {PHONE}"
+    client, _ = client_for(RuntimeError(secret))
+
+    with caplog.at_level("DEBUG"):
+        client.post(path, json={"question": f"Late fee for {PHONE}?", "history": []})
+
+    logged = "\n".join(
+        record.getMessage() + (record.exc_text or "") + str(record.exc_info or "")
+        for record in caplog.records
+    )
+    assert "RuntimeError at test_api.py:" in logged
+    assert PHONE not in logged
+    assert "model failed" not in logged
+    assert "Traceback" not in logged
+    assert all(record.exc_info is None for record in caplog.records)
+
+
 def test_ask_reports_the_trace_id_when_tracing_is_on(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         api_module.mlflow, "get_last_active_trace_id", lambda thread_local=False: "tr-1"
