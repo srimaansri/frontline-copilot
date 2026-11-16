@@ -41,6 +41,7 @@ export const DEMO_NAMES = [
   "pending",
   "calls",
   "calls-summary",
+  "calls-assist",
 ] as const;
 
 export type DemoName = (typeof DEMO_NAMES)[number];
@@ -72,7 +73,11 @@ const DEMO_QUESTIONS: Partial<Record<DemoName, string>> = {
 export const DEMO_QUESTION: string | null = DEMO === null ? null : (DEMO_QUESTIONS[DEMO] ?? null);
 
 /** The call the Calls view opens on, if the demo is one of its states. */
-export const DEMO_CALL: string | null = DEMO === "calls" || DEMO === "calls-summary" ? "T0002" : null;
+export const DEMO_CALL: string | null =
+  DEMO === "calls" || DEMO === "calls-summary" || DEMO === "calls-assist" ? "T0002" : null;
 
 /** True when the Calls demo should also ask for the summary. */
 export const DEMO_CALL_SUMMARY = DEMO === "calls-summary";
+
+/** True when the Calls demo should open the call in its replay, with the whole call on show. */
+export const DEMO_CALL_ASSIST = DEMO === "calls-assist";

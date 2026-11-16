@@ -108,17 +108,16 @@ def _asks_for_identity(text: str, in_run: bool) -> bool:
     return False
 
 
-def verification_turn(turns: Sequence[Mapping[str, str]]) -> int | None:
-    """The index of the customer turn that first answers an identity question.
+def identity_answer_turns(turns: Sequence[Mapping[str, str]]) -> list[int]:
+    """The index of every customer turn that answers an identity question, in order.
 
     An identity question is an agent turn that asks for an account number, a
     date of birth, a Social Security number or a PIN, or that asks for a
     number, address or email while saying it is to verify or confirm, or as
     part of a run of such questions. It is answered when the customer's next
     turn holds a redacted value of one of those kinds.
-
-    Returns ``None`` when no identity question is answered anywhere in the call.
     """
+    answered: list[int] = []
     in_run = False
     for index, turn in enumerate(turns):
         if _speaker(turn) != AGENT:
@@ -128,11 +127,21 @@ def verification_turn(turns: Sequence[Mapping[str, str]]) -> int | None:
         if asks and index + 1 < len(turns):
             answer = turns[index + 1]
             if _speaker(answer) == CUSTOMER and _IDENTITY_ANSWER_RE.search(answer.get("text", "")):
-                return index + 1
+                answered.append(index + 1)
         # A run starts when the agent says verification is coming and lasts
         # while each agent turn is another identity question.
         in_run = asks or (bool(_LEAD_IN_RE.search(text)) and not _NOT_A_QUESTION_RE.search(text))
-    return None
+    return answered
+
+
+def verification_turn(turns: Sequence[Mapping[str, str]]) -> int | None:
+    """The index of the customer turn that first answers an identity question.
+
+    ``identity_answer_turns`` says what counts as one. Returns ``None`` when no
+    identity question is answered anywhere in the call.
+    """
+    answered = identity_answer_turns(turns)
+    return answered[0] if answered else None
 
 
 # --- account details and account actions ------------------------------------------

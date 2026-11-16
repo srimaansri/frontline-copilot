@@ -18,9 +18,11 @@ import {
   SourcesSection,
 } from "./sections/ask";
 import {
+  AssistSection,
   CallRowsSection,
   CallsStatesSection,
   FiltersSection,
+  ReplaySection,
   SearchSection,
   SummarySection,
   TranscriptSection,
@@ -63,6 +65,8 @@ const SECTIONS: readonly { id: string; title: string; render: () => ReactElement
   { id: "transcript", title: "Transcript", render: TranscriptSection },
   { id: "summary", title: "Summary card", render: SummarySection },
   { id: "wrap-up", title: "Wrap-up", render: WrapUpSection },
+  { id: "replay", title: "Replay", render: ReplaySection },
+  { id: "assist", title: "Call assist", render: AssistSection },
   { id: "calls-states", title: "Calls states", render: CallsStatesSection },
   { id: "icons", title: "Icons", render: IconsSection },
 ];

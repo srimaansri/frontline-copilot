@@ -15,6 +15,11 @@ interface calls, so a recording has exactly the shape of a live response. It
 makes about one model call per question, runs hand-offs as dry runs so no
 ticket is written, and refuses to save from a working tree with uncommitted
 changes, so the commit it names is the code that produced the answers.
+
+For each recorded call it also follows the call with call assist, one request
+for each turn, and keeps every state under ``assist``. That costs one search
+for each turn the customer says something in and one model call for each change
+of article.
 """
 
 from __future__ import annotations
@@ -60,7 +65,8 @@ WARM_UP_QUESTIONS: tuple[str, ...] = (
     "How do I set up voicemail?",
     "How much is the Plus 10 plan?",
 )
-# Calls whose transcript, summary and wrap-up draft are recorded for the Calls view.
+# Calls whose transcript, summary, wrap-up draft and assist states are recorded for the
+# Calls view.
 CALL_IDS: tuple[str, ...] = ("T0001", "T0002", "T0007", "T0020")
 # One call of each ending is added to these from the list, so each kind can be opened.
 RESOLUTIONS: tuple[str, ...] = ("resolved", "escalated", "unresolved")
@@ -160,6 +166,7 @@ def record(
     transcripts: dict[str, Any] = {}
     summaries: dict[str, Any] = {}
     wrapups: dict[str, Any] = {}
+    assist: dict[str, Any] = {}
     for call_id in wanted:
         transcripts[call_id] = _checked(client.get(f"/api/calls/{call_id}"), f"call {call_id}")
         summaries[call_id] = _checked(
@@ -173,6 +180,12 @@ def record(
             wrapups[call_id] = drafted.json()
         else:
             print(f"  no wrap-up for {call_id} (HTTP {drafted.status_code})", flush=True)
+        # What call assist shows at every turn, asked turn by turn as the replay asks.
+        # A call is kept only whole: a replay with a turn missing would show a panel
+        # that the live copilot never showed.
+        states = record_assist(client, call_id, len(transcripts[call_id]["turns"]))
+        if states is not None:
+            assist[call_id] = states
         print(f"  call {call_id}", flush=True)
     return {
         "meta": meta,
@@ -181,7 +194,26 @@ def record(
         "transcripts": transcripts,
         "summaries": summaries,
         "wrapups": wrapups,
+        "assist": assist,
     }
+
+
+def record_assist(client: Client, call_id: str, turns: int) -> list[Any] | None:
+    """The assist state of one call at each of its turns, or None if any turn failed.
+
+    Each state carries the seconds it took, so the demo can keep the live pace.
+    """
+    states: list[Any] = []
+    for turn in range(turns):
+        followed = client.get(f"/api/calls/{call_id}/assist?turn={turn}")
+        if followed.status_code != 200:
+            print(
+                f"  no assist for {call_id} (HTTP {followed.status_code} at turn {turn})",
+                flush=True,
+            )
+            return None
+        states.append(followed.json())
+    return states
 
 
 def main(argv: list[str] | None = None) -> None:

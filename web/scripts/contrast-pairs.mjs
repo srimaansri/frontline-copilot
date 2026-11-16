@@ -79,6 +79,8 @@ export const PAIRS = [
   ["warn", "sunken", "body", "Step status on the rail"],
   ["warn", "brand-tint", "body", "Call status in the selected row"],
   ["warn", "warn-tint", "ui", "Icon in the hand-off banner"],
+  ["notice", "warn-tint", "body", "New at this turn, on the hint to hand off in call assist"],
+  ["ink-3", "warn-tint", "body", "The turn a hint to hand off dates from, in call assist"],
   ["block", "surface", "body", "Not responding, in the popover"],
   ["block", "sunken", "body", "Step status on the rail"],
   ["knock", "ok", "ui", "Glyph knocked out of the OK circle"],

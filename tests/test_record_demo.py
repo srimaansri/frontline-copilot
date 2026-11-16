@@ -23,19 +23,22 @@ class FakeResponse:
 
 
 class FakeClient:
-    """Answers the five endpoints the recorder calls, and notes what was asked."""
+    """Answers the endpoints the recorder calls, and notes what was asked."""
 
     def __init__(
         self,
         fail_on: str | None = None,
         error_on: str | None = None,
         no_wrap_up_for: str | None = None,
+        no_assist_at: tuple[str, int] | None = None,
     ) -> None:
         self.asked: list[str] = []
         self.posted: list[str] = []
+        self.followed: list[str] = []
         self.fail_on = fail_on
         self.error_on = error_on
         self.no_wrap_up_for = no_wrap_up_for
+        self.no_assist_at = no_assist_at
 
     def get(self, url: str) -> FakeResponse:
         if url == "/api/meta":
@@ -48,7 +51,14 @@ class FakeClient:
                     {"transcript_id": "T0003", "resolution": "escalated"},
                 ]
             )
-        return FakeResponse({"transcript_id": url.rsplit("/", 1)[1], "turns": []})
+        if "/assist?turn=" in url:
+            self.followed.append(url)
+            call_id, turn = url.split("/")[3], int(url.rsplit("=", 1)[1])
+            if (call_id, turn) == self.no_assist_at:
+                return FakeResponse({"detail": "Call assist could not read this turn"}, 502)
+            return FakeResponse({"transcript_id": call_id, "turn": turn, "seconds": 0.4})
+        turns = [{"speaker": "agent", "text": "Hello."}, {"speaker": "customer", "text": "Hi."}]
+        return FakeResponse({"transcript_id": url.rsplit("/", 1)[1], "turns": turns})
 
     def post(self, url: str, *, json: Any = None) -> FakeResponse:
         if url == "/api/ask/stream":
@@ -110,6 +120,37 @@ def test_a_recording_holds_what_the_application_returned() -> None:
     assert list(recording["wrapups"]) == ["T0001", "T0002", "T0003"]
     # A draft is asked for and nothing else: the recorder never saves a wrap-up.
     assert not [url for url in client.posted if url.endswith("/save")]
+
+
+def test_each_recorded_call_is_followed_with_assist_one_request_for_each_turn() -> None:
+    client = FakeClient()
+
+    recording = record(client, [])
+
+    assert list(recording["assist"]) == ["T0001", "T0002", "T0003"]
+    assert recording["assist"]["T0002"] == [
+        {"transcript_id": "T0002", "turn": 0, "seconds": 0.4},
+        {"transcript_id": "T0002", "turn": 1, "seconds": 0.4},
+    ]
+    # The page asks the same way: by turn, in order, with nothing in a request body.
+    assert client.followed[:2] == [
+        "/api/calls/T0001/assist?turn=0",
+        "/api/calls/T0001/assist?turn=1",
+    ]
+    assert len(client.followed) == 6
+
+
+def test_a_call_whose_assist_fails_at_any_turn_has_no_assist_recording(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    client = FakeClient(no_assist_at=("T0002", 1))
+
+    recording = record(client, [])
+
+    # Half a replay is never kept: the demo would show a panel the live copilot never showed.
+    assert list(recording["assist"]) == ["T0001", "T0003"]
+    assert list(recording["transcripts"]) == ["T0001", "T0002", "T0003"]
+    assert "no assist for T0002 (HTTP 502 at turn 1)" in capsys.readouterr().out
 
 
 def test_a_wrap_up_that_cannot_be_drafted_is_left_out_and_the_recording_goes_on(
