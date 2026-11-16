@@ -1,0 +1,263 @@
+{
+  "measured_at": "2026-11-16T01:06:30Z",
+  "git_sha": "cd76009b213dd9fc2a297f8e4f11342b11c8c6ac",
+  "git_dirty": false,
+  "corpus": {
+    "file": "eval/data/claim_corpus.json",
+    "sha256": "6050bd0bdff0fa0e8a2cbe4dca674595fc6bed4accb09dbf6599db046dcbd296",
+    "collected_at": "2026-11-16T01:04:39Z",
+    "git_sha": "7f8961d70eec667a02d253959ed067bc1e697b7f",
+    "prompt_version": "v3",
+    "llm_endpoint": "databricks-gpt-oss-120b"
+  },
+  "seed": 20261115,
+  "variants_per_figure": 3,
+  "answers": 43,
+  "answers_with_a_figure": 30,
+  "figures_in_real_answers": 76,
+  "reported_in_real_answers": {
+    "count": 0,
+    "of": 76,
+    "rate": 0.0,
+    "ci95": [
+      0.0,
+      0.04811526823109757
+    ]
+  },
+  "real_answers_with_a_report": {
+    "count": 0,
+    "of": 43,
+    "rate": 0.0,
+    "ci95": [
+      0.0,
+      0.08201257002322722
+    ]
+  },
+  "reported_figures": [],
+  "changed_figures_caught": {
+    "count": 170,
+    "of": 194,
+    "rate": 0.8762886597938144,
+    "ci95": [
+      0.8225236614690048,
+      0.9154404471916611
+    ]
+  },
+  "caught_by_kind": {
+    "code": {
+      "count": 19,
+      "of": 19,
+      "rate": 1.0,
+      "ci95": [
+        0.8318156346315496,
+        1.0
+      ]
+    },
+    "money": {
+      "count": 50,
+      "of": 57,
+      "rate": 0.8771929824561403,
+      "ci95": [
+        0.7675331041107074,
+        0.939220169964925
+      ]
+    },
+    "phone": {
+      "count": 23,
+      "of": 23,
+      "rate": 1.0,
+      "ci95": [
+        0.8568788745827374,
+        1.0
+      ]
+    },
+    "quantity": {
+      "count": 71,
+      "of": 88,
+      "rate": 0.8068181818181818,
+      "ci95": [
+        0.7122274050169833,
+        0.875741445699903
+      ]
+    },
+    "url": {
+      "count": 7,
+      "of": 7,
+      "rate": 1.0,
+      "ci95": [
+        0.6456611570247934,
+        1.0
+      ]
+    }
+  },
+  "missed": [
+    {
+      "id": "E001",
+      "kind": "quantity",
+      "from": "4-6 digits",
+      "to": "7-6 digits",
+      "caught": false
+    },
+    {
+      "id": "E007",
+      "kind": "quantity",
+      "from": "35 GB",
+      "to": "20 GB",
+      "caught": false
+    },
+    {
+      "id": "E008",
+      "kind": "money",
+      "from": "$15",
+      "to": "$25",
+      "caught": false
+    },
+    {
+      "id": "E014",
+      "kind": "quantity",
+      "from": "10 seconds",
+      "to": "20 seconds",
+      "caught": false
+    },
+    {
+      "id": "E016",
+      "kind": "quantity",
+      "from": "5 GB",
+      "to": "20 GB",
+      "caught": false
+    },
+    {
+      "id": "E016",
+      "kind": "quantity",
+      "from": "5 GB",
+      "to": "2 GB",
+      "caught": false
+    },
+    {
+      "id": "E016",
+      "kind": "money",
+      "from": "$10",
+      "to": "$15",
+      "caught": false
+    },
+    {
+      "id": "E016",
+      "kind": "money",
+      "from": "$10",
+      "to": "$25",
+      "caught": false
+    },
+    {
+      "id": "E024",
+      "kind": "money",
+      "from": "$15",
+      "to": "$25",
+      "caught": false
+    },
+    {
+      "id": "E039",
+      "kind": "quantity",
+      "from": "4-6 digits",
+      "to": "6-6 digits",
+      "caught": false
+    },
+    {
+      "id": "X002",
+      "kind": "money",
+      "from": "$10",
+      "to": "$5",
+      "caught": false
+    },
+    {
+      "id": "X003",
+      "kind": "quantity",
+      "from": "4- to 6-digit",
+      "to": "6- to 6-digit",
+      "caught": false
+    },
+    {
+      "id": "X005",
+      "kind": "money",
+      "from": "$15",
+      "to": "$25",
+      "caught": false
+    },
+    {
+      "id": "X005",
+      "kind": "money",
+      "from": "$35",
+      "to": "$25",
+      "caught": false
+    },
+    {
+      "id": "X006",
+      "kind": "quantity",
+      "from": "0 GB",
+      "to": "10 GB",
+      "caught": false
+    },
+    {
+      "id": "X006",
+      "kind": "quantity",
+      "from": "1 - 0 GB",
+      "to": "16 - 0 GB",
+      "caught": false
+    },
+    {
+      "id": "X006",
+      "kind": "quantity",
+      "from": "1 - 0 GB",
+      "to": "11 - 0 GB",
+      "caught": false
+    },
+    {
+      "id": "X006",
+      "kind": "quantity",
+      "from": "1 - 0 GB",
+      "to": "3 - 0 GB",
+      "caught": false
+    },
+    {
+      "id": "X006",
+      "kind": "quantity",
+      "from": "5 - 0 GB",
+      "to": "6 - 0 GB",
+      "caught": false
+    },
+    {
+      "id": "X006",
+      "kind": "quantity",
+      "from": "5 - 0 GB",
+      "to": "15 - 0 GB",
+      "caught": false
+    },
+    {
+      "id": "X006",
+      "kind": "quantity",
+      "from": "5 - 0 GB",
+      "to": "8 - 0 GB",
+      "caught": false
+    },
+    {
+      "id": "X006",
+      "kind": "quantity",
+      "from": "10 - 2 GB",
+      "to": "20 - 2 GB",
+      "caught": false
+    },
+    {
+      "id": "X006",
+      "kind": "quantity",
+      "from": "20 - 5 GB",
+      "to": "30 - 5 GB",
+      "caught": false
+    },
+    {
+      "id": "X006",
+      "kind": "quantity",
+      "from": "30 GB",
+      "to": "20 GB",
+      "caught": false
+    }
+  ]
+}

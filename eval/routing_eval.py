@@ -4,6 +4,7 @@ Usage:
     python -m eval.routing_eval --router rules --save
     python -m eval.routing_eval --router model --endpoint databricks-gpt-oss-20b --limit 5
     python -m eval.routing_eval --router model --endpoint databricks-gpt-oss-20b --save
+    python -m eval.routing_eval --router agent --save
     python -m eval.routing_eval --compare
 
 The set (``eval/routing_set.jsonl``) was written by an agent that was given the
@@ -15,6 +16,14 @@ are for the clear messages, on which the two annotators agree.
 ``--router rules`` makes no model call. ``--router model`` makes one small call
 per message and saves every prediction, so ``--compare`` can score the rules,
 each model, and rules-then-model without calling anything again.
+
+``--router agent`` runs the whole copilot on each message, as it is deployed:
+the rules first, then the main model, which can open a hand-off itself with
+its tool. It answers "what happens to a hand-off request the rules miss?". It
+counts a hand-off when a ticket was opened and a refusal when the rules
+refused. It cannot see whether the main model declined an override attempt in
+its own words, so its figures for override attempts count only the rules'
+refusals and understate what the copilot does.
 
 A saved result is a first-contact result. If the rules or the router prompt are
 changed after looking at the errors, the set is no longer held out for them,
@@ -206,6 +215,41 @@ def _predict_with_model(
     return predictions
 
 
+def _predict_with_agent(rows: Sequence[Mapping[str, Any]]) -> dict[str, dict[str, Any]]:
+    # Imported here so that scoring the rules, and the tests, do not load the model stack.
+    import mlflow
+    from dotenv import load_dotenv
+
+    from copilot.agent import Copilot
+    from copilot.config import load_settings
+    from copilot.guardrails import FLAG_INJECTION
+
+    load_dotenv()
+    # No ticket is written for a made-up customer, and these runs are not traced.
+    settings = load_settings().model_copy(update={"record_escalations": False})
+    mlflow.tracing.disable()
+    copilot = Copilot(settings)
+    predictions: dict[str, dict[str, Any]] = {}
+    for number, row in enumerate(rows, start=1):
+        started = time.perf_counter()
+        answer = copilot.run(row["text"])
+        if answer.escalated:
+            route = "hand_off"
+        elif FLAG_INJECTION in answer.guardrail_flags:
+            route = "refuse"
+        else:
+            route = "answer"
+        predictions[row["id"]] = {
+            "route": route,
+            "category": None,
+            "tools_used": answer.tools_used,
+            "flags": answer.guardrail_flags,
+            "seconds": round(time.perf_counter() - started, 2),
+        }
+        print(f"  {number}/{len(rows)}", flush=True)
+    return predictions
+
+
 def _saved(results_dir: Path = RESULTS_DIR) -> list[dict[str, Any]]:
     return [
         json.loads(path.read_text(encoding="utf-8"))
@@ -236,7 +280,7 @@ def compare(rows: Sequence[Mapping[str, Any]]) -> dict[str, dict[str, Any]]:
 def main(argv: list[str] | None = None) -> None:
     """Score one router, or compare the saved ones."""
     parser = argparse.ArgumentParser(description=__doc__.split("\n", 1)[0])
-    parser.add_argument("--router", choices=["rules", "model"])
+    parser.add_argument("--router", choices=["rules", "model", "agent"])
     parser.add_argument("--endpoint", help="the serving endpoint, for --router model")
     parser.add_argument("--limit", type=int, default=None, help="score this many, save nothing")
     parser.add_argument("--save", action="store_true", help="write a result file")
@@ -261,6 +305,9 @@ def main(argv: list[str] | None = None) -> None:
     if args.router == "rules":
         name = "rules"
         predictions = _predict_with_rules(chosen)
+    elif args.router == "agent":
+        name = "agent"
+        predictions = _predict_with_agent(chosen)
     else:
         name = args.endpoint.removeprefix("databricks-")
         predictions = _predict_with_model(chosen, args.endpoint)
