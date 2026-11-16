@@ -25,8 +25,8 @@ This repo is being built milestone by milestone. Every number here comes from a 
 | M6 | Results, model and data cards, responsible-AI notes | The cards are written: [model card](docs/MODEL_CARD.md), [data card](docs/DATA_CARD.md), [responsible-AI notes](docs/RESPONSIBLE_AI.md). Not done: the demo video, and a check of the judge against hand labels |
 | M7 | Fix and prove: guard and history fixes, intervals and a CI gate on the evaluation, a public demo that replays real answers | Done |
 | M8 | An evaluation that can fail, and a measured router | Part done: a [held-out routing set](#routing-measured-on-messages-the-rules-had-never-seen) with six routers scored on it, the best one now in the agent, and a [check on every figure](#a-check-on-every-figure-in-an-answer). Not done: the larger evaluation set, the judge checked against hand labels, abstention, tokens per answer |
-| M9 | Live progress, approval before a ticket is written, after-call work | Part done: the interface shows each stage of an answer as the copilot starts it, streamed from the API, and a hand-off is drafted for the agent to approve before anything is written. Not done: a clarifying question for an ambiguous request, after-call wrap-up |
-| M10 | Call assist and compliance review | Not started. Planned in [PLAN.md section 16](PLAN.md) |
+| M9 | Live progress, approval before a ticket is written, after-call work | Built: the interface shows each stage of an answer as the copilot starts it, a hand-off is drafted for the agent to approve before anything is written, and the copilot drafts the after-call wrap-up (how the call ended, what it was about, notes, promises, who owns the next step) for the agent to check and save. Not done: a clarifying question for an ambiguous request, and a pipeline step that wraps up all calls in a batch |
+| M10 | Call assist and compliance review | Part done: [every call is checked for five rule breaches](#checking-every-call-for-a-broken-rule), with recall and precision per rule on held-out wording. Not started: live call assist |
 
 The full specification is in [PLAN.md](PLAN.md).
 
@@ -194,6 +194,27 @@ python -m eval.routing_eval --router rules
 python -m eval.routing_eval --compare
 ```
 
+## Which model answers
+
+The copilot answers with `databricks-gpt-oss-120b`. Four other open-weight models on the workspace support tool calls, so each was put in its place and run on the same 40 questions, with the router on, on 2026-11-16 at commit `8478690`. Two judges scored them (correctness and rules followed), and code scored the rest.
+
+| Answering model | Correct | Rules followed | Right tool | Source cited | Reading level ok | Figures in sources | Reading grade | Median time | 95th percentile |
+|---|---|---|---|---|---|---|---|---|---|
+| `gpt-oss-120b` | 25/31 (63-91%) | 10/11 (62-99%) | 35/37 (82-99%) | 21/22 (78-100%) | 38/40 (83-99%) | 40/40 (91-100%) | 5.6 | 3.8 s | 5.3 s |
+| `llama-4-maverick` | 23/31 (56-87%) | 9/11 (52-95%) | 33/37 (75-96%) | 18/22 (61-93%) | 34/40 (70-93%) | 40/40 (91-100%) | 7.5 | 4.9 s | 6.8 s |
+| `qwen3-next-80b-a3b-instruct` | 23/31 (56-87%) | 9/11 (52-95%) | 31/37 (68-93%) | 16/22 (51-87%) | 37/40 (80-98%) | 39/40 (87-100%) | 5.7 | 3.3 s | 4.7 s |
+| `qwen35-122b-a10b` | 23/31 (56-87%) | 10/11 (62-99%) | 34/37 (78-98%) | 19/22 (66-96%) | 38/40 (83-99%) | 40/40 (91-100%) | 5.7 | 3.8 s | 8.2 s |
+| `gemma-3-12b` | 21/31 (50-82%) | 9/11 (52-95%) | 29/37 (62-89%) | 15/22 (47-84%) | 37/40 (80-98%) | 39/40 (87-100%) | 5.5 | 3.5 s | 5.6 s |
+
+- **Nothing here argues for a change.** `gpt-oss-120b` has the most correct answers, cites its source most often and picks the right tool most often. The gaps to the others are a few rows, and with 31 scored rows a gap of two is inside the intervals, so the honest claim is that no other model is better, not that this one is proven best.
+- **The hand-off decision was right for 38/40, 39/40 in every run**, whichever model answered, because the router makes that decision. The one miss is the same question each time: "What is the account PIN and where does a customer change it?" was handed off as if it asked for one customer's PIN. The router's prompt has since been made clearer on exactly that, which makes this row in-sample for it.
+- **These are not full evaluations.** Only two judges ran, each model ran once, and the judge is known to mark two of these answers wrong when they are right ([ERRORS.md](eval/results/ERRORS.md)). The CI gate ignores these runs.
+- **What is on offer.** The Databricks docs list about 70 hosted models. This Free Edition workspace exposes eight chat endpoints, and three newer open-weight ones from the docs (`glm-5-3`, `deepseek-v4-1-flash-1017`, `kimi-k3`) returned "endpoint not found" when called on 2026-11-15.
+
+```bash
+python -m eval.run_eval --config A --query-type ann --tag models-<name> --llm-endpoint databricks-<name> --judges correctness,expectations_guidelines --limit 5
+```
+
 ## A check on every figure in an answer
 
 A model can write "$7" where its source says "$5", and the citation check passes: the marker still points at a real source. So every answer now has its figures read out and looked up in the text the copilot was given: prices, amounts with a unit, percentages, phone numbers, numbers to dial and web addresses. It is plain code ([src/copilot/claims.py](src/copilot/claims.py)), makes no model call, and runs on every answer. A plainer rewrite of an answer is also thrown away if it changes a figure.
@@ -218,6 +239,31 @@ The second row comes from changing each accepted figure to a different value, th
 
 ```bash
 python -m eval.claim_check_eval
+```
+
+## Checking every call for a broken rule
+
+A supervisor reviews a handful of calls. The copilot checks all of them for five rule breaches, on the redacted transcripts, with plain rules and no model call ([src/copilot/compliance.py](src/copilot/compliance.py)). Most of it needs no language at all: a card placeholder in an agent's turn is a card read back, and a bill-amount placeholder before any answered identity question is a disclosure.
+
+The original 200 calls break no rule, so there was nothing to detect. A generator ([data_gen/synth_breaches.py](data_gen/synth_breaches.py)) writes 382 more, T0201 to T0582, from its own seed: each is clean, a near miss, or breaks exactly one rule at a labelled turn. The near misses are the point: a catalogue price said before verification is not account data, and "the billing team can waive it" is not a promise. Half the calls were used to write the rules. The other half use wording written by a separate agent that never saw the rules, and were scored once, on 2026-11-16 at commit `e95af8a`:
+
+| Rule | Breaches caught | Findings that were right |
+|---|---|---|
+| The agent reads a full card number back | 20/20 (83-100%) | 20/20 (83-100%) |
+| Account work with no identity check anywhere in the call | 26/26 (87-100%) | 26/27 (81-100%) |
+| Account details stated before the identity check | 21/27 (59-90%) | 21/22 (78-100%) |
+| The agent says they have waived or refunded a charge themselves | 15/20 (53-89%) | 15/16 (71-99%) |
+| The agent asks for the full Social Security number | 14/20 (48-86%) | 14/16 (63-97%) |
+
+- **On the 200 original calls, which break no rule, it raised 0 of 200 findings** (95% interval 0 to 1.9%).
+- **The two rules that rest on placeholders caught everything.** The three that rest on wording caught 70 to 78%, against 100% on the half they were written on. That gap is what a rule costs when someone phrases it a new way: "I zeroed that one out" is a promise the rule has no pattern for.
+- **It sees only what the redactor marked.** Three of the six missed disclosures are figures the redactor left in plain text, such as "$33.62 still outstanding" with no cue word near it. That is a redaction gap first and a compliance miss second.
+- **Precision here is not precision in life.** Half of these calls contain a breach. Real calls rarely do, so read the precision column beside the false-alarm rate above.
+- **Limits.** The calls are synthetic and reuse 22 scripted scenarios. The held-out half is not perfectly blind: the writer's summary named a few of its phrasings before the rules were finished, and those phrases were then kept out of the rules. Nothing was changed after the held-out result was seen. A model that reads the turn and the policy would handle the wording rules better; it is not built, and it would need a fresh held-out set.
+
+```bash
+python -m data_gen.synth_breaches
+python -m eval.compliance_eval
 ```
 
 ## Try it
