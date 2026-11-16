@@ -700,13 +700,26 @@ class Redactor:
         """
         mapping = PlaceholderMap()
         results: list[RedactionResult] = []
-        previous: list[str] = []
+        previous = ""
         for turn in turns:
-            words = _context_words(turn)
-            borrowed = previous if len(words) <= _MAX_WORDS_FOR_BORROWED_CONTEXT else []
-            results.append(self.redact(turn, context=borrowed, placeholders=mapping))
-            previous = words
+            results.append(self.redact_after(turn, previous, mapping))
+            previous = turn
         return results
+
+    def redact_after(
+        self, turn: str, previous: str, placeholders: PlaceholderMap
+    ) -> RedactionResult:
+        """Redact one turn of a conversation, given the turn that came before it.
+
+        A short turn is often an answer to the turn before: "the last four of
+        your Social Security number?", then "4821." On its own, "4821." is just
+        a number. So a short turn borrows the previous turn's words as cue
+        words. ``previous`` is the turn as it was said, before redaction.
+        """
+        words = _context_words(turn)
+        short = len(words) <= _MAX_WORDS_FOR_BORROWED_CONTEXT
+        borrowed = _context_words(previous) if short and previous else []
+        return self.redact(turn, context=borrowed, placeholders=placeholders)
 
 
 @lru_cache(maxsize=4)

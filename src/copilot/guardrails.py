@@ -93,6 +93,10 @@ def redact_conversation(
     - One placeholder map is used for the whole conversation, so ``<PERSON_1>``
       means the same person in every turn. Redacting each turn alone would give
       two different people the same placeholder.
+    - A short turn is redacted with the turn before it as context, as a
+      transcript is. "4821." alone is a number; after "the last four of the
+      social?" it is part of a Social Security number. This applies to the
+      question as well, which is often a short reply to the turn before.
     - A turn that tries to override the instructions is left out, with the reply
       that followed it. The check on the question alone would miss it.
     - Citation markers are removed from earlier answers. Source numbers start
@@ -107,9 +111,15 @@ def redact_conversation(
     kept: list[tuple[str, str]] = []
     dropped = False
     skip_reply = False
-    for turn in list(history)[-MAX_HISTORY_TURNS:]:
+    turns = list(history)
+    # The turn just before the ones that are kept still supplies context to the first of them.
+    earlier = turns[: -MAX_HISTORY_TURNS or None][-1:] if len(turns) > MAX_HISTORY_TURNS else []
+    previous = earlier[0].get("content", "") if earlier else ""
+    for turn in turns[-MAX_HISTORY_TURNS:]:
         role = "assistant" if turn.get("role") == "assistant" else "user"
-        text = redactor.redact(turn.get("content", ""), placeholders=placeholders).text
+        said = turn.get("content", "")
+        text = redactor.redact_after(said, previous, placeholders).text
+        previous = said
         if role == "assistant":
             if skip_reply:
                 skip_reply = False
@@ -124,7 +134,7 @@ def redact_conversation(
         text = text.strip()[:MAX_HISTORY_TURN_CHARS]
         if text:
             kept.append((role, text))
-    result = redactor.redact(question, placeholders=placeholders)
+    result = redactor.redact_after(question, previous, placeholders)
     flags = [
         f"{FLAG_PII_IN_QUESTION}:{entity_type}" for entity_type in sorted(result.entity_counts)
     ]
