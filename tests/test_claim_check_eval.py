@@ -29,7 +29,10 @@ CORPUS = {
 
 def test_every_kind_of_figure_can_be_changed_to_a_different_one() -> None:
     rng = random.Random(1)
-    text = "It is $5.00 after 10 days, 5% off. Dial 611 or 1-800-555-0199. See northline.example/outage."
+    text = (
+        "It is $5.00 after 10 days, 5% off. Dial 611 or 1-800-555-0199. "
+        "See northline.example/outage."
+    )
 
     for claim in extract_claims(text):
         changed = changed_text(claim, rng)
