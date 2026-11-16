@@ -129,6 +129,9 @@ class Settings(BaseSettings):
     router_endpoint: str = "databricks-llama-4-maverick"
     # A router that has not answered by now is given up on, and the rules decide.
     router_timeout_seconds: float = Field(default=8.0, gt=0.0)
+    # True: the copilot drafts a hand-off and the agent approves it before anything is
+    # written. False: the copilot writes the ticket itself, as it did at first.
+    handoff_needs_approval: bool = True
     # False makes a hand-off a dry run: the ticket and the script are produced, and
     # nothing is written to the escalations table. Evaluation runs use it.
     record_escalations: bool = True

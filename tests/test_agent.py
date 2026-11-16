@@ -138,6 +138,9 @@ def make_copilot(
 ) -> Copilot:
     # The plain rules route these tests' questions unless a test asks for the model router.
     overrides.setdefault("router", "rules")
+    # Most of these tests are about the copilot writing a ticket itself. The tests of
+    # a hand-off that waits for approval ask for it.
+    overrides.setdefault("handoff_needs_approval", False)
     router_model = overrides.pop("router_model", None)
     settings = Settings(_env_file=None, chunk_config="B", query_type="hybrid", **overrides)  # type: ignore[call-arg]
 
@@ -733,6 +736,81 @@ def test_one_run_s_listener_is_not_left_behind_for_the_next(redactor: Redactor) 
 
     assert seen > 0
     assert len(events) == seen
+
+
+def test_a_hand_off_is_drafted_for_approval_and_nothing_is_written(redactor: Redactor) -> None:
+    sql = FakeSql([])
+    model = FakeModel("unused")
+
+    answer = make_copilot(redactor, model, sql=sql, handoff_needs_approval=True).run(
+        f"Refund the $5 late fee on this customer's account. Their number is {PHONE}."
+    )
+
+    assert sql.calls == []
+    assert model.calls == []
+    assert answer.escalated
+    assert answer.tools_used == ["escalate_to_human"]
+    draft = answer.handoff_draft
+    assert draft is not None
+    assert (draft.category, draft.urgency, draft.team) == ("billing", "normal", "the billing team")
+    assert PHONE not in draft.reason
+    assert "<PHONE_NUMBER_1>" in draft.reason
+    # The answer says a person is needed and that nothing has been sent. It gives no reference.
+    assert "the billing team has to handle it" in answer.answer
+    assert "Nothing has been sent yet" in answer.answer
+    assert "ESC-" not in answer.answer
+    assert PHONE not in last_trace().to_json()
+
+
+def test_a_hand_off_the_model_asks_for_is_drafted_too(redactor: Redactor) -> None:
+    sql = FakeSql([])
+    model = FakeModel(
+        call(
+            "escalate_to_human", reason="Customer wants a port-out PIN", category="account access"
+        ),
+        "I have drafted a hand-off for you to check and open.",
+    )
+
+    answer = make_copilot(redactor, model, sql=sql, handoff_needs_approval=True).run(
+        "The customer wants to leave and needs whatever they need for that."
+    )
+
+    assert sql.calls == []
+    assert answer.escalated
+    assert answer.handoff_draft is not None
+    assert answer.handoff_draft.category == "account_access"
+    assert answer.handoff_draft.reason == "Customer wants a port-out PIN"
+    # The model is told the hand-off is a draft, so that it does not say it is open.
+    tool_result = model.calls[1][-1].content
+    assert "not open" in tool_result
+    assert "ESC-" not in tool_result
+
+
+def test_the_router_s_hand_off_is_drafted_as_well(redactor: Redactor) -> None:
+    router = FakeRouter('{"route": "hand_off", "category": "cancellation"}')
+    sql = FakeSql([])
+
+    answer = make_copilot(
+        redactor,
+        FakeModel("unused"),
+        sql=sql,
+        router="model",
+        router_model=router,
+        handoff_needs_approval=True,
+    ).run("pls cancel his line")
+
+    assert sql.calls == []
+    assert answer.handoff_draft is not None
+    assert answer.handoff_draft.team == "the account team"
+
+
+def test_an_answer_with_no_hand_off_has_no_draft(redactor: Redactor) -> None:
+    model = FakeModel(call("search_kb", query="late fee"), "The late fee is $5 [1].")
+
+    answer = make_copilot(redactor, model, handoff_needs_approval=True).run("Late fee?")
+
+    assert answer.handoff_draft is None
+    assert not answer.escalated
 
 
 class FakeRouter:

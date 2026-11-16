@@ -11,7 +11,13 @@ from fastapi.testclient import TestClient
 import api.main as api_module
 from api.main import Runtime, create_app, start_tracing
 from copilot.config import Settings
-from copilot.schemas import CallSummary, Citation, CopilotAnswer
+from copilot.schemas import (
+    CallSummary,
+    Citation,
+    CopilotAnswer,
+    EscalationTicket,
+    HandOffDraft,
+)
 from copilot.tools import ToolError
 
 PHONE = "480-555-0132"
@@ -32,6 +38,7 @@ class FakeRedactor:
 class FakeTools:
     def __init__(self) -> None:
         self.statements: list[str] = []
+        self.tickets: list[tuple[str, str, str]] = []
 
     def sql(self, statement: str, parameters: Any) -> list[dict[str, Any]]:
         self.statements.append(statement)
@@ -40,6 +47,21 @@ class FakeTools:
         if parameters["transcript_id"][1] == "T0001":
             return [{"turns_json": json.dumps(TURNS)}]
         return []
+
+    def escalate_to_human(
+        self, reason: str, category: str = "other", urgency: str = "normal"
+    ) -> EscalationTicket:
+        self.tickets.append((reason, category, urgency))
+        if urgency not in {"low", "normal", "high"}:
+            raise ToolError("urgency must be low, normal or high")
+        return EscalationTicket(
+            ticket_id="ESC-TEST0001",
+            category=category,
+            urgency=urgency,  # type: ignore[arg-type]
+            reason=reason.replace(PHONE, "<PHONE_NUMBER_1>"),
+            agent_script="I'm passing you to the billing team. Your reference is ESC-TEST0001.",
+            recorded=True,
+        )
 
     def summarize_call(self, transcript_id: str) -> CallSummary:
         if transcript_id == "T12":
@@ -122,6 +144,70 @@ def test_meta_describes_what_is_running() -> None:
     assert len(meta["examples"]) == 4
     assert {example["tool"] for example in meta["examples"]} == {t["name"] for t in meta["tools"]}
     assert "synthetic" in meta["disclaimer"]
+
+
+# --- a hand-off the agent approved ----------------------------------------------------------
+
+
+def test_an_answer_carries_the_hand_off_draft_for_the_agent_to_approve() -> None:
+    draft = HandOffDraft(category="billing", reason="Refund the late fee", team="the billing team")
+    drafted = CopilotAnswer(
+        answer="This needs the billing team. I have drafted the hand-off.",
+        tools_used=["escalate_to_human"],
+        escalated=True,
+        guardrail_flags=["account_action_requested"],
+        handoff_draft=draft,
+    )
+    client, copilot = client_for(drafted)
+
+    body = client.post("/api/ask", json={"question": "Refund it.", "history": []}).json()
+
+    assert body["handoff_draft"] == {
+        "category": "billing",
+        "urgency": "normal",
+        "reason": "Refund the late fee",
+        "team": "the billing team",
+    }
+    assert [step["title"] for step in body["steps"] if step["tool"]] == ["Drafted a hand-off"]
+    # Asking wrote nothing.
+    assert copilot.tools.tickets == []
+    plain = client.post("/api/ask", json={"question": "Late fee?", "history": []})
+    assert "handoff_draft" in plain.json()
+
+
+def test_approving_a_hand_off_writes_it_and_returns_the_reference_and_the_script() -> None:
+    client, copilot = client_for()
+
+    response = client.post(
+        "/api/handoffs",
+        json={"reason": f"Refund the late fee. Number {PHONE}.", "category": "billing"},
+    )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["ticket_id"] == "ESC-TEST0001"
+    assert body["recorded"] is True
+    assert "ESC-TEST0001" in body["agent_script"]
+    assert PHONE not in body["reason"]
+    assert copilot.tools.tickets == [(f"Refund the late fee. Number {PHONE}.", "billing", "normal")]
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        {"reason": "", "category": "billing"},
+        {"reason": "x" * 501},
+        {"reason": "Refund it", "urgency": "soon"},
+        {"category": "billing"},
+    ],
+)
+def test_a_hand_off_that_is_not_well_formed_is_refused_and_nothing_is_written(
+    body: dict[str, str],
+) -> None:
+    client, copilot = client_for()
+
+    assert client.post("/api/handoffs", json=body).status_code == 422
+    assert copilot.tools.tickets == []
 
 
 # --- asking ------------------------------------------------------------------------------------

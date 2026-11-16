@@ -34,7 +34,13 @@ from copilot.agent import Copilot
 from copilot.config import Settings, load_settings
 from copilot.guardrails import redact_question
 from copilot.prompts import PROMPT_VERSION
-from copilot.schemas import CallSummary, Citation, CopilotAnswer
+from copilot.schemas import (
+    CallSummary,
+    Citation,
+    CopilotAnswer,
+    EscalationTicket,
+    HandOffDraft,
+)
 from copilot.steps import Step, describe_steps
 from copilot.tools import ToolError
 from copilot.transcripts import get_transcript, list_transcripts
@@ -93,9 +99,19 @@ class AskResponse(BaseModel):
     tools_used: list[str]
     escalated: bool
     guardrail_flags: list[str]
+    # A hand-off the copilot drafted. It is written only by POST /api/handoffs.
+    handoff_draft: HandOffDraft | None = None
     seconds: float
     trace_id: str | None
     steps: list[Step]
+
+
+class HandOffRequest(BaseModel):
+    """A hand-off the agent has checked, perhaps changed, and approved."""
+
+    reason: str = Field(min_length=1, max_length=500)
+    category: str = Field(default="other", max_length=40)
+    urgency: Literal["low", "normal", "high"] = "normal"
 
 
 class FeedbackRequest(BaseModel):
@@ -298,6 +314,29 @@ def create_app(
                 result = tools.summarize_call(transcript_id)
                 span.set_outputs(result.model_dump())
             return result
+        except ToolError as error:
+            raise _tool_error(error) from error
+
+    @app.post("/api/handoffs")
+    def open_hand_off(body: HandOffRequest) -> EscalationTicket:
+        """Write the hand-off the agent approved, and return its reference and script.
+
+        This is the only place the web interface writes a ticket. The copilot
+        itself only drafts one. The reason may have been edited by the agent, so
+        it is redacted again by the tool before it is stored, and it is never put
+        on the trace as it arrived: the span records the ticket, whose reason is
+        the redacted one.
+        """
+        tools = runtime.copilot.tools
+        try:
+            if not runtime.tracing:
+                return tools.escalate_to_human(body.reason, body.category, body.urgency)
+            with mlflow.start_span(name="open_hand_off", span_type=SpanType.TOOL) as span:
+                span.set_inputs({"category": body.category, "urgency": body.urgency})
+                mlflow.update_current_trace(tags={"source": "web", "view": "hand_off"})
+                ticket = tools.escalate_to_human(body.reason, body.category, body.urgency)
+                span.set_outputs(ticket.model_dump())
+            return ticket
         except ToolError as error:
             raise _tool_error(error) from error
 

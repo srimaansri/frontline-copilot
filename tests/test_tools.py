@@ -371,6 +371,24 @@ def test_escalation_still_returns_a_ticket_when_the_write_fails() -> None:
     assert "ESC-TEST0001" in ticket.agent_script
 
 
+def test_a_draft_is_what_a_ticket_would_hold_and_writes_nothing() -> None:
+    sql = FakeSql([])
+    tools = make_tools(sql=sql)
+
+    draft = tools.draft_hand_off("Customer at 480-555-0132 wants a refund", "Billing ", "high")
+
+    assert sql.calls == []
+    assert draft.model_dump() == {
+        "category": "billing",
+        "urgency": "high",
+        "reason": "Customer at <PHONE_NUMBER_1> wants a refund",
+        "team": "the billing team",
+    }
+    assert tools.draft_hand_off("x", "made up").category == "other"
+    with pytest.raises(ToolError, match="urgency"):
+        tools.draft_hand_off("x", "billing", "soon")  # type: ignore[arg-type]
+
+
 def test_a_dry_run_hand_off_writes_nothing_and_reads_like_a_real_one() -> None:
     sql = FakeSql([])
     settings = Settings(_env_file=None, record_escalations=False)  # type: ignore[call-arg]

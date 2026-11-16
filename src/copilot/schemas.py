@@ -84,6 +84,20 @@ class EscalationTicket(BaseModel):
     recorded: bool
 
 
+class HandOffDraft(BaseModel):
+    """A hand-off the copilot proposes. Nothing is written until a person approves it.
+
+    ``reason`` is redacted. ``team`` is who would pick the ticket up, for showing.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    category: str
+    urgency: Urgency = "normal"
+    reason: str
+    team: str
+
+
 class CopilotAnswer(BaseModel):
     """What ``run_copilot`` returns. The app, the evaluation and the tests all read this."""
 
@@ -97,6 +111,9 @@ class CopilotAnswer(BaseModel):
     # The question as the copilot processed it: redacted, with placeholder numbers that
     # agree with the rest of the conversation.
     question_as_processed: str = ""
+    # A hand-off waiting for the agent's approval. When this is set, ``escalated``
+    # means the copilot decided a person is needed, and no ticket exists yet.
+    handoff_draft: HandOffDraft | None = None
     # The text the answer was checked against: sources, tool results and the
     # conversation. Kept for evaluation only, so it is left out when the answer is
     # written to a trace or sent to the interface.

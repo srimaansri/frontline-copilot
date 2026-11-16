@@ -1,6 +1,6 @@
 """The plain-language account of what the copilot did, built from an answer's own record."""
 
-from copilot.schemas import Citation, CopilotAnswer
+from copilot.schemas import Citation, CopilotAnswer, HandOffDraft
 from copilot.steps import describe_steps
 
 CITATION = Citation(number=1, title="Late payment fee", url="https://x.example/late-payment-fee")
@@ -156,6 +156,24 @@ def test_the_hand_off_step_carries_the_ticket_reference_from_the_answer() -> Non
     assert all(step.reference is None for step in describe_steps(without_one))
     # Only a hand-off step may carry a reference, whatever the answer text says.
     assert all(step.reference is None for step in describe_steps(searched))
+
+
+def test_a_drafted_hand_off_is_not_reported_as_opened() -> None:
+    draft = HandOffDraft(category="billing", reason="Refund the fee", team="the billing team")
+    steps = describe_steps(
+        answer(
+            tools_used=["escalate_to_human"],
+            escalated=True,
+            guardrail_flags=["account_action_requested"],
+            handoff_draft=draft,
+        )
+    )
+
+    hand_off = next(step for step in steps if step.tool == "escalate_to_human")
+    assert hand_off.title == "Drafted a hand-off"
+    assert hand_off.detail == "Nothing is written until you approve it."
+    assert hand_off.status == "notice"
+    assert hand_off.reference is None
 
 
 def test_a_dropped_earlier_message_is_reported() -> None:

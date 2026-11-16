@@ -59,7 +59,7 @@ from copilot.prompts import (
 from copilot.redaction import Redactor, get_redactor
 from copilot.retriever import Retriever
 from copilot.router import ROUTER_PROMPT_VERSION, route_with_model
-from copilot.schemas import Citation, CopilotAnswer, KBHit, Urgency
+from copilot.schemas import Citation, CopilotAnswer, HandOffDraft, KBHit, Urgency
 from copilot.tools import ESCALATION_TEAMS, ToolError, Tools
 
 logger = logging.getLogger(__name__)
@@ -79,6 +79,12 @@ EMPTY_ANSWER = (
 )
 NO_ARTICLE_FOUND = "No help article matched this search."
 NO_PLAN_FOUND = "No row in the plan catalogue matched."
+# What the model is told when it asks for a hand-off and the agent has to approve it.
+HAND_OFF_DRAFTED = (
+    "The hand-off is drafted and waits for the agent to approve it. It is not open and "
+    "has no reference yet. Say that you have drafted a hand-off for the agent to check "
+    "and open. Do not say that it is open."
+)
 
 # Tool definitions in the OpenAI function format. The schemas are kept flat on
 # purpose: the serving endpoint accepts no `anyOf` or `pattern`, which is what a
@@ -200,7 +206,7 @@ TOOL_LABELS: dict[str, str] = {
     TOOL_SEARCH_KB: "Searching the help articles",
     TOOL_PLAN_DETAILS: "Looking up the plan catalogue",
     TOOL_SUMMARIZE_CALL: "Summarizing the call",
-    TOOL_ESCALATE: "Opening a hand-off",
+    TOOL_ESCALATE: "Preparing a hand-off",
 }
 
 # The listener of the run in progress. A context variable, because one copilot serves
@@ -243,6 +249,8 @@ class CopilotState(TypedDict):
     cited: list[int]
     # Everything a figure in the answer may come from: the sources and the conversation.
     evidence: list[str]
+    # A hand-off waiting for the agent's approval, if one was drafted.
+    handoff_draft: HandOffDraft | None
 
 
 def format_sources(hits: Sequence[KBHit], first_number: int) -> str:
@@ -385,6 +393,7 @@ class Copilot:
             "draft": "",
             "cited": [],
             "evidence": [],
+            "handoff_draft": None,
         }
         with mlflow.start_span(name="run_copilot", span_type=SpanType.AGENT) as root:
             root.set_inputs({"question": question, "history_turns": len(history)})
@@ -421,6 +430,7 @@ class Copilot:
                 guardrail_flags=final["flags"],
                 question_as_processed=question,
                 evidence=final["evidence"],
+                handoff_draft=final["handoff_draft"],
             )
             root.set_outputs(answer.model_dump())
         return answer
@@ -508,7 +518,14 @@ class Copilot:
         return {"route": "agent", "category": "other", "flags": list(state["flags"])}
 
     def _escalate(self, state: CopilotState) -> dict[str, Any]:
-        """Open a hand-off without asking the model. The request itself is the reason."""
+        """Hand the request to a person without asking the model. The request is the reason.
+
+        With ``handoff_needs_approval`` the hand-off is drafted and nothing is
+        written: the agent sees the draft, can change it, and opens it. A ticket
+        is someone else's work queue, and a copilot that fills it by itself on a
+        misread request is a nuisance nobody can undo. Without the setting the
+        ticket is written here.
+        """
         category = state["category"]
         # "usage" is a kind of request the guard tells apart; the team that handles it
         # is the one that handles account access.
@@ -516,12 +533,29 @@ class Copilot:
         team_category = category if category in ESCALATION_TEAMS else "account_access"
         if category == "other":
             team_category = "other"
+        cannot = CANNOT_DO.get(category, CANNOT_DO["other"])
+        if self.settings.handoff_needs_approval:
+            with mlflow.start_span(name=f"tool_{TOOL_ESCALATE}", span_type=SpanType.TOOL) as span:
+                span.set_inputs({"category": team_category, "urgency": "normal", "written": False})
+                proposal = self._get_tools().draft_hand_off(state["question"], team_category)
+                span.set_outputs(proposal.model_dump())
+            draft = (
+                f"{cannot} This needs a human specialist: {proposal.team} has to handle it.\n\n"
+                "I have drafted the hand-off. Check it below, then open it. "
+                "Nothing has been sent yet."
+            )
+            return {
+                "draft": draft,
+                "escalated": True,
+                "tools_used": [TOOL_ESCALATE],
+                "sources": [draft],
+                "handoff_draft": proposal,
+            }
         with mlflow.start_span(name=f"tool_{TOOL_ESCALATE}", span_type=SpanType.TOOL) as span:
             span.set_inputs({"category": team_category, "urgency": "normal"})
             ticket = self._get_tools().escalate_to_human(state["question"], team_category)
             span.set_outputs(ticket.model_dump())
         team = ESCALATION_TEAMS[ticket.category]
-        cannot = CANNOT_DO.get(category, CANNOT_DO["other"])
         draft = (
             f"{cannot} This needs a human specialist: {team} has to handle it.\n\n"
             f'What to tell the customer: "{ticket.agent_script}"'
@@ -593,6 +627,7 @@ class Copilot:
         tools_used = list(state["tools_used"])
         flags = list(state["flags"])
         escalated = state["escalated"]
+        drafts: list[HandOffDraft] = []
         results: list[ToolMessage] = []
         for call in getattr(state["messages"][-1], "tool_calls", None) or []:
             name = str(call["name"])
@@ -610,7 +645,7 @@ class Copilot:
                 }
                 span.set_inputs(dict(arguments))
                 try:
-                    text, did_escalate = self._call_tool(name, arguments, retrieved)
+                    text, did_escalate = self._call_tool(name, arguments, retrieved, drafts)
                 except ToolError as error:
                     # The message can quote an argument back, so it is checked as well.
                     text = self._for_trace(f"Tool error: {error}", known)
@@ -636,15 +671,22 @@ class Copilot:
             "tools_used": tools_used,
             "flags": flags,
             "escalated": escalated,
+            # The first draft is the one shown: one answer asks the agent for one decision.
+            "handoff_draft": state["handoff_draft"] or (drafts[0] if drafts else None),
         }
 
     def _call_tool(
-        self, name: str, arguments: Mapping[str, Any], retrieved: list[KBHit]
+        self,
+        name: str,
+        arguments: Mapping[str, Any],
+        retrieved: list[KBHit],
+        drafts: list[HandOffDraft],
     ) -> tuple[str, bool]:
-        """Run one tool. Returns its result as text, and whether it opened a hand-off.
+        """Run one tool. Returns its result as text, and whether it handed off to a person.
 
         ``retrieved`` is extended in place with new search hits, so that source
-        numbers stay the same across several searches in one answer.
+        numbers stay the same across several searches in one answer. ``drafts``
+        is given a hand-off that was drafted for the agent to approve.
         """
         tools = self._get_tools()
         if name == TOOL_SEARCH_KB:
@@ -679,11 +721,13 @@ class Copilot:
                 urgency = "low"
             elif requested == "high":
                 urgency = "high"
-            ticket = tools.escalate_to_human(
-                str(arguments.get("reason") or "The agent asked for a hand-off."),
-                str(arguments.get("category") or "other"),
-                urgency,
-            )
+            reason = str(arguments.get("reason") or "The agent asked for a hand-off.")
+            category = str(arguments.get("category") or "other")
+            if self.settings.handoff_needs_approval:
+                proposal = tools.draft_hand_off(reason, category, urgency)
+                drafts.append(proposal)
+                return json.dumps({**proposal.model_dump(), "status": HAND_OFF_DRAFTED}), True
+            ticket = tools.escalate_to_human(reason, category, urgency)
             return json.dumps(ticket.model_dump()), True
         raise ToolError(f"There is no tool called {name[:40]!r}")
 

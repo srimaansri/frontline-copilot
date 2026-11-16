@@ -24,6 +24,10 @@ router: model
 router_endpoint: databricks-llama-4-maverick
 router_timeout_seconds: 8
 
+# A hand-off is drafted and shown to the agent, and a ticket is written only when
+# they approve it. Set to false for the copilot to write the ticket itself.
+handoff_needs_approval: true
+
 # Retrieval. `chunk_config` and `query_type` start at the experiment baseline
 # (PLAN.md §9.4) and are updated once real eval runs pick a winner.
 vs_endpoint: frontline-vs
