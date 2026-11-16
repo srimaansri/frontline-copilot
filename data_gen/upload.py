@@ -24,6 +24,10 @@ from copilot.config import Settings, get_settings
 DATA_FILES: tuple[tuple[Path, str], ...] = (
     (Path("data/synthetic/kb_articles.jsonl"), "kb_articles.jsonl"),
     (Path("data/raw/transcripts.jsonl"), "transcripts.jsonl"),
+    # The calls with a seeded rule breach, T0201 on (`python -m data_gen.synth_breaches`).
+    # Their labels are not uploaded: they score the checker, on the laptop, and the
+    # workspace has no use for them.
+    (Path("data/raw/compliance/transcripts.jsonl"), "compliance_transcripts.jsonl"),
     (Path("data/raw/pii_labels.jsonl"), "pii_labels.jsonl"),
     (Path("data/raw/plans.csv"), "plans.csv"),
 )
