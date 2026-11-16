@@ -11,16 +11,12 @@ from data_gen.kb_topics import TOPICS
 from data_gen.plans import PLANS
 from eval.run_eval import (
     EVAL_ID_TAG,
-    SUMMARY_HEADER,
     aggregate,
     as_pass,
     load_eval_set,
-    mean_text,
-    rate_text,
     rows_by_eval_id,
     rows_without_answer,
     scores_from_trace,
-    summary_row,
     to_records,
 )
 from eval.scorers import (
@@ -445,7 +441,11 @@ def test_aggregate_counts_only_rows_that_have_a_value() -> None:
 
     metrics = aggregate(per_row)
 
-    assert metrics["correctness"] == {"kind": "pass_fail", "passed": 1, "scored": 2, "rate": 0.5}
+    correctness = metrics["correctness"]
+    assert (correctness["passed"], correctness["scored"], correctness["rate"]) == (1, 2, 0.5)
+    # One of two is weak evidence, and the interval says so.
+    assert correctness["ci95"][0] < 0.1
+    assert correctness["ci95"][1] > 0.9
     assert metrics["reading_level_ok"]["scored"] == 2
     assert metrics["latency_ms"] == {
         "kind": "numeric",
@@ -453,17 +453,8 @@ def test_aggregate_counts_only_rows_that_have_a_value() -> None:
         "mean": 2000.0,
         "median": 2000.0,
         "p90": 3000.0,
+        "p95": 3000.0,
     }
-
-
-def test_rate_and_mean_text() -> None:
-    metrics = aggregate([{"correctness": "yes", "grade": 4.0}, {"correctness": "no", "grade": 6.0}])
-
-    assert rate_text(metrics, "correctness") == "1/2"
-    assert rate_text(metrics, "grade") == "n/a"
-    assert rate_text(metrics, "missing") == "n/a"
-    assert mean_text(metrics, "grade") == "5.00 (n=2)"
-    assert mean_text(metrics, "correctness") == "n/a"
 
 
 def test_scores_from_trace_skips_errors_and_non_feedback() -> None:
@@ -502,29 +493,3 @@ def test_rows_without_an_answer_are_named() -> None:
 
     assert rows_without_answer(rows, scored) == ["E002", "E003", "E004"]
     assert rows_without_answer(rows[:1], scored) == []
-
-
-def test_summary_row_matches_the_header_columns() -> None:
-    report = {
-        "run_at": "2026-11-14T12:00:00Z",
-        "tag": "baseline",
-        "chunk_config": "A",
-        "query_type": "ann",
-        "rows": 2,
-        "rows_reviewed": 0,
-        "git_sha": "abcdef1234567890",
-        "metrics": aggregate(
-            [
-                {"expected_source_retrieved": True, "correctness": "yes", "latency_ms": 2000.0},
-                {"expected_source_retrieved": False, "correctness": "yes", "latency_ms": 4000.0},
-            ]
-        ),
-    }
-
-    row = summary_row(report, "file.json")
-
-    header_columns = SUMMARY_HEADER.strip().splitlines()[-2].count("|")
-    assert row.count("|") == header_columns
-    assert "| baseline | A | ann | 2 | 0/2 | 1/2 |" in row
-    assert "| 2/2 |" in row
-    assert "| 3.0 | `abcdef1` | file.json |" in row

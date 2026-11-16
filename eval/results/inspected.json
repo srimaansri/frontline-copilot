@@ -1,0 +1,31 @@
+{
+  "_about": "What was found when a failed row was read by hand. Keyed by result file, then row id. A row that is not here was not inspected, or what was found was not recorded against that row. The findings are the ones written up in README.md at the time of each run.",
+  "2026-11-14_m3-kb-v2-B-ann.json": {
+    "E017": {
+      "cause": "retrieval",
+      "found": "With small chunks and vector search, the article on scam messages was not retrieved, so the answer left out where to forward the message."
+    }
+  },
+  "2026-11-15_m4-full-A-ann.json": {
+    "E013": {
+      "cause": "judge",
+      "found": "The judge wanted the wording \"support asks for it\". The answer said the PIN is used \"to prove who you are when you call support\"."
+    },
+    "E014": {
+      "cause": "judge",
+      "found": "The answer contains every expected fact. The judge objected that the article lists more steps."
+    },
+    "E015": {
+      "cause": "judge",
+      "found": "The answer contains every expected fact. The judge objected that the article lists more steps."
+    },
+    "E025": {
+      "cause": "tool choice",
+      "found": "The plan question was answered from the help articles and not from the plan table. The answer was right."
+    },
+    "E043": {
+      "cause": "not decided",
+      "found": "The judge found the summary did not say the customer had already typed in their card number."
+    }
+  }
+}

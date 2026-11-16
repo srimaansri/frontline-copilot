@@ -74,6 +74,15 @@ jobs:
       - name: Tests
         run: pytest --cov=src/copilot
 
+      # Neither step calls a model. The gate fails when the newest saved evaluation
+      # was made with a different evaluation set or prompt from the ones in this
+      # commit, or is below the thresholds in PLAN.md section 9.5.
+      - name: Evaluation gate
+        run: python -m eval.gate
+
+      - name: Evaluation reports are up to date
+        run: python -m eval.report --check
+
   web:
     name: Web interface (typecheck, lint, build)
     runs-on: ubuntu-latest

@@ -7,9 +7,9 @@ Usage:
 Always try ``--limit 5`` first. A full pass makes several hundred model calls, and
 on Free Edition a pass that dies on the daily quota costs a day.
 
-``--save`` writes ``eval/results/<date>_<tag>.json`` and adds a row to
-``eval/results/SUMMARY.md``. It refuses to run from a dirty working tree, so every
-saved number has a real git SHA.
+``--save`` writes ``eval/results/<date>_<tag>.json`` and rebuilds
+``eval/results/SUMMARY.md`` and ``ERRORS.md`` from every saved run. It refuses to run
+from a dirty working tree, so every saved number has a real git SHA.
 """
 
 from __future__ import annotations
@@ -26,21 +26,12 @@ from pathlib import Path
 from typing import Any
 
 from eval.redaction_eval import _git, _sha256
+from eval.report import as_pass
+from eval.report import write as write_reports
+from eval.stats import percentile, wilson_interval
 
 EVAL_SET = Path("eval/eval_set.jsonl")
 RESULTS_DIR = Path("eval/results")
-SUMMARY_FILE = RESULTS_DIR / "SUMMARY.md"
-SUMMARY_HEADER = (
-    "# Evaluation runs\n\n"
-    "One row per saved run. Rates are shown as passed/scored. Full detail is in the JSON "
-    "file named in the last column.\n\n"
-    "| Date | Tag | Config | Query | Rows | Reviewed | Source retrieved | Chunk relevance | "
-    "Context sufficient | Grounded | Correct | Relevant | Reading level ok | "
-    "Median latency (s) | Commit | File | Rules followed | Hand-off correct | Right tool | "
-    "No PII leak |\n"
-    "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|\n"
-)
-
 EVAL_ID_TAG = "eval_id"
 
 # Defaults for a workspace with a low requests-per-second limit on its model
@@ -57,9 +48,6 @@ EVAL_ENVIRONMENT: dict[str, str] = {
     # trace cost. Not needed here.
     "MLFLOW_MODEL_CATALOG_URI": "",
 }
-
-_PASS_VALUES = {"yes", "true", "pass"}
-_FAIL_VALUES = {"no", "false", "fail"}
 
 
 def load_eval_set(
@@ -96,26 +84,13 @@ def to_records(
     ]
 
 
-def as_pass(value: Any) -> bool | None:
-    """Read a pass/fail value. Returns None for anything that is not pass/fail."""
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, str):
-        lowered = value.strip().lower()
-        if lowered in _PASS_VALUES:
-            return True
-        if lowered in _FAIL_VALUES:
-            return False
-    return None
-
-
 def aggregate(per_row: Sequence[Mapping[str, Any]]) -> dict[str, dict[str, Any]]:
     """Summarise each scorer over the rows that have a value for it.
 
-    A pass/fail scorer gets ``passed``, ``scored`` and ``rate``. A numeric one
-    gets ``scored``, ``mean``, ``median`` and ``p90``. Rows where a scorer
-    produced nothing or errored are simply not counted, and ``scored`` says how
-    many were.
+    A pass/fail scorer gets ``passed``, ``scored``, ``rate`` and ``ci95``, the
+    95% Wilson interval of the rate. A numeric one gets ``scored``, ``mean``,
+    ``median``, ``p90`` and ``p95``. Rows where a scorer produced nothing or
+    errored are simply not counted, and ``scored`` says how many were.
     """
     values: dict[str, list[Any]] = defaultdict(list)
     for scores in per_row:
@@ -132,6 +107,7 @@ def aggregate(per_row: Sequence[Mapping[str, Any]]) -> dict[str, dict[str, Any]]
                 "passed": passed,
                 "scored": len(items),
                 "rate": passed / len(items),
+                "ci95": list(wilson_interval(passed, len(items))),
             }
             continue
         numbers = sorted(float(item) for item in items if isinstance(item, int | float))
@@ -142,45 +118,9 @@ def aggregate(per_row: Sequence[Mapping[str, Any]]) -> dict[str, dict[str, Any]]
                 "mean": statistics.fmean(numbers),
                 "median": statistics.median(numbers),
                 "p90": numbers[min(len(numbers) - 1, int(0.9 * len(numbers)))],
+                "p95": percentile(numbers, 0.95),
             }
     return summary
-
-
-def rate_text(metrics: Mapping[str, Mapping[str, Any]], name: str) -> str:
-    """``passed/scored`` for a pass/fail scorer, or ``n/a`` when it was not run."""
-    metric = metrics.get(name)
-    if not metric or metric.get("kind") != "pass_fail":
-        return "n/a"
-    return f"{metric['passed']}/{metric['scored']}"
-
-
-def summary_row(report: Mapping[str, Any], file_name: str) -> str:
-    """One Markdown table row for ``SUMMARY.md``."""
-    metrics = report["metrics"]
-    latency = metrics.get("latency_ms", {}).get("median")
-    latency_text = f"{latency / 1000:.1f}" if latency is not None else "n/a"
-    return (
-        f"| {report['run_at'][:10]} | {report['tag']} | {report['chunk_config']} | "
-        f"{report['query_type']} | {report['rows']} | "
-        f"{report['rows_reviewed']}/{report['rows']} | "
-        f"{rate_text(metrics, 'expected_source_retrieved')} | "
-        f"{mean_text(metrics, 'retrieval_relevance/precision')} | "
-        f"{rate_text(metrics, 'retrieval_sufficiency')} | "
-        f"{rate_text(metrics, 'retrieval_groundedness')} | {rate_text(metrics, 'correctness')} | "
-        f"{rate_text(metrics, 'relevance_to_query')} | {rate_text(metrics, 'reading_level_ok')} | "
-        f"{latency_text} | `{report['git_sha'][:7]}` | {file_name} | "
-        f"{rate_text(metrics, 'expectations_guidelines')} | "
-        f"{rate_text(metrics, 'escalation_correct')} | {rate_text(metrics, 'tool_choice')} | "
-        f"{rate_text(metrics, 'no_pii_leak')} |\n"
-    )
-
-
-def mean_text(metrics: Mapping[str, Mapping[str, Any]], name: str) -> str:
-    """Mean of a numeric scorer to two places, or ``n/a`` when it was not run."""
-    metric = metrics.get(name)
-    if not metric or metric.get("kind") != "numeric":
-        return "n/a"
-    return f"{metric['mean']:.2f} (n={metric['scored']})"
 
 
 def rows_by_eval_id(traces: Sequence[Any]) -> dict[str, dict[str, Any]]:
@@ -375,11 +315,10 @@ def main(argv: list[str] | None = None) -> None:
         (RESULTS_DIR / file_name).write_text(
             json.dumps(report, indent=2) + "\n", encoding="utf-8", newline="\n"
         )
-        if not SUMMARY_FILE.exists():
-            SUMMARY_FILE.write_text(SUMMARY_HEADER, encoding="utf-8", newline="\n")
-        with SUMMARY_FILE.open("a", encoding="utf-8", newline="\n") as handle:
-            handle.write(summary_row(report, file_name))
         print(f"\nsaved {RESULTS_DIR / file_name}")
+        # SUMMARY.md and ERRORS.md are rebuilt from every saved run, this one included.
+        for path in write_reports():
+            print(f"wrote {path.as_posix()}")
 
 
 if __name__ == "__main__":
