@@ -19,6 +19,20 @@ export function hostOf(url: string): string {
   }
 }
 
+/**
+ * A moment such as "2026-11-16T14:02:11Z" as a date and a time in the reader's
+ * own time zone and language, or the text itself if it cannot be read.
+ */
+export function formatDateTime(iso: string): string {
+  const moment = new Date(iso);
+  if (Number.isNaN(moment.getTime())) {
+    return iso;
+  }
+  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(
+    moment,
+  );
+}
+
 /** "1 source", "2 sources". */
 export function countOf(count: number, singular: string, plural = `${singular}s`): string {
   return `${count} ${count === 1 ? singular : plural}`;

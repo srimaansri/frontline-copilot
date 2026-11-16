@@ -309,6 +309,12 @@ export const mockApi: Api = {
     );
   },
 
+  async getSavedWrapUp(_transcriptId, signal) {
+    await wait(200, signal);
+    // The demo saves nothing, so no call in it has a saved wrap-up to read back.
+    return null;
+  },
+
   async openHandOff(_request, signal) {
     await wait(600, signal);
     // The demo reaches no server, so it cannot write a ticket, and it does not pretend to.

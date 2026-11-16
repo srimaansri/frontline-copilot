@@ -235,6 +235,12 @@ export interface SavedWrapUp extends WrapUpFields {
   transcript_id: string;
   /** False when the record could not be written. */
   recorded: boolean;
+  /**
+   * When it was saved, in UTC, such as "2026-11-16T14:02:11Z". On a record read
+   * back from the server. The reply to a save does not carry it. Who saved it is
+   * not here: the server does not record that.
+   */
+  saved_at?: string;
 }
 
 export interface FeedbackRequest {
@@ -278,6 +284,8 @@ export interface Api {
     request: WrapUpFields,
     signal?: AbortSignal,
   ): Promise<SavedWrapUp>;
+  /** The wrap-up most recently saved for a call, as it was stored. Null when none was. */
+  getSavedWrapUp(transcriptId: string, signal?: AbortSignal): Promise<SavedWrapUp | null>;
   /** Write the hand-off the agent approved. This is the only call that opens a ticket. */
   openHandOff(request: HandOffRequest, signal?: AbortSignal): Promise<HandOffTicket>;
   sendFeedback(request: FeedbackRequest, signal?: AbortSignal): Promise<FeedbackResponse>;

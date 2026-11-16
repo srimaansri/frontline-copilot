@@ -106,6 +106,13 @@ function CallDetail({ call, summary, onSummarize, wrapUps, onBack }: CallDetailP
     backButton.current?.focus();
   }, []);
 
+  // A call that already has a saved wrap-up shows it, not the offer of an empty draft.
+  // The look is made once for each call; opening the call again asks nothing.
+  const { load: loadWrapUp } = wrapUps;
+  useEffect(() => {
+    loadWrapUp(transcriptId);
+  }, [loadWrapUp, transcriptId]);
+
   // The copilot's two pieces of work on a call, one under the other on the sunken tone.
   const summaryPanel = (
     <>
@@ -129,6 +136,9 @@ function CallDetail({ call, summary, onSummarize, wrapUps, onBack }: CallDetailP
           }}
           onReopen={() => {
             wrapUps.reopen(transcriptId);
+          }}
+          onRecheck={() => {
+            wrapUps.recheck(transcriptId);
           }}
         />
       </div>

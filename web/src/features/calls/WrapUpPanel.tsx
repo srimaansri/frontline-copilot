@@ -7,7 +7,9 @@ import { ErrorNotice } from "@/components/shared/ErrorNotice";
 import { PlaceholderText } from "@/components/shared/PlaceholderText";
 import { WorkingCard } from "@/components/shared/WorkingCard";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useCycle } from "@/hooks/useCycle";
+import { formatDateTime } from "@/lib/format";
 
 import { CallStatus } from "./CallStatus";
 import { Field, MoodLabel, RelatedArticles } from "./SummaryPanel";
@@ -385,6 +387,11 @@ function SavedRecord({ saved, onReopen }: SavedRecordProps) {
         <span className="font-mono text-meta font-semibold text-ink-2">{saved.wrapup_id}</span>
       </p>
       <p className="mt-2 text-ui text-ink-2">
+        {saved.saved_at !== undefined && (
+          <>
+            Saved on <time dateTime={saved.saved_at}>{formatDateTime(saved.saved_at)}</time>.{" "}
+          </>
+        )}
         This is the record as it was saved. Personal details in it were replaced.
       </p>
       <dl className="mt-4 grid gap-4">
@@ -438,26 +445,58 @@ function Articles({ draft }: { draft: CallWrapUp }) {
 }
 
 export interface WrapUpPanelProps {
-  /** Undefined until a wrap-up has been asked for. */
+  /** Undefined when the call has no saved wrap-up and none has been asked for. */
   state: WrapUpState | undefined;
   onDraft: () => void;
   onChange: (form: WrapUpForm) => void;
   onSave: (form: WrapUpForm) => void;
   onReopen: () => void;
+  /** Look again for a saved wrap-up, after a look that failed. */
+  onRecheck?: () => void;
 }
 
 /**
- * After-call work for one call: a button that asks the copilot to draft the
- * record, then the draft as a form the agent edits and saves, then the record
- * as it was saved.
+ * After-call work for one call. If a wrap-up was already saved for it, that
+ * record is shown. If not: a button that asks the copilot to draft the record,
+ * then the draft as a form the agent edits and saves, then the record as it was
+ * saved.
  */
-export function WrapUpPanel({ state, onDraft, onChange, onSave, onReopen }: WrapUpPanelProps) {
+export function WrapUpPanel({
+  state,
+  onDraft,
+  onChange,
+  onSave,
+  onReopen,
+  onRecheck,
+}: WrapUpPanelProps) {
+  const unknown = state?.status === "unknown";
   return (
     <section aria-label="Call wrap-up">
       <h3 className="display-title text-ink">Wrap-up</h3>
       <div aria-live="polite">
-        {state === undefined && (
+        {state?.status === "checking" && (
           <>
+            <p className="sr-only">Looking for a saved wrap-up.</p>
+            {/* The only sign of loading in this panel, so it pulses. */}
+            <Skeleton className="mt-4 h-24" />
+          </>
+        )}
+        {(state === undefined || unknown) && (
+          <>
+            {unknown && (
+              // A draft is still offered, but not as if the call were known to have no record.
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
+                <p className="min-w-0 flex-1 basis-56 text-ink">
+                  Could not find out whether a wrap-up was already saved for this call. If one
+                  was, saving a new one puts a newer record beside it.
+                </p>
+                {onRecheck && (
+                  <Button size="sm" variant="quiet" onClick={onRecheck}>
+                    Look again
+                  </Button>
+                )}
+              </div>
+            )}
             <p className="mt-2 text-ink-2">
               Get a draft of the record for this call: how it ended, what it was about, notes, what
               was promised and the next step. You check it before it is saved.

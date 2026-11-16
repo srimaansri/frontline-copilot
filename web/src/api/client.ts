@@ -199,6 +199,10 @@ const httpApi: Api = {
       `/calls/${encodeURIComponent(transcriptId)}/wrapup/save`,
       post(body, signal),
     ),
+  getSavedWrapUp: (transcriptId, signal) =>
+    request<SavedWrapUp | null>(`/calls/${encodeURIComponent(transcriptId)}/wrapup/saved`, {
+      signal,
+    }),
   openHandOff: (body: HandOffRequest, signal) =>
     request<HandOffTicket>("/handoffs", post(body, signal)),
   sendFeedback: (body: FeedbackRequest, signal) =>
@@ -220,6 +224,8 @@ function mockApi(): Api {
     draftWrapUp: async (transcriptId, signal) => (await load()).draftWrapUp(transcriptId, signal),
     saveWrapUp: async (transcriptId, body, signal) =>
       (await load()).saveWrapUp(transcriptId, body, signal),
+    getSavedWrapUp: async (transcriptId, signal) =>
+      (await load()).getSavedWrapUp(transcriptId, signal),
     openHandOff: async (body, signal) => (await load()).openHandOff(body, signal),
     sendFeedback: async (body, signal) => (await load()).sendFeedback(body, signal),
   };

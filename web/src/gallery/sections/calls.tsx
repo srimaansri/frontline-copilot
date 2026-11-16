@@ -439,7 +439,14 @@ function draftState(changes: Partial<Extract<WrapUpState, { status: "draft" }>> 
 
 function WrapUpSpecimen({ state }: { state: WrapUpState | undefined }) {
   return (
-    <WrapUpPanel state={state} onDraft={noop} onChange={noop} onSave={noop} onReopen={noop} />
+    <WrapUpPanel
+      state={state}
+      onDraft={noop}
+      onChange={noop}
+      onSave={noop}
+      onReopen={noop}
+      onRecheck={noop}
+    />
   );
 }
 
@@ -523,6 +530,22 @@ export function WrapUpSection() {
             },
           }}
         />
+      </Row>
+      <Row label="looking for a saved wrap-up, as a call opens" on="sunken" className="max-w-100">
+        <WrapUpSpecimen state={{ status: "checking" }} />
+      </Row>
+      <Row label="saved earlier, read back when the call is opened" on="sunken" className="max-w-100">
+        <WrapUpSpecimen
+          state={{
+            status: "saved",
+            draft: WRAP_UP,
+            // When it was saved comes with a record read back from the server.
+            saved: { ...SAVED_WRAP_UP, saved_at: "2026-11-14T16:42:05Z" },
+          }}
+        />
+      </Row>
+      <Row label="could not find out whether one was saved" on="sunken" className="max-w-100">
+        <WrapUpSpecimen state={{ status: "unknown" }} />
       </Row>
       <Row label="changing a saved wrap-up" on="sunken" className="max-w-100">
         <WrapUpSpecimen state={draftState({ startedFrom: "saved" })} />

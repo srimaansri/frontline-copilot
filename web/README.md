@@ -56,7 +56,7 @@ What the demo shows:
 - a request that never answers: send exactly `/pending`;
 - the Calls list, as the live API returned it when the recording was made. The calls named in `eval/record_demo.py` have a transcript and a summary. Any other call shows the error state, which names the calls that are recorded.
 - the rule check. A recording holds, for each call in the list, the rules that fired on it, and for each recorded call its findings. The recorder also records one call for each rule in which that rule is broken (`BREACH_CALL_IDS`), so there is something to see. A recording made before the rule check was added has none of this. The demo then says so in two places: under the filters, where the switch for flagged calls would be, and on an opened call. It never shows a call as checked and clean when it was not checked.
-- a wrap-up draft for a recorded call, if the recording has one under `wrapups`. A recording made before the recorder drafted wrap-ups has none, and "Wrap up" then says so. Pressing "Save wrap-up" in the demo says that the demo does not save wrap-ups, which is true.
+- a wrap-up draft for a recorded call, if the recording has one under `wrapups`. A recording made before the recorder drafted wrap-ups has none, and "Wrap up" then says so. Pressing "Save wrap-up" in the demo says that the demo does not save wrap-ups, which is true. In the live app a call that already has a saved wrap-up opens on that record, with when it was saved. The demo saves nothing, so no call in it has one.
 
 A normal build does not include the recording.
 

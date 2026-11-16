@@ -1,12 +1,19 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import { api, errorMessage } from "@/api/client";
 import type { CallWrapUp, SavedWrapUp } from "@/api/types";
 
 import { fieldsFrom, formFrom, type WrapUpForm } from "./wrapUpForm";
 
-/** Where the wrap-up of one call stands. A call nobody has wrapped up has no state. */
+/**
+ * Where the wrap-up of one call stands. A call that has no saved wrap-up, and
+ * that nobody has asked a draft for, has no state.
+ */
 export type WrapUpState =
+  /** The page is finding out whether a wrap-up was already saved for the call. */
+  | { status: "checking" }
+  /** It could not find out. A draft is offered, and the page says it does not know. */
+  | { status: "unknown" }
   | { status: "loading" }
   | { status: "error"; message: string }
   | {
@@ -25,13 +32,42 @@ export type WrapUpState =
 
 const NOT_SAVED = "The wrap-up could not be saved. Your changes are still here. Please try again.";
 
+/** What a state function returns to leave the state as it is, or `REMOVE` to drop it. */
+const REMOVE = null;
+type Next = (current: WrapUpState | undefined) => WrapUpState | undefined | typeof REMOVE;
+
 /**
- * The wrap-up of every call that has been asked for one, by call id. It is kept
- * here, above the call that is on show, so that choosing another call and
- * coming back does not lose a draft or what was typed over it.
+ * A saved record as the draft it stands for, for a call whose wrap-up was read
+ * back and not drafted in this visit. It has no related articles: those come
+ * with a draft, and nothing was drafted.
+ */
+function draftOf(saved: SavedWrapUp): CallWrapUp {
+  return {
+    transcript_id: saved.transcript_id,
+    disposition: saved.disposition,
+    category: saved.category,
+    notes: saved.notes,
+    promises: saved.promises,
+    follow_up: saved.follow_up,
+    sentiment: saved.sentiment,
+    related_articles: [],
+  };
+}
+
+/**
+ * The wrap-up of every call that has one saved or has been asked for one, by
+ * call id. It is kept here, above the call that is on show, so that choosing
+ * another call and coming back does not lose a draft or what was typed over it.
  */
 export function useWrapUps(): {
   wrapUps: Record<string, WrapUpState>;
+  /**
+   * Look for a wrap-up already saved for the call, once, when the call is first
+   * opened. If there is one, it is shown as saved, in place of the offer of a draft.
+   */
+  load: (transcriptId: string) => void;
+  /** Look again, after a look that failed. */
+  recheck: (transcriptId: string) => void;
   /** Ask the copilot for a draft. Nothing is saved. */
   draft: (transcriptId: string) => void;
   change: (transcriptId: string, form: WrapUpForm) => void;
@@ -41,15 +77,57 @@ export function useWrapUps(): {
   reopen: (transcriptId: string) => void;
 } {
   const [wrapUps, setWrapUps] = useState<Record<string, WrapUpState>>({});
+  // The calls already looked up, so that opening a call again asks nothing.
+  const looked = useRef(new Set<string>());
 
-  const update = useCallback(
-    (transcriptId: string, next: (current: WrapUpState | undefined) => WrapUpState | undefined) => {
-      setWrapUps((all) => {
-        const state = next(all[transcriptId]);
-        return state === undefined ? all : { ...all, [transcriptId]: state };
-      });
+  const update = useCallback((transcriptId: string, next: Next) => {
+    setWrapUps((all) => {
+      const state = next(all[transcriptId]);
+      if (state === undefined) {
+        return all;
+      }
+      if (state === REMOVE) {
+        return Object.fromEntries(Object.entries(all).filter(([id]) => id !== transcriptId));
+      }
+      return { ...all, [transcriptId]: state };
+    });
+  }, []);
+
+  const load = useCallback(
+    (transcriptId: string) => {
+      if (looked.current.has(transcriptId)) {
+        return;
+      }
+      looked.current.add(transcriptId);
+      // A draft the agent has already asked for is never replaced by this look.
+      const waiting = (current: WrapUpState | undefined) =>
+        current === undefined || current.status === "unknown" || current.status === "checking";
+      update(transcriptId, (current) => (waiting(current) ? { status: "checking" } : undefined));
+      api.getSavedWrapUp(transcriptId).then(
+        (saved) => {
+          update(transcriptId, (current) => {
+            if (current?.status !== "checking") {
+              return undefined;
+            }
+            return saved === null ? REMOVE : { status: "saved", draft: draftOf(saved), saved };
+          });
+        },
+        () => {
+          update(transcriptId, (current) =>
+            current?.status === "checking" ? { status: "unknown" } : undefined,
+          );
+        },
+      );
     },
-    [],
+    [update],
+  );
+
+  const recheck = useCallback(
+    (transcriptId: string) => {
+      looked.current.delete(transcriptId);
+      load(transcriptId);
+    },
+    [load],
   );
 
   const draft = useCallback(
@@ -108,6 +186,20 @@ export function useWrapUps(): {
               ? { status: "saved", draft: current.draft, saved }
               : undefined,
           );
+          // The reply to a save does not say when the record was stored. The record
+          // itself does, so it is read back. If that fails, what is shown stays right.
+          api.getSavedWrapUp(transcriptId).then(
+            (stored) => {
+              update(transcriptId, (current) =>
+                current?.status === "saved" &&
+                stored !== null &&
+                stored.wrapup_id === current.saved.wrapup_id
+                  ? { ...current, saved: stored }
+                  : undefined,
+              );
+            },
+            () => undefined,
+          );
         },
         (error: unknown) => {
           failed(errorMessage(error));
@@ -139,5 +231,5 @@ export function useWrapUps(): {
     [update],
   );
 
-  return { wrapUps, draft, change, save, reopen };
+  return { wrapUps, load, recheck, draft, change, save, reopen };
 }
