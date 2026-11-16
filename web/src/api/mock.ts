@@ -19,6 +19,7 @@ import type {
   Api,
   AskRequest,
   AskResponse,
+  AssistState,
   CallListItem,
   CallSummary,
   CallTranscript,
@@ -41,6 +42,11 @@ interface Recording {
   summaries: Record<string, CallSummary>;
   /** The wrap-up the live copilot drafted for each recorded call. Absent from older recordings. */
   wrapups?: Record<string, CallWrapUp>;
+  /**
+   * What call assist showed at each turn of each recorded call, first turn first.
+   * Absent from recordings made before the recorder followed calls with assist.
+   */
+  assist?: Record<string, AssistState[]>;
 }
 
 // The file is JSON, so its literal types are wider than the API's unions.
@@ -131,6 +137,8 @@ export const mockSummaries: Record<string, CallSummary> = RECORDING.summaries;
 export const mockTranscripts: Record<string, CallTranscript> = RECORDING.transcripts;
 /** Empty until a recording is made with a version of the recorder that drafts wrap-ups. */
 export const mockWrapUps: Record<string, CallWrapUp> = RECORDING.wrapups ?? {};
+/** Empty until a recording is made with a version of the recorder that follows calls with assist. */
+export const mockAssist: Record<string, AssistState[]> = RECORDING.assist ?? {};
 
 // --- The demo API ---------------------------------------------------------------------------
 
@@ -280,6 +288,31 @@ export const mockApi: Api = {
         "and shows it as saved.",
       503,
     );
+  },
+
+  async assistCall(transcriptId, turn, signal) {
+    const id = normalizeId(transcriptId);
+    const states = mockAssist[id];
+    if (!states) {
+      await wait(400, signal);
+      // No state is made up here: a call the live copilot did not follow has none.
+      const recordedIds = Object.keys(mockAssist);
+      throw new ApiError(
+        recordedIds.length === 0
+          ? "The demo has no recorded call assist yet. In the live app, Cue follows the call " +
+            "as it is replayed."
+          : `The demo has no recorded call assist for call ${id}. It has one for these calls: ${recordedIds.join(", ")}.`,
+        404,
+      );
+    }
+    const state = states[turn];
+    if (!state) {
+      await wait(400, signal);
+      throw new ApiError(`Call ${id} has ${String(states.length)} turns. It has no turn ${String(turn)}.`, 400);
+    }
+    // The wait is the time the live copilot took over this turn, up to the longest wait.
+    await wait(Math.min(state.seconds, LONGEST_WAIT_SECONDS) * 1000, signal);
+    return state;
   },
 
   async openHandOff(_request, signal) {
