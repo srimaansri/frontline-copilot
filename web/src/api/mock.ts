@@ -19,6 +19,7 @@ import type {
   Api,
   AskRequest,
   AskResponse,
+  CallFindings,
   CallListItem,
   CallSummary,
   CallTranscript,
@@ -41,6 +42,12 @@ interface Recording {
   summaries: Record<string, CallSummary>;
   /** The wrap-up the live copilot drafted for each recorded call. Absent from older recordings. */
   wrapups?: Record<string, CallWrapUp>;
+  /**
+   * What the rule check found in each recorded call. Absent from a recording made
+   * before the check was wired in; the calls of such a recording carry no
+   * `findings` either.
+   */
+  findings?: Record<string, CallFindings>;
 }
 
 // The file is JSON, so its literal types are wider than the API's unions.
@@ -131,6 +138,8 @@ export const mockSummaries: Record<string, CallSummary> = RECORDING.summaries;
 export const mockTranscripts: Record<string, CallTranscript> = RECORDING.transcripts;
 /** Empty until a recording is made with a version of the recorder that drafts wrap-ups. */
 export const mockWrapUps: Record<string, CallWrapUp> = RECORDING.wrapups ?? {};
+/** Empty until a recording is made with a version of the recorder that runs the rule check. */
+export const mockFindings: Record<string, CallFindings> = RECORDING.findings ?? {};
 
 // --- The demo API ---------------------------------------------------------------------------
 
@@ -243,6 +252,24 @@ export const mockApi: Api = {
       throw notRecorded(id);
     }
     return transcript;
+  },
+
+  async getFindings(transcriptId, signal) {
+    await wait(300, signal);
+    const id = normalizeId(transcriptId);
+    const found = mockFindings[id];
+    if (!found) {
+      // No finding is made up here, and "nothing found" is not claimed either: a call
+      // the recorder did not run the check on has no result at all.
+      const recordedIds = Object.keys(mockFindings);
+      throw new ApiError(
+        recordedIds.length === 0
+          ? "The demo has no recorded rule check: its recording was made before the check was added. In the live app, the rules read the call when you open it."
+          : `The demo has no recorded rule check for call ${id}. It has one for these calls: ${recordedIds.join(", ")}.`,
+        404,
+      );
+    }
+    return found;
   },
 
   async summarizeCall(transcriptId, signal) {

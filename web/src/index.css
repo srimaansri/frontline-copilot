@@ -967,6 +967,16 @@
 }
 
 /*
+ * The outline of a turn the rule check points at: the colour of "needs a
+ * person", as heavy as a control's border, and drawn inside the box so the
+ * turn keeps its size.
+ */
+@utility edge-flag {
+  border-color: var(--warn);
+  box-shadow: inset 0 0 0 0.5px var(--warn);
+}
+
+/*
  * Display type: Schibsted Grotesk at the three display sizes. The weight and
  * the tracking are set here once, per size, and nowhere else. The face has no
  * optical-size axis, so the tracking does that work: the larger the size, the

@@ -7,12 +7,14 @@
 import {
   mockAnswer,
   mockCalls,
+  mockFindings,
   mockMeta,
   mockSummaries,
   mockTranscripts,
   mockWrapUps,
 } from "@/api/mock";
 import type {
+  CallFindings,
   CallListItem,
   CallSummary,
   CallTranscript,
@@ -209,6 +211,93 @@ export const CALL_ROWS: CallListItem[] = [
 ];
 
 export const FIRST_CALL: CallListItem = required(mockCalls[0], "calls");
+
+/**
+ * A call in which the agent reads a card number back and then says they waived
+ * a fee, as the redacted table would hold it. It was written for the gallery,
+ * as the wrap-up above was, and is used only until the recording holds a call
+ * with a finding. The findings under it are what `copilot.compliance.check_call`
+ * returns for exactly these turns.
+ */
+const FLAGGED_TRANSCRIPT_SPECIMEN: CallTranscript = {
+  transcript_id: "T9001",
+  turns: [
+    {
+      speaker: "agent",
+      text: "Thank you for calling Northline Wireless, this is <PERSON_1>. How can I help you today?",
+    },
+    { speaker: "customer", text: "Hi, I want to pay my bill by card." },
+    {
+      speaker: "agent",
+      text: "Sure. First I need to verify a few things. Can I have your account number, please?",
+    },
+    { speaker: "customer", text: "It's <ACCOUNT_NUMBER_1>." },
+    { speaker: "agent", text: "Thank you. Which card would you like to use?" },
+    { speaker: "customer", text: "It's <CREDIT_CARD_1>." },
+    { speaker: "agent", text: "Let me read that back: <CREDIT_CARD_1>. Is that right?" },
+    { speaker: "customer", text: "Yes. Can you take the late fee off as well?" },
+    { speaker: "agent", text: "I've waived that fee for you." },
+    { speaker: "customer", text: "Great, thank you." },
+  ],
+};
+
+const FINDINGS_SPECIMEN: CallFindings = {
+  transcript_id: "T9001",
+  findings: [
+    {
+      rule: "card_read_back",
+      turn_index: 6,
+      reason: "The agent says a full payment card number.",
+    },
+    {
+      rule: "unauthorized_promise",
+      turn_index: 8,
+      reason:
+        "The agent says they removed, refunded or credited a charge themselves, or promises it. Only the billing team can.",
+    },
+  ],
+  rules_checked: [
+    "disclosure_before_verification",
+    "verification_skipped",
+    "card_read_back",
+    "unauthorized_promise",
+    "full_ssn_requested",
+  ],
+};
+
+/** A recorded call with a finding and its recorded transcript, if the recording has one. */
+const RECORDED_FLAGGED = Object.values(mockFindings).find(
+  (result) => result.findings.length > 0 && mockTranscripts[result.transcript_id] !== undefined,
+);
+
+/** True when the rule-check specimens show a recording and not the specimen above. */
+export const FINDINGS_ARE_RECORDED = RECORDED_FLAGGED !== undefined;
+
+export const FINDINGS: CallFindings = RECORDED_FLAGGED ?? FINDINGS_SPECIMEN;
+
+export const FLAGGED_TRANSCRIPT: CallTranscript =
+  (RECORDED_FLAGGED && mockTranscripts[RECORDED_FLAGGED.transcript_id]) ??
+  FLAGGED_TRANSCRIPT_SPECIMEN;
+
+/** The rule check's answer for a call in which no rule fired. */
+export const NO_FINDINGS: CallFindings = {
+  transcript_id: TRANSCRIPT.transcript_id,
+  findings: [],
+  rules_checked: FINDINGS.rules_checked,
+};
+
+/** The flagged call as a row of the list. */
+export const FLAGGED_CALL_ROW: CallListItem = mockCalls.find(
+  (call) => call.transcript_id === FINDINGS.transcript_id && (call.findings?.length ?? 0) > 0,
+) ?? {
+  transcript_id: FINDINGS.transcript_id,
+  category: "billing",
+  resolution: "resolved",
+  findings: [...new Set(FINDINGS.findings.map((finding) => finding.rule))],
+};
+
+/** How many calls of the recording the rule check flagged. 0 for a recording with no check. */
+export const FLAGGED_COUNT = mockCalls.filter((call) => (call.findings?.length ?? 0) > 0).length;
 
 export const CALL_COUNTS = {
   all: mockCalls.length,

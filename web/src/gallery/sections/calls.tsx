@@ -3,11 +3,13 @@ import type { ReactNode } from "react";
 import {
   CallList,
   CallRow,
+  FlaggedFilter,
   ResolutionFilter,
   SearchField,
   type CallFilter,
 } from "@/features/calls/CallList";
 import { CallHeader, NothingSelected } from "@/features/calls/CallsView";
+import { FindingsPanel } from "@/features/calls/FindingsPanel";
 import { SummaryPanel } from "@/features/calls/SummaryPanel";
 import { TranscriptPanel } from "@/features/calls/TranscriptPanel";
 import type { WrapUpState } from "@/features/calls/useWrapUps";
@@ -18,7 +20,13 @@ import {
   CALL_COUNTS,
   CALL_ROWS,
   ERROR_MESSAGE,
+  FINDINGS,
+  FINDINGS_ARE_RECORDED,
   FIRST_CALL,
+  FLAGGED_CALL_ROW,
+  FLAGGED_COUNT,
+  FLAGGED_TRANSCRIPT,
+  NO_FINDINGS,
   noop,
   SAVED_WRAP_UP,
   summaryWith,
@@ -53,7 +61,7 @@ export function CallRowsSection() {
     <GallerySection
       id="call-rows"
       title="Calls list row"
-      note="One row per call, with each of the three endings. The selected row takes the cobalt tint with an ink outline, so the status colours stay legible."
+      note="One row per call, with each of the three endings. The selected row takes the cobalt tint with an ink outline, so the status colours stay legible. A call the rule check fired on carries a flag, which is not a status shape: the shapes say how a call ended."
     >
       <Row label="rest: resolved, escalated, unresolved">
         <ListColumn>
@@ -78,7 +86,46 @@ export function CallRowsSection() {
           </ListColumn>
         </Row>
       ))}
+      <Row label="flagged by the rule check">
+        <ListColumn>
+          <ul className="border-b border-line">
+            <CallRow call={FLAGGED_CALL_ROW} selected={false} onSelect={noop} />
+          </ul>
+        </ListColumn>
+      </Row>
+      <Row label="flagged: hover">
+        <ListColumn>
+          <Force state="hover">
+            <ul className="border-b border-line">
+              <CallRow call={FLAGGED_CALL_ROW} selected={false} onSelect={noop} />
+            </ul>
+          </Force>
+        </ListColumn>
+      </Row>
+      <Row label="flagged and selected">
+        <ListColumn>
+          <ul className="border-b border-line">
+            <CallRow call={FLAGGED_CALL_ROW} selected onSelect={noop} />
+          </ul>
+        </ListColumn>
+      </Row>
     </GallerySection>
+  );
+}
+
+function FlaggedSpecimen({
+  on = false,
+  count = FLAGGED_COUNT || 1,
+  checked = true,
+}: {
+  on?: boolean;
+  count?: number | null;
+  checked?: boolean;
+}) {
+  return (
+    <div className="w-full max-w-88 bg-surface">
+      <FlaggedFilter on={on} onChange={noop} count={count} checked={checked} />
+    </div>
   );
 }
 
@@ -95,7 +142,7 @@ export function FiltersSection() {
     <GallerySection
       id="filters"
       title="Filter chips"
-      note="Four filters with their counts. The one that is on is filled with ink, and its status shape becomes a plain silhouette."
+      note="Four filters with their counts. The one that is on is filled with ink, and its status shape becomes a plain silhouette. Under them, a switch that keeps only the calls the rule check flagged; it works with the four, not in place of them."
     >
       <Row label="All is on">
         <FilterSpecimen value="all" />
@@ -120,6 +167,33 @@ export function FiltersSection() {
       </Row>
       <Row label="while the calls load">
         <FilterSpecimen value="all" loaded={false} />
+      </Row>
+      <Row label="flagged: off">
+        <FlaggedSpecimen />
+      </Row>
+      <Row label="flagged: on">
+        <FlaggedSpecimen on />
+      </Row>
+      <Row label="flagged: hover">
+        <Force state="hover">
+          <FlaggedSpecimen />
+        </Force>
+      </Row>
+      <Row label="flagged: pressed">
+        <Force state="pressed">
+          <FlaggedSpecimen />
+        </Force>
+      </Row>
+      <Row label="flagged: focus">
+        <Force state="focus">
+          <FlaggedSpecimen />
+        </Force>
+      </Row>
+      <Row label="flagged: while the calls load">
+        <FlaggedSpecimen count={null} />
+      </Row>
+      <Row label="no rule check has run">
+        <FlaggedSpecimen count={0} checked={false} />
       </Row>
     </GallerySection>
   );
@@ -180,11 +254,20 @@ export function TranscriptSection() {
     <GallerySection
       id="transcript"
       title="Transcript bubbles"
-      note="The agent on the left on the surface, the customer on the right on the sunken tone. Placeholders are redaction bars."
+      note="The agent on the left on the surface, the customer on the right on the sunken tone. Placeholders are redaction bars. A turn the rule check points at is outlined in the colour of 'needs a person' and says which rule and which turn."
     >
       <Row label="a call">
         <div className="max-w-3xl">
           <TranscriptPanel transcript={{ status: "ready", data: TRANSCRIPT }} onRetry={noop} />
+        </div>
+      </Row>
+      <Row label="turns the rule check points at">
+        <div className="max-w-3xl">
+          <TranscriptPanel
+            transcript={{ status: "ready", data: FLAGGED_TRANSCRIPT }}
+            onRetry={noop}
+            findings={FINDINGS.findings}
+          />
         </div>
       </Row>
       <Row label="loading">
@@ -199,6 +282,109 @@ export function TranscriptSection() {
               status: "error",
               message: "No transcript was found with the id T0003.",
             }}
+            onRetry={noop}
+          />
+        </div>
+      </Row>
+    </GallerySection>
+  );
+}
+
+export function RuleCheckSection() {
+  const source = FINDINGS_ARE_RECORDED
+    ? "The findings are the live rule check's, from the recording."
+    : "The call shown was written for the gallery, and its findings are what the rule check returns for it: the recording has no rule check yet.";
+  const turnCount = FLAGGED_TRANSCRIPT.turns.length;
+  return (
+    <GallerySection
+      id="rule-check"
+      title="Rule check"
+      note={`What fixed rules found in a call, over its transcript. Soft-square corners: it is not something Cue wrote. With a finding it takes the tint of the hand-off banner, because a person should read the turn. It always says that it is a rule check and that it misses things. ${source}`}
+    >
+      <Row label="findings">
+        <div className="max-w-3xl">
+          <FindingsPanel
+            findings={{ status: "ready", data: FINDINGS }}
+            turnCount={turnCount}
+            onGoToTurn={noop}
+            onRetry={noop}
+          />
+        </div>
+      </Row>
+      <Row label="go to turn: hover">
+        <div className="max-w-3xl">
+          <Force state="hover" nth={0}>
+            <FindingsPanel
+              findings={{ status: "ready", data: FINDINGS }}
+              turnCount={turnCount}
+              onGoToTurn={noop}
+              onRetry={noop}
+            />
+          </Force>
+        </div>
+      </Row>
+      <Row label="go to turn: focus">
+        <div className="max-w-3xl">
+          <Force state="focus" nth={0}>
+            <FindingsPanel
+              findings={{ status: "ready", data: FINDINGS }}
+              turnCount={turnCount}
+              onGoToTurn={noop}
+              onRetry={noop}
+            />
+          </Force>
+        </div>
+      </Row>
+      <Row label="no rule fired">
+        <div className="max-w-3xl">
+          <FindingsPanel
+            findings={{ status: "ready", data: NO_FINDINGS }}
+            turnCount={TRANSCRIPT.turns.length}
+            onGoToTurn={noop}
+            onRetry={noop}
+          />
+        </div>
+      </Row>
+      <Row label="a finding past the end of the transcript on show">
+        <div className="max-w-3xl">
+          <FindingsPanel
+            findings={{ status: "ready", data: FINDINGS }}
+            turnCount={1}
+            onGoToTurn={noop}
+            onRetry={noop}
+          />
+        </div>
+      </Row>
+      <Row label="narrow, as on a phone">
+        <div className="max-w-80">
+          <FindingsPanel
+            findings={{ status: "ready", data: FINDINGS }}
+            turnCount={turnCount}
+            onGoToTurn={noop}
+            onRetry={noop}
+          />
+        </div>
+      </Row>
+      <Row label="checking">
+        <div className="max-w-3xl">
+          <FindingsPanel
+            findings={{ status: "loading" }}
+            turnCount={null}
+            onGoToTurn={noop}
+            onRetry={noop}
+          />
+        </div>
+      </Row>
+      <Row label="the demo has no recorded rule check">
+        <div className="max-w-3xl">
+          <FindingsPanel
+            findings={{
+              status: "error",
+              message:
+                "The demo has no recorded rule check: its recording was made before the check was added. In the live app, the rules read the call when you open it.",
+            }}
+            turnCount={null}
+            onGoToTurn={noop}
             onRetry={noop}
           />
         </div>

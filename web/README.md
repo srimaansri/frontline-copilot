@@ -3,7 +3,7 @@
 The browser front end for Frontline Copilot. In the interface the copilot has a name, Cue. It is a single page with two views:
 
 - **Ask**: a conversation with the copilot. Each answer shows its sources and the route of steps the copilot took to produce it.
-- **Calls**: the redacted call transcripts, with a summary on request, and an after-call wrap-up that the copilot drafts and the agent checks and saves.
+- **Calls**: the redacted call transcripts, with a summary on request, and an after-call wrap-up that the copilot drafts and the agent checks and saves. A rule check marks the calls in which a rule may have been broken: the list flags them and can show only those, and an opened call names each finding in plain words and takes you to the turn it points at. It is fixed rules with no model in them, and the page says each time that they miss things.
 
 It talks to the Python API under `/api`. The API contract is typed in `src/api/types.ts`. The look is described in [`DESIGN.md`](DESIGN.md).
 
@@ -54,7 +54,8 @@ What the demo shows:
 - hand-offs that were dry runs: the reference in a recorded hand-off was made up for that answer and no ticket was written;
 - a failed request: send exactly `/error` to see the error message and its retry button;
 - a request that never answers: send exactly `/pending`;
-- the Calls list (200 rows). The calls named in `eval/record_demo.py` have a transcript and a summary. Any other call shows the error state, which names the calls that are recorded.
+- the Calls list, as the live API returned it when the recording was made. The calls named in `eval/record_demo.py` have a transcript and a summary. Any other call shows the error state, which names the calls that are recorded.
+- the rule check. A recording holds, for each call in the list, the rules that fired on it, and for each recorded call its findings. The recorder also records one call for each rule in which that rule is broken (`BREACH_CALL_IDS`), so there is something to see. A recording made before the rule check was added has none of this. The demo then says so in two places: under the filters, where the switch for flagged calls would be, and on an opened call. It never shows a call as checked and clean when it was not checked.
 - a wrap-up draft for a recorded call, if the recording has one under `wrapups`. A recording made before the recorder drafted wrap-ups has none, and "Wrap up" then says so. Pressing "Save wrap-up" in the demo says that the demo does not save wrap-ups, which is true.
 
 A normal build does not include the recording.
@@ -74,7 +75,7 @@ Then open `http://localhost:5173/gallery.html`. It draws every component in ever
 - `?theme=light` or `?theme=dark` pins the theme, whatever is stored or set in the system, and writes nothing to storage.
 - `?section=<id>` shows one section. For example `http://localhost:5173/gallery.html?theme=dark&section=route`.
 
-The section ids: `tokens`, `buttons`, `view-switcher`, `theme-toggle`, `tags`, `status`, `citation`, `redaction`, `signal-bars`, `composer`, `question`, `answer`, `answer-footer`, `sources`, `route`, `examples`, `running`, `call-rows`, `filters`, `search`, `transcript`, `summary`, `wrap-up`, `calls-states`, `icons`.
+The section ids: `tokens`, `buttons`, `view-switcher`, `theme-toggle`, `tags`, `status`, `citation`, `redaction`, `signal-bars`, `composer`, `question`, `answer`, `answer-footer`, `sources`, `route`, `examples`, `running`, `call-rows`, `filters`, `search`, `rule-check`, `transcript`, `summary`, `wrap-up`, `calls-states`, `icons`.
 
 A hover, a focus ring or a press is shown in a still picture by writing `data-force="hover"`, `"focus"` or `"pressed"` on the element. Every such style in the app answers to that attribute as well as to the real state.
 
@@ -93,6 +94,7 @@ In the demo build the app opens directly on a recorded state, with no delay, so 
 | `http://localhost:5173/?demo=pending` | A question still waiting for its answer |
 | `http://localhost:5173/?demo=calls` | The Calls view with a call open |
 | `http://localhost:5173/?demo=calls-summary` | The same, with its summary |
+| `http://localhost:5173/?demo=calls-findings` | The Calls view with only the flagged calls listed and one of them open, its findings over the transcript. With a recording that has no rule check, an ordinary call opens and the page says that none was recorded |
 
 Add `&theme=light` or `&theme=dark` to pin the theme.
 
@@ -134,7 +136,7 @@ src/
     shared/     Pieces both views use: the SIM card, signal bars, redaction bars, error notice
   features/
     ask/        Conversation, question box, answer card, sources, the route of steps
-    calls/      Call list, transcript, summary
+    calls/      Call list, transcript, the rule check's findings, summary, wrap-up
   gallery/      The gallery: its sections, its fixtures, and the wrapper that pins a state
   hooks/        useLoad (fetching), useTheme, useMediaQuery, useCycle
   lib/          Small pure helpers, the Markdown plugin, and devHooks.ts (the query hooks above)
