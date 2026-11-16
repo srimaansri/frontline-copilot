@@ -127,6 +127,19 @@ export interface AskResponse {
   seconds: number;
   trace_id: string | null;
   steps: Step[];
+  /** Set only by the public demo, for a question it has no recording of as typed. */
+  demo?: DemoNote;
+}
+
+/**
+ * What the public demo did with a question it has no recording of. The demo is a
+ * static page and cannot run the copilot, so it says which of two things it did.
+ */
+export interface DemoNote {
+  /** The recorded question whose answer is shown. Null when no recording is close. */
+  shown_for: string | null;
+  /** Recorded questions to try, the closest first. */
+  suggestions: string[];
 }
 
 /** What the copilot is doing at one moment, sent while an answer is on its way. */

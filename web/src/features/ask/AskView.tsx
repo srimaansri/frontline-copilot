@@ -58,9 +58,10 @@ export function AskView({ meta, onRetryMeta, firstQuestion = null }: AskViewProp
   // Bring the newest question to the top when it is asked and when it is answered.
   useEffect(() => {
     if (latestId !== undefined && latestStatus !== undefined) {
-      document
-        .getElementById(latestId)
-        ?.scrollIntoView({ block: "start", behavior: reducedMotion ? "auto" : "smooth" });
+      document.getElementById(latestId)?.scrollIntoView({
+        block: "start",
+        behavior: reducedMotion ? "auto" : "smooth",
+      });
     }
   }, [latestId, latestStatus, reducedMotion]);
 
@@ -82,7 +83,11 @@ export function AskView({ meta, onRetryMeta, firstQuestion = null }: AskViewProp
 
   const cite = (exchangeId: string, number: number) => {
     setSelectedId(exchangeId);
-    setHighlight((current) => ({ exchangeId, number, tick: (current?.tick ?? 0) + 1 }));
+    setHighlight((current) => ({
+      exchangeId,
+      number,
+      tick: (current?.tick ?? 0) + 1,
+    }));
   };
 
   const toggleDetails = (exchangeId: string) => {
@@ -135,6 +140,7 @@ export function AskView({ meta, onRetryMeta, firstQuestion = null }: AskViewProp
                   onRetry={() => {
                     retry(exchange.id);
                   }}
+                  onAsk={pick}
                 />
               ))}
             </div>
