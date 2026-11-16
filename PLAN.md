@@ -634,6 +634,8 @@ Done when:
 - A follow-up question keeps its context, and an ambiguous request gets one clarifying question. Both are evaluation rows.
 - After-call wrap-up: disposition, notes, promises made and who owns the follow-up, edited and approved by the agent and saved to `ops.call_wrapups`. The summary prompt no longer receives the call's recorded category and outcome. A pipeline step writes `gold.call_insights` for all 200 calls, and disposition accuracy is measured against the generator's own labels.
 
+**State on 2026-11-16.** Done: live progress. The agent reports each stage to a listener as it starts, `POST /api/ask/stream` sends those as server-sent events followed by the answer, and the interface shows them. Differences from the criteria above: the events come from the graph's own nodes through a listener and a queue, not from LangGraph's `astream`, because the answer has to be worked out on one thread for its MLflow trace to stay whole, and a listener keeps `run` as the single entry point for the app, the evaluation and the tests. Not done: approval before a ticket, follow-ups and clarifying questions, wrap-up.
+
 ### 16.5 M10. Call assist and compliance review
 Done when:
 - Call assist by replay: a redacted call plays turn by turn, and a side panel shows the matching article, a next step and reminders without being asked. Retrieval runs on a rolling window of turns with no model call; the model is called only when the top article changes.

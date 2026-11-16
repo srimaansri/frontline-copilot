@@ -238,7 +238,10 @@ def create_app(
                     body.question,
                     [turn.model_dump() for turn in body.history],
                     trace_tags={"source": "web"},
-                    on_stage=lambda event: events.put(("stage", event)),
+                    # The time lets a recording be replayed at its real pace.
+                    on_stage=lambda event: events.put(
+                        ("stage", {**event, "at": round(time.perf_counter() - started, 2)})
+                    ),
                 )
                 seconds = time.perf_counter() - started
                 trace_id = (

@@ -125,6 +125,7 @@ Motion:
 - While the copilot works, the eyes of the mark glance out through the visor and back, once every 2.4 seconds.
 - Something arrives once. The two views are both kept laid out, and the one not on show is made invisible and inert, because an element that returns from `display: none` plays its entrance again.
 - A change of theme is one event: no control eases its own colours while it happens, and where the browser supports view transitions the whole page cross-fades in 200ms.
+- The words on the working card are the stage the server says is running, sent as each one starts ("Searching the help articles", "Writing the answer"). They change when the work does, never on a timer. Before the first event, and against a server that sends none, the card says only "Working on it".
 - One thing on a screen says "working": the signal bars. A placeholder that sits beside the working card holds still (`<Skeleton still>`); a placeholder that is the only sign of loading pulses.
 - Nothing moves for decoration. The highlighter is not drawn in when an answer arrives: an agent sees hundreds of answers a day, and the facts have to be readable the moment the card is.
 - `prefers-reduced-motion` stops every animation and transition, and the seeking bar holds still, half filled. The eyes of the mark hold still.

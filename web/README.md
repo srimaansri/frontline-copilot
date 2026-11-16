@@ -48,6 +48,7 @@ What the demo shows:
 - a recorded answer for any question in the recording, matched by its letters and digits, so "Hello!" finds "hello";
 - for any other question, a note that there is no recording, with some questions that have one. It is marked as a note from the page and is not the copilot's "no article matched" answer, because the live copilot would search for it;
 - a wait as long as the live answer took, up to eight seconds, and the recorded time under the answer;
+- the stages the live copilot reported while it worked ("Checking the request", "Searching the help articles", ...), in their recorded order and at their recorded times;
 - no rating buttons, because a recording has no trace to attach a rating to;
 - hand-offs that were dry runs: the reference in a recorded hand-off was made up for that answer and no ticket was written;
 - a failed request: send exactly `/error` to see the error message and its retry button;

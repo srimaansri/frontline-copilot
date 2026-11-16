@@ -163,7 +163,14 @@ export function AnswerSection() {
         </div>
       </Row>
       <Row label="pending">
-        <ProgressHint />
+        <ProgressHint
+          stage={{
+            stage: "tool",
+            label: "Searching the help articles",
+            tool: "search_kb",
+            at: 0.9,
+          }}
+        />
       </Row>
     </GallerySection>
   );

@@ -634,3 +634,44 @@ They also found defects, each confirmed by running the code before it was change
 - `eval/routing_set.jsonl`, especially the 17 borderline messages and the four the annotators disagree on (R024, R056, R084, R118). Your label settles those.
 - Whether 0.8 seconds on most messages is a price worth paying for the routing. `router: rules` in `config/settings.yaml` turns it off.
 - `databricks-llama-4-maverick` as the router. It is under the Llama 4 Community License.
+
+## 2026-11-16 — M9, first part: the interface shows what the copilot is really doing
+
+**Tool:** Claude Code.
+
+**Asked:** (on 2026-11-15, looking at the demo) "why does it say removing personal details and then that's taking way more than 0.8 seconds". The labels were a timed loop: four stage names cycled every 1.8 seconds, in the live app as well as the demo, whatever the copilot was doing.
+
+**What was built**
+
+- `src/copilot/agent.py`: `run` takes an optional `on_stage` listener. Each node of the graph tells it what is starting: redaction, the request check, the first model call, each tool by name, writing the answer, a rewrite, the output check.
+- `api/main.py`: `POST /api/ask/stream` sends those as server-sent events, each with the seconds since the request began, then one `answer` event with the body `/api/ask` returns, or one `error` event.
+- `web/`: the client reads the stream, the conversation keeps the latest stage on the pending answer, and the working card shows its words. A server without the endpoint is asked the ordinary way.
+- `eval/record_demo.py` records the stages with their times, and the demo replays them.
+
+**Decisions**
+
+- **A listener, not LangGraph's stream.** The plan said `astream`. The answer has to be worked out on one thread for its MLflow trace to stay whole, and FastAPI runs a streaming generator's steps on different worker threads. So the copilot runs on one thread and hands events to the response through a queue. It also keeps `run` as the one entry point the app, the evaluation and the tests share.
+- **An event is a stage name and fixed words.** It carries no question, no answer and nothing a tool returned, so there is nothing in the stream to redact, and a test checks that.
+- **A failing listener costs nothing.** A closed connection must not lose an answer that is already being worked out.
+- **The answer never depends on the stream.** If the endpoint is missing, the client falls back to `/api/ask`.
+- **"Working on it" until the server speaks.** The card no longer names a stage it has not been told about.
+
+**Checked, with dates**
+
+- 2026-11-15, against the live workspace, API run from this branch: five questions over the stream. Stages arrived as they started. For "Which plans cost $25 a month or less?": request check at 0.01 s, first model call at 0.84 s, the plan catalogue at 1.52 s, writing at 3.64 s, the answer at 4.18 s, with a trace.
+- 2026-11-15, the built page served by that API, driven in a browser: the working card showed "Removing personal details", "Checking the request", "Working out what to look up", "Looking up the plan catalogue", "Writing the answer", and then the answer at 4.7 s.
+
+**Things that went wrong on the way**
+
+- **My first live check talked to the wrong server.** Port 8010 was held by an older copy of the API from an earlier session, which answered the health check and has no streaming endpoint. The new server had failed to bind and I had not looked.
+- **The live check wrote one real ticket.** "pls cancel his line" was asked through the local API with ticket-writing on, so `ops.escalations` has one test row from it.
+
+**Not done**
+
+- Not tried on Databricks Apps. Its proxy may buffer a streamed reply, in which case every stage would arrive at once at the end. The response sets `X-Accel-Buffering: no`, which is a request, not a guarantee.
+- A hand-off took 7.8 seconds in the live check, nearly all of it the insert through the SQL warehouse. The page now says "Opening a hand-off" for that long, which is honest and slow.
+- The stream cannot be cancelled on the server: if the page goes away, the answer is still worked out.
+
+**For me to review**
+
+- The stage wording in `STAGE_LABELS` and `TOOL_LABELS` in `src/copilot/agent.py`. It is what an agent reads on every question.

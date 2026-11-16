@@ -83,6 +83,18 @@ export interface AskResponse {
   steps: Step[];
 }
 
+/** What the copilot is doing at one moment, sent while an answer is on its way. */
+export interface StageEvent {
+  /** "redaction", "input_check", "model", "tool", "answer", "simplify" or "output_check". */
+  stage: string;
+  /** The words to show, such as "Searching the help articles". */
+  label: string;
+  /** The tool that is running, on a "tool" stage. */
+  tool: string | null;
+  /** Seconds from the start of the request to the start of this stage. */
+  at: number;
+}
+
 export type Resolution = "resolved" | "escalated" | "unresolved";
 
 export interface CallListItem {
@@ -136,7 +148,12 @@ export interface ErrorBody {
 export interface Api {
   getMeta(signal?: AbortSignal): Promise<Meta>;
   getHealth(signal?: AbortSignal): Promise<Health>;
-  ask(request: AskRequest, signal?: AbortSignal): Promise<AskResponse>;
+  /** `onStage` is called as each stage of the answer starts, if the server reports them. */
+  ask(
+    request: AskRequest,
+    signal?: AbortSignal,
+    onStage?: (event: StageEvent) => void,
+  ): Promise<AskResponse>;
   listCalls(signal?: AbortSignal): Promise<CallListItem[]>;
   getCall(transcriptId: string, signal?: AbortSignal): Promise<CallTranscript>;
   summarizeCall(transcriptId: string, signal?: AbortSignal): Promise<CallSummary>;

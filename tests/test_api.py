@@ -171,11 +171,14 @@ def test_the_stream_reports_each_stage_and_then_the_same_answer_as_ask() -> None
     assert response.headers["content-type"].startswith("text/event-stream")
     events = events_in(response.text)
     assert [name for name, _ in events] == ["stage", "stage", "answer"]
-    assert events[0][1] == {
-        "stage": "redaction",
-        "label": "Removing personal details",
-        "tool": None,
-    }
+    first = events[0][1]
+    assert (first["stage"], first["label"], first["tool"]) == (
+        "redaction",
+        "Removing personal details",
+        None,
+    )
+    # Each stage says how many seconds into the request it started.
+    assert 0 <= first["at"] <= events[1][1]["at"]
     assert events[1][1]["tool"] == "search_kb"
     streamed = events[2][1]
     plain = client.post("/api/ask", json=request).json()

@@ -1,5 +1,6 @@
 """The recorder for the public demo, against a fake application."""
 
+from json import dumps
 from typing import Any
 
 import pytest
@@ -7,10 +8,15 @@ import pytest
 from eval.record_demo import CALL_IDS, EXTRA_QUESTIONS, demo_questions, question_key, record
 
 
+def sse(*events: tuple[str, Any]) -> str:
+    return "".join(f"event: {name}\ndata: {dumps(data)}\n\n" for name, data in events)
+
+
 class FakeResponse:
-    def __init__(self, body: Any, status_code: int = 200) -> None:
+    def __init__(self, body: Any, status_code: int = 200, text: str = "") -> None:
         self._body = body
         self.status_code = status_code
+        self.text = text
 
     def json(self) -> Any:
         return self._body
@@ -19,9 +25,10 @@ class FakeResponse:
 class FakeClient:
     """Answers the five endpoints the recorder calls, and notes what was asked."""
 
-    def __init__(self, fail_on: str | None = None) -> None:
+    def __init__(self, fail_on: str | None = None, error_on: str | None = None) -> None:
         self.asked: list[str] = []
         self.fail_on = fail_on
+        self.error_on = error_on
 
     def get(self, url: str) -> FakeResponse:
         if url == "/api/meta":
@@ -37,11 +44,15 @@ class FakeClient:
         return FakeResponse({"transcript_id": url.rsplit("/", 1)[1], "turns": []})
 
     def post(self, url: str, *, json: Any = None) -> FakeResponse:
-        if url == "/api/ask":
+        if url == "/api/ask/stream":
             self.asked.append(json["question"])
             if json["question"] == self.fail_on:
                 return FakeResponse({"detail": "no"}, 502)
-            return FakeResponse({"answer": "A.", "seconds": 1.5, "trace_id": "tr-live-123"})
+            stage = {"stage": "redaction", "label": "Removing personal details", "tool": None}
+            answer = {"answer": "A.", "seconds": 1.5, "trace_id": "tr-live-123"}
+            if json["question"] == self.error_on:
+                return FakeResponse(None, text=sse(("stage", {**stage, "at": 0.0}), ("error", {})))
+            return FakeResponse(None, text=sse(("stage", {**stage, "at": 0.0}), ("answer", answer)))
         return FakeResponse({"transcript_id": url.split("/")[3], "intent": "x"})
 
 
@@ -70,6 +81,10 @@ def test_a_recording_holds_what_the_application_returned() -> None:
     assert client.asked[0] == "How much is the late fee?"
     assert [item["question"] for item in recording["answers"]] == client.asked
     assert recording["answers"][0]["response"]["answer"] == "A."
+    # The stages the copilot reported are kept, with the time each one started.
+    assert recording["answers"][0]["stages"] == [
+        {"stage": "redaction", "label": "Removing personal details", "tool": None, "at": 0.0}
+    ]
     # A visitor cannot open a trace or rate a recording.
     assert all(item["response"]["trace_id"] is None for item in recording["answers"])
     assert len(recording["calls"]) == 3
@@ -86,6 +101,13 @@ def test_a_trial_run_records_a_few_questions_and_one_call() -> None:
 
     assert len(recording["answers"]) == 2
     assert list(recording["transcripts"]) == ["T0001"]
+
+
+def test_an_answer_that_ends_in_an_error_stops_the_recording() -> None:
+    client = FakeClient(error_on="hello")
+
+    with pytest.raises(RuntimeError, match="ended with error"):
+        record(client, [])
 
 
 def test_a_failed_request_stops_the_recording() -> None:

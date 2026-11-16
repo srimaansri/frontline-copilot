@@ -10,6 +10,7 @@ import type {
   FeedbackResponse,
   Health,
   Meta,
+  StageEvent,
 } from "./types";
 
 /** True when the build answers from fixtures. Set with `VITE_USE_MOCK=1`. */
@@ -85,10 +86,93 @@ function post(body: unknown, signal?: AbortSignal): RequestInit {
   return { method: "POST", body: JSON.stringify(body), signal };
 }
 
+/** One server-sent event: its name and its data, read as JSON. */
+function readEvent(block: string): { name: string; data: unknown } | null {
+  let name = "message";
+  const data: string[] = [];
+  for (const line of block.split("\n")) {
+    if (line.startsWith("event:")) {
+      name = line.slice(6).trim();
+    } else if (line.startsWith("data:")) {
+      data.push(line.slice(5).trim());
+    }
+  }
+  if (data.length === 0) {
+    return null;
+  }
+  try {
+    return { name, data: JSON.parse(data.join("\n")) as unknown };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Ask over the streaming endpoint: each stage is passed to `onStage` as it
+ * starts, and the answer is the last event. A server without the endpoint is
+ * asked the ordinary way, so the answer never depends on the stream.
+ */
+async function askStreaming(
+  body: AskRequest,
+  signal: AbortSignal | undefined,
+  onStage: (event: StageEvent) => void,
+): Promise<AskResponse> {
+  let response: Response;
+  try {
+    response = await fetch("/api/ask/stream", {
+      method: "POST",
+      headers: { Accept: "text/event-stream", "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal,
+    });
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw error;
+    }
+    throw new ApiError("The service could not be reached. Check the connection and try again.", 0);
+  }
+  if (response.status === 404 || response.status === 405 || response.body === null) {
+    return request<AskResponse>("/ask", post(body, signal));
+  }
+  if (!response.ok) {
+    throw new ApiError(await readDetail(response), response.status);
+  }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffered = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    buffered += decoder.decode(value, { stream: !done });
+    const blocks = buffered.split("\n\n");
+    buffered = blocks.pop() ?? "";
+    for (const block of blocks) {
+      const event = readEvent(block);
+      if (event === null) {
+        continue;
+      }
+      if (event.name === "stage") {
+        onStage(event.data as StageEvent);
+      } else if (event.name === "answer") {
+        return event.data as AskResponse;
+      } else if (event.name === "error") {
+        const detail = (event.data as { detail?: unknown }).detail;
+        throw new ApiError(
+          typeof detail === "string" ? detail : "The copilot could not answer just now.",
+          502,
+        );
+      }
+    }
+    if (done) {
+      throw new ApiError("The answer was cut off before it arrived. Please try again.", 502);
+    }
+  }
+}
+
 const httpApi: Api = {
   getMeta: (signal) => request<Meta>("/meta", { signal }),
   getHealth: (signal) => request<Health>("/health", { signal }),
-  ask: (body: AskRequest, signal) => request<AskResponse>("/ask", post(body, signal)),
+  ask: (body: AskRequest, signal, onStage) =>
+    onStage ? askStreaming(body, signal, onStage) : request<AskResponse>("/ask", post(body, signal)),
   listCalls: (signal) => request<CallListItem[]>("/calls", { signal }),
   getCall: (transcriptId, signal) =>
     request<CallTranscript>(`/calls/${encodeURIComponent(transcriptId)}`, { signal }),
@@ -107,7 +191,7 @@ function mockApi(): Api {
   return {
     getMeta: async (signal) => (await load()).getMeta(signal),
     getHealth: async (signal) => (await load()).getHealth(signal),
-    ask: async (body, signal) => (await load()).ask(body, signal),
+    ask: async (body, signal, onStage) => (await load()).ask(body, signal, onStage),
     listCalls: async (signal) => (await load()).listCalls(signal),
     getCall: async (transcriptId, signal) => (await load()).getCall(transcriptId, signal),
     summarizeCall: async (transcriptId, signal) =>
