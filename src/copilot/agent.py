@@ -25,7 +25,8 @@ from __future__ import annotations
 
 import json
 import logging
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
+from contextvars import ContextVar
 from functools import lru_cache
 from typing import Annotated, Any, Literal, TypedDict
 
@@ -179,6 +180,49 @@ TOOL_SPECS: list[dict[str, Any]] = [
 
 Route = Literal["agent", "escalate", "refuse"]
 
+# --- progress, as it happens -----------------------------------------------------------------
+
+# What the copilot is doing at one moment: {"stage": ..., "label": ..., "tool": ...}.
+StageEvent = dict[str, Any]
+StageListener = Callable[[StageEvent], None]
+
+# The stages, with the words an interface shows while each one runs.
+STAGE_LABELS: dict[str, str] = {
+    "redaction": "Removing personal details",
+    "input_check": "Checking the request",
+    "model": "Working out what to look up",
+    "answer": "Writing the answer",
+    "simplify": "Rewriting in plainer words",
+    "output_check": "Checking the answer",
+}
+TOOL_LABELS: dict[str, str] = {
+    TOOL_SEARCH_KB: "Searching the help articles",
+    TOOL_PLAN_DETAILS: "Looking up the plan catalogue",
+    TOOL_SUMMARIZE_CALL: "Summarizing the call",
+    TOOL_ESCALATE: "Opening a hand-off",
+}
+
+# The listener of the run in progress. A context variable, because one copilot serves
+# many requests at once and each has its own listener.
+_LISTENER: ContextVar[StageListener | None] = ContextVar("copilot_stage_listener", default=None)
+
+
+def _emit(stage: str, *, tool: str | None = None) -> None:
+    """Tell the listener, if there is one, what is starting now.
+
+    An event carries a stage name and fixed words. It never carries the question,
+    an answer or anything a tool returned, so a listener cannot leak them.
+    """
+    listener = _LISTENER.get()
+    if listener is None:
+        return
+    label = TOOL_LABELS.get(tool, f"Using {tool}") if tool else STAGE_LABELS[stage]
+    try:
+        listener({"stage": stage, "label": label, "tool": tool})
+    except Exception as error:
+        # Showing progress must never cost an answer.
+        logger.warning("A progress listener failed (%s)", type(error).__name__)
+
 
 class CopilotState(TypedDict):
     """What the graph carries from node to node."""
@@ -286,6 +330,7 @@ class Copilot:
         history: Sequence[Mapping[str, str]] | None = None,
         *,
         trace_tags: Mapping[str, str] | None = None,
+        on_stage: StageListener | None = None,
     ) -> CopilotAnswer:
         """Answer one question.
 
@@ -294,13 +339,22 @@ class Copilot:
             history: Earlier turns as ``{"role": ..., "content": ...}``, oldest first.
             trace_tags: Extra tags for the trace, such as an evaluation row id.
                 The caller must not put personal data in them.
+            on_stage: Called as each stage starts, with what the copilot is now doing.
+                It is called on the thread that runs the answer, so it must return fast.
 
         Returns:
             The answer, its citations, the tools used and any guardrail flags.
         """
-        safe = redact_conversation(question, history or [], self._get_redactor())
-        # Nothing above this line is traced. Only redacted text goes below it.
-        return self._answer(safe.question, list(safe.history), list(safe.flags), trace_tags or {})
+        token = _LISTENER.set(on_stage)
+        try:
+            _emit("redaction")
+            safe = redact_conversation(question, history or [], self._get_redactor())
+            # Nothing above this line is traced. Only redacted text goes below it.
+            return self._answer(
+                safe.question, list(safe.history), list(safe.flags), trace_tags or {}
+            )
+        finally:
+            _LISTENER.reset(token)
 
     def _answer(
         self,
@@ -407,6 +461,7 @@ class Copilot:
         because they refused questions that only quoted an override attempt.
         If the router cannot be reached or read, the rules decide.
         """
+        _emit("input_check")
         question = state["question"]
         check = check_input(question)
         if self.settings.router == "rules" or check.route == "escalate":
@@ -456,6 +511,7 @@ class Copilot:
         category = state["category"]
         # "usage" is a kind of request the guard tells apart; the team that handles it
         # is the one that handles account access.
+        _emit("tool", tool=TOOL_ESCALATE)
         team_category = category if category in ESCALATION_TEAMS else "account_access"
         if category == "other":
             team_category = "other"
@@ -483,6 +539,8 @@ class Copilot:
         """One model turn. On the turn after the last allowed tool round, no tools are offered."""
         iterations = state["iterations"] + 1
         out_of_rounds = iterations > self.settings.max_tool_iterations
+        # The first call decides what to look up. A later one has results to write from.
+        _emit("model" if iterations == 1 else "answer")
         messages = list(state["messages"])
         flags = state["flags"]
         if out_of_rounds:
@@ -527,6 +585,7 @@ class Copilot:
         for call in getattr(state["messages"][-1], "tool_calls", None) or []:
             name = str(call["name"])
             arguments = call.get("args") or {}
+            _emit("tool", tool=name)
             with mlflow.start_span(name=f"tool_{name}", span_type=SpanType.TOOL) as span:
                 span.set_inputs(dict(arguments))
                 try:
@@ -606,6 +665,7 @@ class Copilot:
         raise ToolError(f"There is no tool called {name[:40]!r}")
 
     def _output_guard(self, state: CopilotState) -> dict[str, Any]:
+        _emit("output_check")
         flags = list(state["flags"])
         from_model = state["route"] == "agent"
         draft = message_text(state["messages"][-1]) if from_model else state["draft"]
@@ -649,6 +709,7 @@ class Copilot:
         }
 
     def _simplify(self, text: str) -> str:
+        _emit("simplify")
         with mlflow.start_span(name="simplify_answer", span_type=SpanType.CHAT_MODEL) as span:
             span.set_inputs({"answer": text})
             reply = self._get_model().invoke([SystemMessage(SIMPLIFY_PROMPT), HumanMessage(text)])

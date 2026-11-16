@@ -657,6 +657,84 @@ def test_a_fixed_hand_off_reply_is_not_checked_for_figures(redactor: Redactor) -
     assert not any(flag.startswith("unsupported_claim") for flag in answer.guardrail_flags)
 
 
+def stages(events: list[dict[str, Any]]) -> list[tuple[str, str | None]]:
+    return [(event["stage"], event["tool"]) for event in events]
+
+
+def test_each_stage_is_reported_as_it_starts_in_the_order_it_happens(redactor: Redactor) -> None:
+    model = FakeModel(call("search_kb", query="late fee"), "The late fee is $5 [1].")
+    events: list[dict[str, Any]] = []
+
+    make_copilot(redactor, model).run("How much is the late fee?", on_stage=events.append)
+
+    assert stages(events) == [
+        ("redaction", None),
+        ("input_check", None),
+        ("model", None),
+        ("tool", "search_kb"),
+        ("answer", None),
+        ("output_check", None),
+    ]
+    assert [event["label"] for event in events][2:5] == [
+        "Working out what to look up",
+        "Searching the help articles",
+        "Writing the answer",
+    ]
+
+
+def test_a_hand_off_by_the_rules_reports_no_model_stage(redactor: Redactor) -> None:
+    events: list[dict[str, Any]] = []
+
+    make_copilot(redactor, FakeModel("unused"), sql=FakeSql([])).run(
+        "Refund the $5 late fee on this customer's account.", on_stage=events.append
+    )
+
+    assert stages(events) == [
+        ("redaction", None),
+        ("input_check", None),
+        ("tool", "escalate_to_human"),
+        ("output_check", None),
+    ]
+
+
+def test_a_stage_event_never_carries_the_question_or_what_a_tool_returned(
+    redactor: Redactor,
+) -> None:
+    model = FakeModel(call("search_kb", query="late fee"), "The late fee is $5 [1].")
+    events: list[dict[str, Any]] = []
+
+    make_copilot(redactor, model).run(
+        f"Customer at {PHONE} asks about the late fee.", on_stage=events.append
+    )
+
+    assert all(set(event) == {"stage", "label", "tool"} for event in events)
+    assert PHONE not in str(events)
+    assert "$5" not in str(events)
+
+
+def test_a_listener_that_fails_does_not_cost_the_answer(redactor: Redactor) -> None:
+    def broken(event: dict[str, Any]) -> None:
+        raise RuntimeError("the connection closed")
+
+    model = FakeModel(call("search_kb", query="late fee"), "The late fee is $5 [1].")
+
+    answer = make_copilot(redactor, model).run("How much is the late fee?", on_stage=broken)
+
+    assert answer.answer == "The late fee is $5 [1]."
+
+
+def test_one_run_s_listener_is_not_left_behind_for_the_next(redactor: Redactor) -> None:
+    events: list[dict[str, Any]] = []
+    copilot = make_copilot(redactor, FakeModel("Hello!"))
+
+    copilot.run("hello", on_stage=events.append)
+    seen = len(events)
+    copilot.run("hello")
+
+    assert seen > 0
+    assert len(events) == seen
+
+
 class FakeRouter:
     """A router model that gives one reply, or fails, and keeps what it was sent."""
 

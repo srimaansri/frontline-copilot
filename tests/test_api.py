@@ -63,8 +63,18 @@ class FakeCopilot:
         self.answer = answer
         self.calls: list[tuple[str, list[dict[str, str]], dict[str, str]]] = []
 
-    def run(self, question: str, history: Any = None, *, trace_tags: Any = None) -> CopilotAnswer:
+    def run(
+        self,
+        question: str,
+        history: Any = None,
+        *,
+        trace_tags: Any = None,
+        on_stage: Any = None,
+    ) -> CopilotAnswer:
         self.calls.append((question, list(history or []), dict(trace_tags or {})))
+        if on_stage is not None:
+            on_stage({"stage": "redaction", "label": "Removing personal details", "tool": None})
+            on_stage({"stage": "tool", "label": "Searching the help articles", "tool": "search_kb"})
         if isinstance(self.answer, Exception):
             raise self.answer
         return self.answer
@@ -140,6 +150,67 @@ def test_ask_returns_the_answer_with_its_steps_and_the_redacted_question() -> No
     assert body["steps"][0]["title"] == "Personal details removed"
     # The copilot gets the question as typed and redacts it itself.
     assert copilot.calls == [(f"Late fee for {PHONE}?", history, {"source": "web"})]
+
+
+def events_in(text: str) -> list[tuple[str, Any]]:
+    """Read a body of server-sent events as (event name, data) pairs."""
+    events = []
+    for block in text.strip().split("\n\n"):
+        lines = dict(line.split(": ", 1) for line in block.splitlines())
+        events.append((lines["event"], json.loads(lines["data"])))
+    return events
+
+
+def test_the_stream_reports_each_stage_and_then_the_same_answer_as_ask() -> None:
+    client, copilot = client_for()
+    request = {"question": f"Late fee for {PHONE}?", "history": []}
+
+    response = client.post("/api/ask/stream", json=request)
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/event-stream")
+    events = events_in(response.text)
+    assert [name for name, _ in events] == ["stage", "stage", "answer"]
+    assert events[0][1] == {
+        "stage": "redaction",
+        "label": "Removing personal details",
+        "tool": None,
+    }
+    assert events[1][1]["tool"] == "search_kb"
+    streamed = events[2][1]
+    plain = client.post("/api/ask", json=request).json()
+    assert {**streamed, "seconds": 0} == {**plain, "seconds": 0}
+    assert streamed["question_as_processed"] == "Late fee for <PHONE_NUMBER_1>?"
+    # Nothing in the stream but the answer itself repeats what was typed.
+    assert PHONE not in json.dumps([data for name, data in events if name == "stage"])
+    assert copilot.calls[0] == (f"Late fee for {PHONE}?", [], {"source": "web"})
+
+
+def test_a_failure_while_streaming_is_one_error_event_with_no_detail_of_the_cause() -> None:
+    client, _ = client_for(RuntimeError(f"model failed on a question about {PHONE}"))
+
+    response = client.post("/api/ask/stream", json={"question": "Late fee?", "history": []})
+
+    assert response.status_code == 200
+    events = events_in(response.text)
+    assert events[-1] == (
+        "error",
+        {"detail": "The copilot could not answer just now. Please try again."},
+    )
+    assert PHONE not in response.text
+
+
+def test_the_stream_reports_the_trace_id_from_the_thread_that_answered(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        api_module.mlflow, "get_last_active_trace_id", lambda thread_local=False: "tr-9"
+    )
+    client, _ = client_for(tracing=True)
+
+    response = client.post("/api/ask/stream", json={"question": "Late fee?", "history": []})
+
+    assert events_in(response.text)[-1][1]["trace_id"] == "tr-9"
 
 
 def test_ask_reports_the_trace_id_when_tracing_is_on(monkeypatch: pytest.MonkeyPatch) -> None:

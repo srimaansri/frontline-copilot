@@ -12,14 +12,19 @@ the tool applies the output check for personal data itself. The built web interf
 
 from __future__ import annotations
 
+import json
 import logging
+import queue
+import threading
 import time
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, Literal
 
 import mlflow
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from mlflow.entities import AssessmentSource, AssessmentSourceType, SpanType
 from pydantic import BaseModel, Field
@@ -28,7 +33,7 @@ from copilot.agent import Copilot
 from copilot.config import Settings, load_settings
 from copilot.guardrails import redact_question
 from copilot.prompts import PROMPT_VERSION
-from copilot.schemas import CallSummary, Citation
+from copilot.schemas import CallSummary, Citation, CopilotAnswer
 from copilot.steps import Step, describe_steps
 from copilot.tools import ToolError
 from copilot.transcripts import get_transcript, list_transcripts
@@ -40,6 +45,7 @@ DISCLAIMER = (
     "Unofficial demo. Not affiliated with or endorsed by any carrier. "
     "Northline Wireless is fictional and all data is synthetic."
 )
+ASK_FAILED = "The copilot could not answer just now. Please try again."
 TOOLS: tuple[tuple[str, str], ...] = (
     ("search_kb", "Help articles"),
     ("get_plan_details", "Plan catalogue"),
@@ -204,22 +210,61 @@ def create_app(
         except Exception as error:
             # The reason may quote the question, so only its type is logged or returned.
             logger.exception("The copilot failed to answer (%s)", type(error).__name__)
-            raise HTTPException(
-                status_code=502, detail="The copilot could not answer just now. Please try again."
-            ) from error
+            raise HTTPException(status_code=502, detail=ASK_FAILED) from error
         seconds = time.perf_counter() - started
         trace_id = mlflow.get_last_active_trace_id(thread_local=True) if tracing_now else None
-        fields = answer.model_dump()
-        # The copilot reports the question as it processed it. One that does not is asked
-        # here, so the interface never shows the question as it was typed.
-        processed = fields.pop("question_as_processed", "")
-        return AskResponse(
-            **fields,
-            question_as_processed=processed
-            or redact_question(body.question, copilot_now.redactor).text,
-            seconds=round(seconds, 2),
-            trace_id=trace_id,
-            steps=describe_steps(answer),
+        return _ask_response(copilot_now, body, answer, seconds, trace_id)
+
+    @app.post("/api/ask/stream")
+    def ask_stream(body: AskRequest) -> StreamingResponse:
+        """The same answer as ``/api/ask``, with each stage reported as it starts.
+
+        The reply is a stream of server-sent events: ``stage`` events while the
+        copilot works, then one ``answer`` event with the body ``/api/ask``
+        returns, or one ``error`` event. A stage event holds a stage name and
+        fixed words, never the question or any text a tool returned.
+
+        The answer is worked out on one thread, so that its trace is whole, and
+        the events cross to the response through a queue.
+        """
+        copilot_now = runtime.copilot
+        tracing_now = runtime.tracing
+        events: queue.Queue[tuple[str, dict[str, Any]] | None] = queue.Queue()
+
+        def work() -> None:
+            started = time.perf_counter()
+            try:
+                answer = copilot_now.run(
+                    body.question,
+                    [turn.model_dump() for turn in body.history],
+                    trace_tags={"source": "web"},
+                    on_stage=lambda event: events.put(("stage", event)),
+                )
+                seconds = time.perf_counter() - started
+                trace_id = (
+                    mlflow.get_last_active_trace_id(thread_local=True) if tracing_now else None
+                )
+                response = _ask_response(copilot_now, body, answer, seconds, trace_id)
+                events.put(("answer", response.model_dump()))
+            except Exception as error:
+                # The reason may quote the question, so only its type is logged or sent.
+                logger.exception("The copilot failed to answer (%s)", type(error).__name__)
+                events.put(("error", {"detail": ASK_FAILED}))
+            finally:
+                events.put(None)
+
+        threading.Thread(target=work, name="copilot-answer", daemon=True).start()
+
+        def stream() -> Iterator[str]:
+            while (item := events.get()) is not None:
+                name, data = item
+                yield f"event: {name}\ndata: {json.dumps(data)}\n\n"
+
+        return StreamingResponse(
+            stream(),
+            media_type="text/event-stream",
+            # A proxy that buffers the reply would hold every stage back until the end.
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
 
     @app.get("/api/calls")
@@ -270,6 +315,23 @@ def create_app(
         # Mounted last, so it only receives what no API route matched.
         app.mount("/", StaticFiles(directory=static_dir, html=True), name="web")
     return app
+
+
+def _ask_response(
+    copilot: Copilot, body: AskRequest, answer: CopilotAnswer, seconds: float, trace_id: str | None
+) -> AskResponse:
+    """What the interface is sent for one answer."""
+    fields = answer.model_dump()
+    # The copilot reports the question as it processed it. One that does not is asked
+    # here, so the interface never shows the question as it was typed.
+    processed = fields.pop("question_as_processed", "")
+    return AskResponse(
+        **fields,
+        question_as_processed=processed or redact_question(body.question, copilot.redactor).text,
+        seconds=round(seconds, 2),
+        trace_id=trace_id,
+        steps=describe_steps(answer),
+    )
 
 
 def _tool_error(error: ToolError) -> HTTPException:
