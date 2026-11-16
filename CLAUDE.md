@@ -38,7 +38,9 @@ Portfolio demo: an AI copilot for wireless-carrier frontline support agents, on 
 - Dev set for tuning the redactor: `python -m data_gen.synth_transcripts --seed 7 --out-dir data/raw/dev --labeled 200`
 - Redaction eval: `python -m eval.redaction_eval` (test set), `--data-dir data/raw/dev --show-errors` (dev set), `--challenge` (hand-written set). Add `--save --tag <name>` to record a result; it needs a clean working tree.
 - Eval: `python -m eval.run_eval --config A --query-type ann --tag baseline` (always try `--limit 5` first)
-- App (local): `uvicorn api.main:app --port 8000` for the API, then `npm run dev` in `web/` for the interface. `npm run dev:mock` in `web/` needs no API.
+- Eval reports: `python -m eval.report` rebuilds `eval/results/SUMMARY.md` and `ERRORS.md` from the saved runs (`--save` does it too). Never edit them by hand. `python -m eval.gate` is the offline check CI runs: it fails when the newest full run is below the thresholds, or was made with another evaluation set or prompt version.
+- Demo recording: commit first, then `python -m eval.record_demo` (try `--limit 3` first; it writes nothing). It writes `web/src/api/recorded.json`, which the public demo replays. Never edit that file by hand.
+- App (local): `uvicorn api.main:app --port 8000` for the API, then `npm run dev` in `web/` for the interface. `npm run dev:mock` in `web/` needs no API: it replays the recording.
 - App (deploy): commit first, then `python setup/deploy_app.py`. It builds `web/`, uploads and deploys.
 - MCP (stdio): `python -m mcp_server.server`
 

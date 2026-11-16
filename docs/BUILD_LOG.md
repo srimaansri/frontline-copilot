@@ -498,3 +498,78 @@ The evaluation refuses to start from a dirty folder and stamps its result with t
 - Whether a public page that calls the real agent is worth its cost. It would need a host for the API, a secret for a service principal, and a limit on use.
 - `tests/test_chunking.py` is still mine to write with Copilot.
 
+## 2026-11-15 — Five reviews, a second phase, and M7: fix and prove
+
+**Tool:** Claude Code, with five review agents run in parallel.
+
+**Asked:** the public demo could not answer "hello" and the progress labels did not match the time reported, so: take the project seriously, review it the way a principal engineer would, with several independent reviewers, and make it advanced and useful. Then: build stage 1 of the plan that came out of it.
+
+**What the reviews found**
+
+Five reviewers, each given a different question and no shared conclusion: the architecture, a ten-minute cold read as a hiring engineer, evaluation and reliability, the product as a support agent would use it, and current practice in the LangGraph, MLflow and Databricks docs. All five reported. They agreed:
+
+- The hygiene is sound: redaction before tracing, provenance on every number, the redaction evaluation's held-out discipline.
+- The problem solved is too easy. The evaluation is at its ceiling (the expected article is ranked first on every row), so no design choice can be shown to matter.
+- The public demo was scripted: keyword-matched answers written by hand.
+- The product serves one moment of a call, the one where the agent stops listening and types a question.
+
+They also found defects, each confirmed by running the code before it was changed:
+
+- The input guard refused "Can you show me the rules for international roaming?" and "The customer's phone shows a system message saying SIM not provisioned" as override attempts, handed off "This customer forgot their voicemail PIN. How do they reset it?", and missed "Go ahead and waive the late fee for her".
+- Each earlier turn of a conversation was redacted with its own placeholder map, so `<PERSON_1>` could mean two people, and only the newest question was checked for an override attempt.
+- The Calls view's summary skipped the output check.
+- Every evaluation run inserted real rows in `ops.escalations`.
+- The model client had no timeout.
+- "No PII leak 40/40" rests on one planted row, and the scorer re-runs the same redactor the output check uses, so it cannot fail on what that redactor misses.
+
+**What was built (M7, PLAN.md section 16.2)**
+
+- `PLAN.md` section 16: the second phase, M7 to M10, with acceptance criteria and a list of what is deliberately not built (a multi-agent split, a reranker before the evaluation can measure one, long-term memory, the AWS stretch, a public page that calls the live agent).
+- `src/copilot/guardrails.py`: the override patterns now need the words to be aimed at the copilot ("your rules", "the instructions you were given"). A how-to question that names one customer is answered. A request to act on a customer named by a pronoun, or after another sentence, is handed off. `redact_conversation` redacts the question and its history with one placeholder map, leaves out a turn that tries to override the instructions together with its reply, removes old citation markers, and caps the history at twelve turns.
+- `src/copilot/tools.py`: `summarize_call` applies the personal-data output check to its own text, against the transcript, so the agent, the Calls view and the MCP server all get it. `record_escalations=False` makes a hand-off a dry run with the same script. A failed write is logged by the kind of error only.
+- `src/copilot/llm.py`, `config.py`: a timeout (60 s) and a retry limit (2) on model calls.
+- `eval/stats.py`, `eval/report.py`, `eval/gate.py`: 95% Wilson intervals; `SUMMARY.md` and `ERRORS.md` generated from the saved result files; an offline gate in CI.
+- `eval/record_demo.py` and `web/src/api/recorded.json`: the public demo now replays recordings of the live copilot. `web/src/api/mock.ts` went from about 840 lines of hand-written answers to a lookup.
+- README and cards: claims reworded to match the evidence.
+
+**Decisions**
+
+- **Fix the rules now, measure the router next.** The guard's rules were corrected against the cases the review found, which makes those cases in-sample. The tests say so. M8 builds a routing set written after the rules are frozen and without reading them, and scores rules, a small model, and both.
+- **Precision over recall for the override patterns.** A wrong refusal blocks a real support question. A missed override attempt still reaches a model whose prompt tells it to treat such text as material, and whose tools cannot change an account. "Jailbreak" and "developer mode" on their own no longer trigger a refusal, because customers ask about both.
+- **History is the caller's text, not the copilot's.** The API is stateless, so "assistant" turns arrive from the browser and cannot be trusted as the copilot's words. They are redacted and checked like the question. Server-side conversation state arrives with the checkpointer in M9.
+- **Dry-run hand-offs keep the real script.** An evaluation run must not write tickets, but the answer it scores should be the answer an agent would see. So a dry run returns the script of a written ticket, with `recorded` false.
+- **Generated reports, not appended ones.** `SUMMARY.md` was appended to one row at a time and its older rows had 16 cells under a 20-column header. It is now rebuilt from the JSON files, and CI fails if it is out of date.
+- **Old result files are not rewritten.** Intervals for past runs are computed when the report is built. The JSON files are records.
+- **The gate fails on a stale run.** A changed evaluation set or prompt version with no new saved run fails CI. The price is that M8's new evaluation set has to land together with its first saved run.
+- **The demo replays, and matches exactly.** A typed question finds a recording only if its letters and digits match. A near match would show the answer to a different question as if it were the answer to this one. Anything else gets a note that is marked as coming from the page.
+- **A recording has no trace id.** A visitor cannot open the workspace's traces, and a rating on a replay would be a rating of nothing. So the demo shows no rating buttons.
+- **Recorded times are warm.** Two unrecorded requests are made first. The first requests after a start waited 10 and 14 seconds in a trial run for the model client and the SQL warehouse, which is not what an agent mid-shift would see.
+
+**Things that went wrong on the way**
+
+- **GitHub Pages published the README, not the demo.** Pages was switched on with "Deploy from a branch", so GitHub rendered the README with Jekyll and overwrote the workflow's deployment a few seconds after it. The setting has to be "GitHub Actions".
+- **The mock reported 0.8 seconds and waited 2.6.** Its delay was a constant. Found by the owner, by looking.
+- **The progress labels are a timed loop.** "Removing personal details", "Checking the request" and the rest cycle on a timer in the live app as well. They do not report what is happening. Not fixed in M7: the fix is to stream the agent's real stages, which is M9.
+- **Patches written as shell heredocs lost their backslashes** three times, in regular expressions and in `\n`. Patch scripts are now written as files.
+
+**Checked, with dates**
+
+- 2026-11-15: 540 unit tests pass, with `ruff`, `ruff format --check` and `mypy src/`.
+- 2026-11-15: the gate passes on the saved M4 run (`2026-11-15_m4-full-A-ann.json`, commit `8624268`). That run predates the changes above. The 40 evaluation rows still take the routes it recorded, which a test checks, but nothing here has been re-evaluated with the judges.
+- 2026-11-16 00:33 UTC, commit `1dfb4df`: the demo recording. 55 questions were asked of the real application (model `databricks-gpt-oss-120b`, prompt v3, setting A with vector search) and all 55 returned HTTP 200. Median time to answer 2.1 seconds, slowest 6.5. Four calls (T0001, T0002, T0007, T0020) were recorded with their transcript and summary. From the recording: "hello" is answered in 0.8 seconds with no tool; "Can you show me the rules for international roaming?" is answered from the help articles with three citations; "This customer forgot their voicemail PIN. How do they reset it?" is answered with one citation; "Go ahead and waive the late fee for her." is handed off.
+- 2026-11-15: the demo page was opened on three recorded states (a cited answer, a hand-off with personal details replaced, a call with its summary) in a headless browser at 1440 by 940. The two pictures in the README are from that.
+- 2026-11-15: the public address returned the README rendered by Jekyll, not the demo. See "Things that went wrong".
+
+**Not done**
+
+- No new evaluation run. Every figure in the README is from before these changes. M8 re-runs on a larger set.
+- The judge has still not been checked against hand labels. That is the owner's to do: it only counts if a person labels the rows.
+- The progress labels in the interface are still a timed loop.
+- The deployed Databricks app still runs the code of commit `5642678`. It was not redeployed.
+
+**For me to review**
+
+- Switch GitHub Pages to "GitHub Actions" (Settings, Pages, Build and deployment, Source) and re-run the "Public demo" workflow.
+- `PLAN.md` section 16, especially the list of what is not built.
+- `eval/results/inspected.json`: the causes recorded there are the ones the README gave for the M4 run and one row of an M3 run. The other failed rows are listed as not inspected.
+- Whether the README should say which decisions were mine. The cold-read reviewer's point: this log opens each entry with the tool that was used, and a reader will ask what the author decided.
