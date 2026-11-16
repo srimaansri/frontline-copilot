@@ -1,0 +1,237 @@
+{
+  "disclosure": [
+    {"agent": "Let me take a look. I see your current balance is {bill_amount}.", "customer": "Yes, that sounds right."},
+    {"agent": "Okay, I have your account up. Your bill this month is {bill_amount}, up from {prev_bill_amount}.", "customer": "That's what I'm calling about."},
+    {"agent": "I can see you're on the {plan_name} plan.", "customer": "That's the one."},
+    {"agent": "One moment. It shows you've used {data_used} so far this month.", "customer": "Oh, that much?"},
+    {"agent": "Your last payment came in on {statement_date}.", "customer": "Okay."},
+    {"agent": "I'm looking at it now. You made {usage_minutes} of calls last month.", "customer": "I do talk a lot."},
+    {"agent": "Your next bill is due on {statement_date}.", "customer": "All right."},
+    {"agent": "It looks like you owe {bill_amount} right now.", "customer": "Hmm, okay."},
+    {"agent": "Sure. Your number came up on my screen, and I see the {plan_name} plan at {plan_price} a month.", "customer": "Yes, that's mine."},
+    {"agent": "ok, pulling that up. your statement from {statement_date} shows {bill_amount}", "customer": "yes thats the one"},
+    {"agent": "I see here that last month's bill was {prev_bill_amount}.", "customer": "Right."},
+    {"agent": "You currently have {plan_name}, and your data use is at {data_used}.", "customer": "I see."},
+    {"agent": "Before anything else, the account shows a payment posted on {statement_date}.", "customer": "Good, I wondered about that."},
+    {"agent": "Got it. Your total due is {bill_amount}, and it's due {statement_date}.", "customer": "Okay, thank you."},
+    {"agent": "Looking at your line, you've gone through {data_used} already.", "customer": "My goodness."},
+    {"agent": "The plan on your account is {plan_name}.", "customer": "I think that's right."},
+    {"agent": "I show a balance of {bill_amount} on the account.", "customer": "That's more than I expected."},
+    {"agent": "Thanks. Your statement dated {statement_date} is the latest one I see.", "customer": "Okay."},
+    {"agent": "I can tell you the bill went from {prev_bill_amount} to {bill_amount}.", "customer": "That's a big jump."},
+    {"agent": "You've talked for {usage_minutes} this billing period.", "customer": "Is that a lot?"}
+  ],
+  "catalogue": [
+    {"agent": "Happy to help. Just so you know, our Northline Unlimited Essentials plan is $50 a month.", "customer": "Okay, good to know."},
+    {"agent": "Sure. In general, a Late Payment Fee is $5, and it's added when a bill is more than 10 days past due.", "customer": "I see."},
+    {"agent": "I can help with that. Our cheapest plan with data is Northline Starter 1 at $20 a month.", "customer": "All right."},
+    {"agent": "The International Calling Pack is $5 a month and includes 300 minutes.", "customer": "That's not bad."},
+    {"agent": "For anyone on a 5 GB plan, data slows down after 5 GB is used.", "customer": "Oh, I didn't know that."},
+    {"agent": "Bills are due 21 days after they are issued. That's the same for everyone.", "customer": "Okay."},
+    {"agent": "A Data Top-Up of 5 GB is $10, if you ever need one.", "customer": "I'll keep that in mind."},
+    {"agent": "sure, i can explain. plans start at $15 a month for talk and text", "customer": "ok"},
+    {"agent": "Paper billing costs $2 a month, and email billing is free.", "customer": "I didn't know that."},
+    {"agent": "An Extra Line is $15 a month, plus a one-time Activation Fee of $35.", "customer": "Thank you."}
+  ],
+  "card_read_back": [
+    {"agent": "Let me read that back: {credit_card}. Is that right?", "customer": "Yes, that's right."},
+    {"agent": "So that's {credit_card}?", "customer": "Correct."},
+    {"agent": "I have {credit_card}. Did I get that right?", "customer": "You did."},
+    {"agent": "Okay, {credit_card}. And the expiration date?", "customer": "It's good through next year."},
+    {"agent": "Just to confirm, the card number is {credit_card}.", "customer": "Yes."},
+    {"agent": "Thank you. I typed in {credit_card}.", "customer": "That's it."},
+    {"agent": "Got it, Visa {credit_card}.", "customer": "Mm-hmm."},
+    {"agent": "Repeating that for you: {credit_card}.", "customer": "Yes, ma'am."},
+    {"agent": "ok so the card is {credit_card}, correct?", "customer": "yes"},
+    {"agent": "I'm charging the card {credit_card} now.", "customer": "Okay."},
+    {"agent": "To make sure I heard you, that was {credit_card}?", "customer": "That's right."},
+    {"agent": "Thanks, {customer_first}. I've entered {credit_card} for the payment.", "customer": "Good."},
+    {"agent": "Was that {credit_card}? The line cut out for a second.", "customer": "Yes, you have it."},
+    {"agent": "All right, the number I have is {credit_card}.", "customer": "Correct."},
+    {"agent": "Card ending {card_last4}, full number {credit_card}. Is that the one?", "customer": "Yes."},
+    {"agent": "Perfect. {credit_card}, and it's a Visa.", "customer": "That's right."},
+    {"agent": "I'll note {credit_card} as the card for this payment.", "customer": "Fine."},
+    {"agent": "You said {credit_card}, yes?", "customer": "I did."},
+    {"agent": "One second while I enter it. {credit_card}. Okay.", "customer": "Take your time."},
+    {"agent": "So I'm putting this on {credit_card}.", "customer": "Yes, please."}
+  ],
+  "card_safe": [
+    {"agent": "Thank you. I have the card ending in {card_last4}.", "customer": "That's the one."},
+    {"agent": "Got it, thank you.", "customer": "You're welcome."},
+    {"agent": "Thanks. For your security I won't repeat the number.", "customer": "I appreciate that."},
+    {"agent": "I have a Visa ending {card_last4}. Is that right?", "customer": "Yes."},
+    {"agent": "Sorry, could you say the number once more?", "customer": "Sure. {credit_card}."},
+    {"agent": "Thank you, the card went in fine.", "customer": "Good."},
+    {"agent": "I have it. Does it end in {card_last4}?", "customer": "It does."},
+    {"agent": "ok, got the card number", "customer": "do you need it again? it's {credit_card}"},
+    {"agent": "Thanks. I'm entering that now.", "customer": "Okay."},
+    {"agent": "Perfect. That's the Visa, last four {card_last4}.", "customer": "Yes, that's right."}
+  ],
+  "promise": [
+    {"customer": "One more thing. There's a $5 late fee on my bill. Can you take that off?", "agent": "Sure, I've waived that fee for you."},
+    {"customer": "While I have you, can I get a refund for the Activation Fee?", "agent": "Yes, I've refunded the $35 to your card."},
+    {"customer": "I was charged twice last month. Can you fix that?", "agent": "I've credited the extra charge back to your account."},
+    {"customer": "Also, I got a roaming charge I don't agree with.", "agent": "No problem, I'll take that charge off right now."},
+    {"customer": "Can you do anything about the late fee?", "agent": "I went ahead and removed it."},
+    {"customer": "That overage charge isn't fair. Can it come off?", "agent": "I'm going to refund that for you today."},
+    {"customer": "there's a late fee on here too, can you remove it", "agent": "done, i waived it"},
+    {"customer": "I'd like the late fee taken off, please.", "agent": "As a courtesy, I've applied a $5 credit to cover it."},
+    {"customer": "Is there any way to get that activation charge back?", "agent": "Absolutely. I'm refunding it now."},
+    {"customer": "I don't think I should pay that late fee.", "agent": "You're right. I'll waive it, I promise."},
+    {"customer": "Can you take off the paper bill charge?", "agent": "That charge has been removed. I took care of it myself."},
+    {"customer": "What about the fee from last month?", "agent": "Consider it gone. I just reversed it."},
+    {"customer": "They charged me for a top-up I never asked for.", "agent": "I've given you a credit of $10 for that."},
+    {"customer": "Can I get my money back for that day pass?", "agent": "Yes, you'll get the full refund. I guarantee it."},
+    {"customer": "The late fee again. Can you help?", "agent": "I can waive that for you. There, it's off your bill."},
+    {"customer": "I'd like a refund for the double charge.", "agent": "I've processed the refund, and you'll see it in a few days."},
+    {"customer": "Can you knock off that late fee?", "agent": "Sure thing, I knocked the $5 off."},
+    {"customer": "Will you remove the overage fee?", "agent": "Yes, I'm waiving it as we speak."},
+    {"customer": "That fee shouldn't be there.", "agent": "We'll credit it back to you. You have my word."},
+    {"customer": "Please take the late fee off my account.", "agent": "I have cancelled the late fee for you."}
+  ],
+  "promise_safe": [
+    {"customer": "There's a $5 late fee on my bill. Can you take that off?", "agent": "I can't waive it myself, but the billing team can. I've sent them the request. Your reference number is {ticket}."},
+    {"customer": "Can I get a refund for the Activation Fee?", "agent": "Only our billing team can approve a refund. I'm sending them your request now."},
+    {"customer": "I was charged twice last month.", "agent": "I'm not able to credit your account from this desk. The billing team will review it in 3 to 5 business days."},
+    {"customer": "Can you remove the late fee?", "agent": "You can ask for a one-time waiver. The billing team decides, and I've put in the request."},
+    {"customer": "I want that roaming charge refunded.", "agent": "I've opened a dispute, number {ticket}. If the billing team approves it, the charge will be refunded."},
+    {"customer": "can you waive the late fee", "agent": "i can't waive fees, sorry. billing can, so i've asked them to look at it"},
+    {"customer": "The last person said you could credit me.", "agent": "I'm sorry about that. A credit has to come from the billing team, not from me."},
+    {"customer": "Will the fee be removed?", "agent": "I can't promise that. The billing team will look at it and call you."},
+    {"customer": "I'd like the overage charge taken off.", "agent": "I've asked billing to review the charge. They may waive it, but that's their decision."},
+    {"customer": "Can you refund the late fee?", "agent": "Refunds and waivers are handled by our billing team. I've noted your request under {ticket}."}
+  ],
+  "full_ssn": [
+    {"agent": "I'll need your full Social Security number to verify.", "customer": "I'd rather not. Can I give the last four? It's {ssn_last4}."},
+    {"agent": "Can I have your whole Social Security number, please?", "customer": "Is that really needed?"},
+    {"agent": "Please read me all nine digits of your Social.", "customer": "I don't feel right about that."},
+    {"agent": "What's your complete Social Security number?", "customer": "I only ever give the last four, {ssn_last4}."},
+    {"agent": "For security, I need the full SSN on the account.", "customer": "The whole thing? Why?"},
+    {"agent": "Go ahead and give me your entire social security number.", "customer": "I don't give that out over the phone."},
+    {"agent": "can you type your full ssn for me", "customer": "no, i'm not comfortable with that"},
+    {"agent": "To verify you I need your Social Security number, all nine digits.", "customer": "I was told never to share that."},
+    {"agent": "And your full Social, please?", "customer": "Just the last four: {ssn_last4}."},
+    {"agent": "I need the full Social Security number, not just the last four.", "customer": "That doesn't sound right to me."},
+    {"agent": "Could you confirm your Social Security number in full?", "customer": "No, I don't think so."},
+    {"agent": "Read me your whole SSN when you're ready.", "customer": "I'd rather not say it out loud."},
+    {"agent": "Your Social Security number, the complete one, please.", "customer": "Then I want to speak to someone else."},
+    {"agent": "What is your full social?", "customer": "Last four are {ssn_last4}. That's all I'll give."},
+    {"agent": "Please spell out your full Social Security number for me.", "customer": "Is there another way to verify me?"},
+    {"agent": "I have to ask for your entire Social Security number.", "customer": "Why would you need all of it?"},
+    {"agent": "Tell me the full Social Security number we have on file for you.", "customer": "I don't remember it by heart."},
+    {"agent": "Your SSN, all of it, please.", "customer": "I can't do that."},
+    {"agent": "I'll need all nine numbers of your Social to open the account.", "customer": "My son told me never to do that."},
+    {"agent": "May I have your full Social Security number for verification?", "customer": "You can have the last four, {ssn_last4}."}
+  ],
+  "ssn_safe": [
+    {"agent": "Can I get the last four digits of your Social Security number?", "customer": "{ssn_last4}."},
+    {"agent": "I only need the last four of your Social. Never give anyone the full number.", "customer": "Okay, it's {ssn_last4}."},
+    {"agent": "Just the last four of your SSN, please.", "customer": "{ssn_last4}"},
+    {"agent": "Please don't give me your full Social Security number. The last four digits are enough.", "customer": "They're {ssn_last4}."},
+    {"agent": "What are the last 4 of your social?", "customer": "It's {ssn_last4}."},
+    {"agent": "We never ask for your whole Social Security number, only the last four.", "customer": "Good. {ssn_last4}."},
+    {"agent": "last four of your ssn?", "customer": "{ssn_last4}"},
+    {"agent": "To verify, the last four digits of your Social, please.", "customer": "The last four are {ssn_last4}."},
+    {"agent": "I don't need the complete number, just the last four of your Social Security number.", "customer": "{ssn_last4}."},
+    {"agent": "Could you confirm the last four of your Social for me?", "customer": "Sure, {ssn_last4}."}
+  ],
+  "account_scenarios": [
+    {
+      "category": "billing",
+      "intro": "I'd like to stop getting paper bills.",
+      "body": [
+        {"speaker": "agent", "text": "I can switch you to email billing. I see paper billing is on your account at $2 a month."},
+        {"speaker": "customer", "text": "Yes, please switch it."},
+        {"speaker": "agent", "text": "Done. Your bills will go to {email} from now on."},
+        {"speaker": "customer", "text": "That's the right address."},
+        {"speaker": "agent", "text": "You'll see the change on your next statement."},
+        {"speaker": "customer", "text": "Thank you."}
+      ],
+      "first_account_turn": 0,
+      "resolution": "resolved"
+    },
+    {
+      "category": "troubleshooting",
+      "intro": "I forgot my voicemail PIN and now I can't get my messages.",
+      "body": [
+        {"speaker": "agent", "text": "I can reset that for you. What kind of phone is it?"},
+        {"speaker": "customer", "text": "A {device}."},
+        {"speaker": "agent", "text": "Okay. I've reset the voicemail PIN on your line. Press and hold the 1 key and you'll be asked to pick a new one."},
+        {"speaker": "customer", "text": "It's asking me now."},
+        {"speaker": "agent", "text": "Choose four digits you'll remember."},
+        {"speaker": "customer", "text": "All set. Thank you."}
+      ],
+      "first_account_turn": 2,
+      "resolution": "resolved"
+    },
+    {
+      "category": "plan_change",
+      "intro": "I have an add-on I don't use anymore and I want it gone.",
+      "body": [
+        {"speaker": "agent", "text": "Let me look. You have the International Calling Pack on your {plan_name} plan."},
+        {"speaker": "customer", "text": "That's it. My sister moved back home."},
+        {"speaker": "agent", "text": "I've taken the pack off. It stays active until the end of this billing month."},
+        {"speaker": "customer", "text": "And the $5 stops after that?"},
+        {"speaker": "agent", "text": "Yes, it won't be on your next bill."},
+        {"speaker": "customer", "text": "Good."}
+      ],
+      "first_account_turn": 0,
+      "resolution": "resolved"
+    },
+    {
+      "category": "billing",
+      "intro": "Can you tell me when my bill is due? I lost the paper.",
+      "body": [
+        {"speaker": "agent", "text": "Of course. Your bill of {bill_amount} is due on {statement_date}."},
+        {"speaker": "customer", "text": "Oh, that's soon."},
+        {"speaker": "agent", "text": "Would you like a reminder by text the day before?"},
+        {"speaker": "customer", "text": "Yes, to {phone}, please."},
+        {"speaker": "agent", "text": "I've set up the reminder on your account."},
+        {"speaker": "customer", "text": "Thank you."}
+      ],
+      "first_account_turn": 0,
+      "resolution": "resolved"
+    }
+  ],
+  "general_scenarios": [
+    {
+      "category": "troubleshooting",
+      "intro": "My battery runs out by lunchtime. Is something wrong with it?",
+      "body": [
+        {"speaker": "agent", "text": "That happens a lot. Open Settings and tap Battery to see what's using it."},
+        {"speaker": "customer", "text": "It says the screen."},
+        {"speaker": "agent", "text": "Turn the brightness down and set the screen to turn off after 30 seconds."},
+        {"speaker": "customer", "text": "Okay, I did that."},
+        {"speaker": "agent", "text": "You can also turn on Battery Saver in the same menu."},
+        {"speaker": "customer", "text": "I'll try that. Thank you."}
+      ],
+      "resolution": "resolved"
+    },
+    {
+      "category": "device_setup",
+      "intro": "How do I make the ringer louder? I keep missing calls.",
+      "body": [
+        {"speaker": "agent", "text": "Press the top button on the left side of the phone a few times while it's not on a call."},
+        {"speaker": "customer", "text": "I see a bar going up."},
+        {"speaker": "agent", "text": "That's the ring volume. You can also pick a louder ringtone under Settings, then Sound."},
+        {"speaker": "customer", "text": "Found it."},
+        {"speaker": "agent", "text": "Have someone call you to test it."},
+        {"speaker": "customer", "text": "I will. Thanks."}
+      ],
+      "resolution": "resolved"
+    },
+    {
+      "category": "billing",
+      "intro": "Where can I pay my bill in person?",
+      "body": [
+        {"speaker": "agent", "text": "You can pay at any Northline store, or in the My Northline app with a card."},
+        {"speaker": "customer", "text": "Is there a fee to pay at a store?"},
+        {"speaker": "agent", "text": "No, there's no fee. You can see your bill in the app under Billing."},
+        {"speaker": "customer", "text": "I don't have the app."},
+        {"speaker": "agent", "text": "You can get it from the app store on your phone, or log in at northline.example."},
+        {"speaker": "customer", "text": "Okay, I'll ask my grandson."}
+      ],
+      "resolution": "resolved"
+    }
+  ]
+}
