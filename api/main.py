@@ -8,7 +8,8 @@ This is a thin layer. Every endpoint calls the same ``copilot.agent`` and
 view's summary and its after-call wrap-up call their tools directly, not through
 the agent graph; each tool applies the output check for personal data itself. A
 wrap-up is drafted by one request and stored by another, which the agent sends
-once they have checked it. The rule check on a call (``copilot.compliance``) is
+once they have checked it, and a third reads the stored record back when the
+call is opened again. The rule check on a call (``copilot.compliance``) is
 plain rules on the redacted turns, with no model call: the calls list reads what
 the pipeline found, and the findings of one call are worked out when it is
 opened. The built web interface in
@@ -58,6 +59,7 @@ from copilot.schemas import (
 from copilot.steps import Step, describe_steps
 from copilot.tools import MAX_WRAP_UP_CHARS, ToolError, valid_transcript_id
 from copilot.transcripts import get_transcript, list_calls
+from copilot.wrapups import StoredWrapUp, latest_wrap_up
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +71,7 @@ DISCLAIMER = (
 ASK_FAILED = "The copilot could not answer just now. Please try again."
 WRAP_UP_FAILED = "The wrap-up could not be drafted just now. Please try again."
 SAVE_FAILED = "The wrap-up could not be saved just now. Please try again."
+SAVED_WRAP_UP_FAILED = "The saved wrap-up could not be read just now. Please try again."
 CALLS_FAILED = "The calls could not be listed just now. Please try again."
 FINDINGS_FAILED = "The rule check could not be run just now. Please try again."
 TOOLS: tuple[tuple[str, str], ...] = (
@@ -494,6 +497,24 @@ def create_app(
         except Exception as error:
             _log_failure(error)
             raise HTTPException(status_code=502, detail=SAVE_FAILED) from error
+
+    @app.get("/api/calls/{transcript_id}/wrapup/saved")
+    def saved_wrap_up(transcript_id: str) -> StoredWrapUp | None:
+        """The wrap-up most recently saved for one call, or null if none was.
+
+        It is read from ``ops.call_wrapups`` as it was stored, so every line in
+        it has already passed the output check: nothing is redacted again here
+        and nothing is put on a trace. The record says when it was saved. It
+        does not say by whom, because the table does not record that.
+        """
+        copilot_now = runtime.copilot
+        try:
+            return latest_wrap_up(copilot_now.tools.sql, copilot_now.settings, transcript_id)
+        except ToolError as error:
+            raise _tool_error(error) from error
+        except Exception as error:
+            _log_failure(error)
+            raise HTTPException(status_code=502, detail=SAVED_WRAP_UP_FAILED) from error
 
     @app.post("/api/handoffs")
     def open_hand_off(body: HandOffRequest) -> EscalationTicket:

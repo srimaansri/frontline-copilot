@@ -61,6 +61,20 @@ APPROVED: dict[str, Any] = {
     "follow_up": {"owner": "team", "action": "Review the late fee."},
     "sentiment": "neutral",
 }
+# The wrap-up of T0001 as the wrap-ups table returns it: redacted when it was saved.
+STORED_ROW: dict[str, Any] = {
+    "wrapup_id": "WRP-4F2A91C7",
+    "saved_at": "2026-11-14 16:42:05",
+    "disposition": "escalated",
+    "category": "billing",
+    "notes_json": json.dumps(
+        ["The customer disputed a late fee.", "Call back on <PHONE_NUMBER_1>."]
+    ),
+    "promises_json": "[]",
+    "follow_up_owner": "team",
+    "follow_up": "Review the late fee.",
+    "sentiment": "neutral",
+}
 
 
 class FakeRedactor:
@@ -97,6 +111,8 @@ class FakeTools:
                 rows = [row for row in rows if parameters["rule"][1] in (row["rules_json"] or "")]
             return rows
         call_id = parameters["transcript_id"][1]
+        if "call_wrapups" in statement:
+            return [STORED_ROW] if call_id == "T0001" else []
         if call_id in TRANSCRIPTS:
             return [{"turns_json": json.dumps(TRANSCRIPTS[call_id])}]
         return []
@@ -822,6 +838,78 @@ def test_a_wrap_up_failure_does_not_leak_its_reason(
     assert "RuntimeError at test_api.py:" in logged
     assert PHONE not in logged
     assert "model failed" not in logged
+
+
+def test_a_saved_wrap_up_is_read_back_with_when_it_was_saved() -> None:
+    client, copilot = client_for()
+
+    response = client.get("/api/calls/t0001/wrapup/saved")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "wrapup_id": "WRP-4F2A91C7",
+        "transcript_id": "T0001",
+        "disposition": "escalated",
+        "category": "billing",
+        "notes": ["The customer disputed a late fee.", "Call back on <PHONE_NUMBER_1>."],
+        "promises": [],
+        "follow_up": {"owner": "team", "action": "Review the late fee."},
+        "sentiment": "neutral",
+        "recorded": True,
+        "saved_at": "2026-11-14T16:42:05Z",
+    }
+    # One read of the wrap-ups table, and nothing is drafted, saved or asked of a model.
+    assert len(copilot.tools.statements) == 1
+    assert "ops.call_wrapups" in copilot.tools.statements[0]
+    assert copilot.tools.parameters[0] == {"transcript_id": ("STRING", "T0001")}
+    assert copilot.tools.drafted == []
+    assert copilot.tools.saved == []
+
+
+def test_a_call_with_no_saved_wrap_up_reads_back_as_nothing() -> None:
+    client, _ = client_for()
+
+    response = client.get("/api/calls/T0207/wrapup/saved")
+
+    assert response.status_code == 200
+    assert response.json() is None
+
+
+def test_reading_a_saved_wrap_up_is_not_traced(monkeypatch: pytest.MonkeyPatch) -> None:
+    spans, _ = record_spans(monkeypatch)
+    client, _ = client_for(tracing=True)
+
+    assert client.get("/api/calls/T0001/wrapup/saved").status_code == 200
+    assert spans == []
+
+
+def test_a_malformed_id_has_no_saved_wrap_up_and_nothing_is_looked_up() -> None:
+    client, copilot = client_for()
+
+    response = client.get("/api/calls/T12/wrapup/saved")
+
+    assert response.status_code == 400
+    assert "not a valid transcript id" in response.json()["detail"]
+    assert copilot.tools.statements == []
+
+
+def test_a_saved_wrap_up_that_cannot_be_read_does_not_leak_its_reason(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    client, copilot = client_for()
+    copilot.tools.sql_failure = RuntimeError(f"warehouse stopped on the note about {PHONE}")
+
+    with caplog.at_level("DEBUG"):
+        response = client.get("/api/calls/T0001/wrapup/saved")
+
+    assert response.status_code == 502
+    assert response.json() == {
+        "detail": "The saved wrap-up could not be read just now. Please try again."
+    }
+    logged = "\n".join(record.getMessage() + (record.exc_text or "") for record in caplog.records)
+    assert "RuntimeError at test_api.py:" in logged
+    assert PHONE not in logged
+    assert "warehouse stopped" not in logged
 
 
 # --- feedback ----------------------------------------------------------------------------------
