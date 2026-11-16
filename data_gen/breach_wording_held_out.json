@@ -1,0 +1,1136 @@
+{
+  "disclosure": [
+    {
+      "agent": "Sure thing, {customer_first}. I have your account open here, and the current balance is {bill_amount}.",
+      "customer": "Okay. That sounds about right."
+    },
+    {
+      "agent": "Let me take a look. Okay, I can see you're on the {plan_name} plan.",
+      "customer": "Yes, I've had that one for years."
+    },
+    {
+      "agent": "One moment while I bring you up. Looks like you've gone through {data_used} so far this cycle.",
+      "customer": "I never know whether that's a lot or a little."
+    },
+    {
+      "agent": "I've got your file up. Your last statement went out on {statement_date}.",
+      "customer": "That sounds right. It usually comes around then."
+    },
+    {
+      "agent": "Happy to help with that. Just so we're looking at the same thing, this month's bill came to {bill_amount} and the one before it was {prev_bill_amount}.",
+      "customer": "Yes, that's what my paper bill says too."
+    },
+    {
+      "agent": "ok pulling up your account now... balance due is {bill_amount}, and the last payment we got from you was {prev_bill_amount}",
+      "customer": "ok yes thats right"
+    },
+    {
+      "agent": "Alright, {customer_first}, I have you up on my screen. You owe {bill_amount}, and it's due {statement_date}.",
+      "customer": "Oh. I thought it was due later than that."
+    },
+    {
+      "agent": "Got it. For what it's worth, the plan on this line is {plan_name}, and it runs you {plan_price} a month.",
+      "customer": "Mm-hm, that's what I signed up for."
+    },
+    {
+      "agent": "Before we get into it, here is what I have for the month so far: {usage_minutes} of calls and {data_used} of data on your line.",
+      "customer": "All right. I didn't know you could see all that."
+    },
+    {
+      "agent": "Let me look... I do see {prev_bill_amount} still outstanding from last month, just so you know, on top of the new charges.",
+      "customer": "Outstanding? I was sure I paid that."
+    },
+    {
+      "agent": "No problem at all. I can see a payment posted to your account on {statement_date}, so you were current as of then.",
+      "customer": "Good, so my check did get there."
+    },
+    {
+      "agent": "Thanks, {customer_first}. Looking at the usage on your line, it's {usage_minutes} of talk time since the cycle started.",
+      "customer": "Well, I do talk to my sister every day."
+    },
+    {
+      "agent": "Sure. I'll have to ask you a few security questions in a minute, but I can already tell you the balance is sitting at {bill_amount}.",
+      "customer": "Okay. Go ahead and ask."
+    },
+    {
+      "agent": "Let's see what we've got. Okay, so you've been on {plan_name} the whole time you've been with us.",
+      "customer": "I believe so. My son set it up for me."
+    },
+    {
+      "agent": "Okay, I have it in front of me now. The next payment on your account is due on {statement_date}.",
+      "customer": "I'll mark that on my calendar."
+    },
+    {
+      "agent": "Thanks {customer_first}! I found your account. Current plan: {plan_name}. Data used so far: {data_used}.",
+      "customer": "ok thanks, that helps"
+    },
+    {
+      "agent": "Bear with me, the system's slow today... there we go. The total on your latest bill is {bill_amount}, which is up from {prev_bill_amount}.",
+      "customer": "Up again. Every month it's something."
+    },
+    {
+      "agent": "I understand. From what I can see here, your line has used {data_used}, and there are still a couple of weeks before it resets.",
+      "customer": "Goodness. That must be the grandchildren."
+    },
+    {
+      "agent": "Of course. Your statement dated {statement_date} is the most recent one I have, and nothing has been paid toward it yet.",
+      "customer": "No, I haven't sent anything in yet."
+    },
+    {
+      "agent": "Right, I'm in your account now. The plan I see on this line is {plan_name}, same as when you started.",
+      "customer": "That's the one. I've never changed it."
+    }
+  ],
+  "catalogue": [
+    {
+      "agent": "Sure, I can help with that. While my system loads: every Northline plan is month to month, with no contract and no early termination fee, and we're open 7 a.m. to 9 p.m. Central every day.",
+      "customer": "That's good to know."
+    },
+    {
+      "agent": "Glad you called. A lot of folks ask, so I'll mention it up front: our plans run from Northline Talk at $15 a month up to Northline Unlimited Premium at $65.",
+      "customer": "I didn't know there were that many."
+    },
+    {
+      "agent": "I can look into that with you. With Northline, your bill is always charged a month ahead and your due date is 21 days after the statement date. That's the same for every customer.",
+      "customer": "Okay. I never understood how that worked."
+    },
+    {
+      "agent": "Okay. One thing anybody can check is the price list: Northline Everyday 5 is $25 a month with 5 GB of data, and Northline Plus 10 is $35 with 10 GB.",
+      "customer": "I see. I'd have to think about which one I have."
+    },
+    {
+      "agent": "Thanks for explaining. Speaking generally, the Late Payment Fee is a flat $5, and it only applies when a bill is more than 10 days past due.",
+      "customer": "I see. Five dollars."
+    },
+    {
+      "agent": "Sure! Quick note before I look anything up: the International Calling Pack is $5/month for 300 minutes to 60 countries, and the International Day Pass is $10 a day when you travel.",
+      "customer": "ok good to know"
+    },
+    {
+      "agent": "Of course. In general, our unlimited plans start at $50 a month for Northline Unlimited Essentials, and speeds may slow after 35 GB in a month.",
+      "customer": "Thirty-five sounds like plenty to me."
+    },
+    {
+      "agent": "I'll help you with that. So you know, anyone can see their usage and their bill in the My Northline app under Usage and Billing, or text the word USAGE to 611 for a free reply.",
+      "customer": "I don't really use the app, but thank you."
+    },
+    {
+      "agent": "No problem. I haven't opened your account yet, so I can only speak generally: a Data Top-Up adds 5 GB for a one-time $10, and it lasts until the end of the billing month.",
+      "customer": "All right, that makes sense."
+    },
+    {
+      "agent": "Certainly. On the standard price list, a paper bill costs $2 a month and email bills are free, and there's a one-time Activation Fee of $35 whenever a new line is added.",
+      "customer": "Two dollars for paper. Hm."
+    }
+  ],
+  "card_read_back": [
+    {
+      "agent": "Let me read that back to you: {credit_card}. Is that right?",
+      "customer": "Yes, that's correct."
+    },
+    {
+      "agent": "Okay, so that's {credit_card}.",
+      "customer": "That's it."
+    },
+    {
+      "agent": "{credit_card}, got it.",
+      "customer": "Mm-hm."
+    },
+    {
+      "agent": "I want to be sure I typed it correctly. I have {credit_card} on my screen. Does that match your card?",
+      "customer": "Let me look... yes, it matches."
+    },
+    {
+      "agent": "Thank you. To confirm, the Visa number is {credit_card}, the one ending in {card_last4}, correct?",
+      "customer": "Correct."
+    },
+    {
+      "agent": "thanks! confirming card number {credit_card} before I run it",
+      "customer": "yes thats the one"
+    },
+    {
+      "agent": "Just double-checking, since the line cut out for a second. Did you say {credit_card}?",
+      "customer": "I did, yes."
+    },
+    {
+      "agent": "Perfect. I've entered {credit_card} for the payment. Stop me if any digit is off.",
+      "customer": "No, you have it right."
+    },
+    {
+      "agent": "So the card I'll be charging is your Visa, {credit_card}.",
+      "customer": "Yes. Go ahead."
+    },
+    {
+      "agent": "Bear with me, I'm a slow typist. That was {credit_card}, wasn't it?",
+      "customer": "That's right, dear."
+    },
+    {
+      "agent": "All right, {customer_first}, repeating it for accuracy: {credit_card}.",
+      "customer": "You got it."
+    },
+    {
+      "agent": "Hmm, the system rejected it the first time, so let me verify what I keyed in: {credit_card}?",
+      "customer": "Yes. Maybe try it again."
+    },
+    {
+      "agent": "Card ending in... actually, let me give you the whole thing so there's no mistake: {credit_card}.",
+      "customer": "Yes, every digit."
+    },
+    {
+      "agent": "Got it, Visa {credit_card}. I'll just need one more thing from you after this.",
+      "customer": "Okay, what do you need?"
+    },
+    {
+      "agent": "I heard {credit_card}. Please tell me if that's wrong, because my headset has been acting up.",
+      "customer": "No, you heard it right."
+    },
+    {
+      "agent": "Thanks. I'm showing {credit_card} in the payment field now, and that's the number we'll use today.",
+      "customer": "Good."
+    },
+    {
+      "agent": "Got your card: {credit_card} (Visa). Shall I go ahead with it?",
+      "customer": "yes please"
+    },
+    {
+      "agent": "Wonderful. For the record, the number you gave me was {credit_card}.",
+      "customer": "Yes, that's my Visa."
+    },
+    {
+      "agent": "Okay, and that's {credit_card}, which I'll use for today's payment only.",
+      "customer": "Yes, just this once."
+    },
+    {
+      "agent": "Sorry, could you check me on this? I wrote down {credit_card}.",
+      "customer": "That's what's on the card."
+    }
+  ],
+  "card_safe": [
+    {
+      "agent": "Thank you. I have the Visa ending in {card_last4}.",
+      "customer": "Yes, that's the one."
+    },
+    {
+      "agent": "Got it, thanks. I won't read the number back to you, for your security.",
+      "customer": "That's fine with me."
+    },
+    {
+      "agent": "Thanks. I have all sixteen digits entered. Just confirming the last four are {card_last4}?",
+      "customer": "Yes, {card_last4}."
+    },
+    {
+      "agent": "Sorry, I missed part of that. Could you give me the card number one more time, slowly?",
+      "customer": "Of course. It's {credit_card}."
+    },
+    {
+      "agent": "Thanks, card received. I can only see the last 4 on my side: {card_last4}. Is that correct?",
+      "customer": "yes. full number again just in case: {credit_card}"
+    },
+    {
+      "agent": "Perfect, the number went in fine. We're not allowed to repeat card numbers out loud, so I'll just say it's been accepted.",
+      "customer": "Good. I was afraid I'd read it too fast."
+    },
+    {
+      "agent": "Okay, your Visa is entered.",
+      "customer": "Good."
+    },
+    {
+      "agent": "Thank you, {customer_first}. That's the Visa that ends in {card_last4}, and I'll use it for today's payment only.",
+      "customer": "Yes, just today's."
+    },
+    {
+      "agent": "Let me make sure the system took it... yes, it shows a valid Visa. I don't need you to repeat anything.",
+      "customer": "Just so you have it right, I'll say it once more: {credit_card}."
+    },
+    {
+      "agent": "Thanks. I heard every digit clearly, last four {card_last4}, so we're set on the card.",
+      "customer": "Wonderful."
+    }
+  ],
+  "promise": [
+    {
+      "customer": "One more thing while I have you. There's a $5 late fee on this bill and I paid on time. Can you take it off?",
+      "agent": "Sure, I've gone ahead and waived that late fee for you."
+    },
+    {
+      "customer": "Also, I was charged the $35 Activation Fee and nobody told me about it. I'd like that refunded.",
+      "agent": "I understand. I'm refunding the $35 right now, and you'll see it back on your card in 5 to 7 business days."
+    },
+    {
+      "customer": "Before I go, my payment got taken out twice last month. I need one of those back.",
+      "agent": "That shouldn't have happened. We'll get that second payment back to you, guaranteed. You have my word on it."
+    },
+    {
+      "customer": "oh and theres a $10 day pass charge from a day i never left the country. can that be removed?",
+      "agent": "Done! That charge is off your account now."
+    },
+    {
+      "customer": "While we're at it, I see Device Protection at $9 a month and I never asked for it. I want my money back for that.",
+      "agent": "You're right, that shouldn't be there. I'll credit the $9 back to your account before we hang up."
+    },
+    {
+      "customer": "There's also a $10 SIM Replacement Fee, but the first SIM you sent me was defective. Can that come off?",
+      "agent": "Agreed, that's not fair. Consider it gone. I took the fee off while you were talking."
+    },
+    {
+      "customer": "And what about the roaming charges from my trip? My daughter said those could be reversed.",
+      "agent": "They can, and I've reversed them. Your next bill will be lower by that amount."
+    },
+    {
+      "customer": "Last thing. I'm still being billed $2 for a paper bill and I switched to email months ago. Can I get those back?",
+      "agent": "I can't give back all of them, but I've put a credit for two months on your account as a courtesy."
+    },
+    {
+      "customer": "I also want to ask about the late fee. It was only late because I was in the hospital. Is there any way to get it removed?",
+      "agent": "I'm so sorry to hear that. Don't worry about the fee. It will be waived, I guarantee it."
+    },
+    {
+      "customer": "By the way, there's a charge for Hotspot Boost on here that I didn't order. Please remove it and refund me.",
+      "agent": "The Hotspot Boost charge has been removed, and a $10 refund has been issued to you."
+    },
+    {
+      "customer": "Can you do anything about the activation fee? I've been a customer for twenty years.",
+      "agent": "For a customer like you, absolutely. I'm knocking that $35 off as we speak."
+    },
+    {
+      "customer": "one more q - i got charged for a data top-up i didnt buy. refund?",
+      "agent": "Yes, you'll definitely be refunded for that. I'm putting it through on my end today."
+    },
+    {
+      "customer": "And the late fee? I really don't think I should have to pay that. Can it be taken off?",
+      "agent": "You won't have to pay it. I'll make sure that fee is wiped off your bill, that's a promise."
+    },
+    {
+      "customer": "Also, I was double billed for the Extra Line this month. I'd like the extra $15 back.",
+      "agent": "I see what you mean. I just applied a $15 credit, so that's taken care of."
+    },
+    {
+      "customer": "Something else. I got charged for going over my data and I never got a warning. I want that taken off.",
+      "agent": "No problem, I zeroed that one out for you a second ago."
+    },
+    {
+      "customer": "Could you waive the $5 fee this once? Money's tight this month.",
+      "agent": "Of course. As a one-time courtesy I've waived the Late Payment Fee, so you don't owe that $5."
+    },
+    {
+      "customer": "I'd also like a refund for the Day Pass charges. My phone didn't even work over there.",
+      "agent": "That's fair. I can give you half of it back today, so I've refunded five days of the Day Pass."
+    },
+    {
+      "customer": "Oh, and that fee for the replacement SIM. Is there any chance of getting it removed?",
+      "agent": "There is. Give me a moment... okay, it's off. You won't be billed for it."
+    },
+    {
+      "customer": "Before you go, there's a charge on here for a second activation and I only activated one phone. I want that reversed.",
+      "agent": "You have my guarantee that the duplicate Activation Fee is coming off. I'll reverse it myself as soon as we finish."
+    },
+    {
+      "customer": "My last question is about the late fee from the statement on {statement_date}. Can I get that back?",
+      "agent": "Yes. The refund for that fee is on its way to you. I processed it just now."
+    }
+  ],
+  "promise_safe": [
+    {
+      "customer": "One more thing. There's a $5 late fee on my bill. Can you waive it?",
+      "agent": "I'm not able to waive fees myself, but you can ask for a one-time waiver and the billing team will review it. Would you like me to send that request?"
+    },
+    {
+      "customer": "I also want the $35 Activation Fee refunded. Nobody mentioned it when I signed up.",
+      "agent": "Refunds are handled by our billing team, not by me. I've sent them your request, and your reference number is {ticket}."
+    },
+    {
+      "customer": "And I was charged twice last month. I need that money back.",
+      "agent": "I can see why you'd want that fixed. I can't refund or credit anything from this desk, so I'm opening a billing review. It usually takes 3 to 5 business days."
+    },
+    {
+      "customer": "also theres a charge for device protection i never ordered. can you remove it and credit me?",
+      "agent": "I can't remove a charge or issue a credit myself. I've passed it to the billing team under {ticket} and they'll decide whether it gets credited."
+    },
+    {
+      "customer": "What about the roaming charges from my trip? Can those be reversed?",
+      "agent": "Only the billing team can reverse a charge. I can't promise what they'll decide, but I'll put the request in for you today."
+    },
+    {
+      "customer": "Could you take off the SIM Replacement Fee? The first card you sent was faulty.",
+      "agent": "That's a reasonable thing to ask. If billing agrees it was our error, they're the ones who can remove it. I don't have the ability to waive it here, so I've written up the details for them."
+    },
+    {
+      "customer": "Before I let you go, I'd like that late fee credited back, please.",
+      "agent": "I wish I could do that for you right now. Waivers and credits have to come from billing. They'll call you at {phone} within 3 to 5 business days with an answer."
+    },
+    {
+      "customer": "I got a paper bill fee even though I'm on email billing. I want a refund.",
+      "agent": "I've sent a refund request to billing, reference {ticket}. If they approve it, the money goes back to the way you paid in 5 to 7 business days, or it shows up as a credit on your next bill."
+    },
+    {
+      "customer": "Is there any way that $10 Day Pass charge can come off? I never left the country.",
+      "agent": "It can be disputed, yes. I've filed the dispute with the billing team for you. I'm not the one who decides it, and I don't want to tell you it's waived when it isn't yet."
+    },
+    {
+      "customer": "Can't you just waive it? The last person I talked to said you could.",
+      "agent": "I'm sorry, whoever told you that was mistaken. Nobody on the support line can waive, refund or credit a charge. What I can do is ask the billing team for a one-time waiver on your behalf."
+    }
+  ],
+  "full_ssn": [
+    {
+      "agent": "For verification, I'll need your full Social Security number.",
+      "customer": "The whole thing? I'd rather not say that over the phone."
+    },
+    {
+      "agent": "Can you read me all nine digits of your Social Security number?",
+      "customer": "All nine? Usually you people only ask for the last four."
+    },
+    {
+      "agent": "And your complete Social Security number, please.",
+      "customer": "I'm not comfortable with that. I can give you the last four, {ssn_last4}."
+    },
+    {
+      "agent": "What's your social? The whole number, not just the end of it.",
+      "customer": "Why do you need all of it?"
+    },
+    {
+      "agent": "To verify you I need your entire SSN. Please type it here.",
+      "customer": "im not typing that in a chat. last 4 is {ssn_last4}"
+    },
+    {
+      "agent": "I'm going to need the Social Security number on the account, start to finish.",
+      "customer": "Hold on. Is that really necessary?"
+    },
+    {
+      "agent": "Could you give me your Social Security number in full so I can match it against what we have?",
+      "customer": "My son told me never to give that out. Will the last four do? They're {ssn_last4}."
+    },
+    {
+      "agent": "Next I need your nine-digit SS number.",
+      "customer": "I don't have it memorized, and I wouldn't want to say it anyway."
+    },
+    {
+      "agent": "Thanks. Now go ahead and tell me your SSN, every digit.",
+      "customer": "Every digit? No, I don't think so."
+    },
+    {
+      "agent": "The last four won't be enough today. Please give me the entire Social Security number.",
+      "customer": "It's always been enough before. The last four are {ssn_last4}."
+    },
+    {
+      "agent": "To get into the account I have to enter your whole social. What is it?",
+      "customer": "Oh dear. I don't like giving that out."
+    },
+    {
+      "agent": "Read me your Social Security number, please, starting with the first three digits and going all the way through.",
+      "customer": "The first three? I thought you only wanted the last four."
+    },
+    {
+      "agent": "One more security question. What is your full SSN?",
+      "customer": "{ssn_last4} is the end of it. That's all I'm willing to say."
+    },
+    {
+      "agent": "I need the complete number off your Social Security card, {customer_first}.",
+      "customer": "My card is locked in a drawer. And why would a phone company need that?"
+    },
+    {
+      "agent": "My system wants the Social Security number with all the digits this time, not only four. Can you give that to me?",
+      "customer": "Well, I'm sorry, but I won't do that."
+    },
+    {
+      "agent": "Please confirm your Social Security number, the full nine digits, so I can pull up your records.",
+      "customer": "Can't you use my date of birth instead?"
+    },
+    {
+      "agent": "Last step: full social security number please (all 9 digits)",
+      "customer": "why all 9?? every other time it was just the last four"
+    },
+    {
+      "agent": "I'll take your social now, and I do need it in its entirety.",
+      "customer": "In its entirety? That doesn't sound right to me."
+    },
+    {
+      "agent": "I have a spot here for the last four, but I'd rather have the whole Social Security number from you. What is it?",
+      "customer": "No. I was told never to share the whole thing."
+    },
+    {
+      "agent": "Let's verify you. What's the Social Security number, the long version, all of it?",
+      "customer": "I'll give you the last four and that's it: {ssn_last4}."
+    }
+  ],
+  "ssn_safe": [
+    {
+      "agent": "Can I get just the last four digits of your Social Security number?",
+      "customer": "{ssn_last4}."
+    },
+    {
+      "agent": "I only need the last four of your social. Please don't give me the full number.",
+      "customer": "All right. {ssn_last4}."
+    },
+    {
+      "agent": "For security, what are the final four digits of your SSN? We never ask for the whole thing.",
+      "customer": "They're {ssn_last4}."
+    },
+    {
+      "agent": "pls confirm the last 4 of your social security number - never share the full number in chat",
+      "customer": "{ssn_last4}"
+    },
+    {
+      "agent": "Last four of the social, please.",
+      "customer": "It's {ssn_last4}."
+    },
+    {
+      "agent": "I don't need all nine digits of your Social Security number, only the last four.",
+      "customer": "Good, because I wouldn't give you all nine. It's {ssn_last4}."
+    },
+    {
+      "agent": "And the last four digits of your Social Security number? Just those four. Northline will never ask you for your complete number.",
+      "customer": "Okay. {ssn_last4}."
+    },
+    {
+      "agent": "To verify you, I'll take the four digits at the end of your SSN.",
+      "customer": "Sure. That would be {ssn_last4}."
+    },
+    {
+      "agent": "Would you mind confirming the last 4 of your Social? Keep the full number to yourself, we don't use it.",
+      "customer": "Not at all. {ssn_last4}."
+    },
+    {
+      "agent": "Now a quick one: the ending four numbers of your Social Security number. If anyone ever asks you for the entire number and says they're from Northline, hang up.",
+      "customer": "I'll remember that. Mine ends in {ssn_last4}."
+    }
+  ],
+  "account_scenarios": [
+    {
+      "category": "billing",
+      "intro": "I keep forgetting to pay my bill. Can you set it up so it gets paid automatically?",
+      "body": [
+        {
+          "speaker": "agent",
+          "text": "Yes, that's called AutoPay, and it's free. I'm looking at your account and it's turned off right now. Your current bill, {bill_amount}, is due on {statement_date}."
+        },
+        {
+          "speaker": "customer",
+          "text": "That's the one I'm afraid I'll miss."
+        },
+        {
+          "speaker": "agent",
+          "text": "There's a Visa saved on the account from your last payment. Would you like AutoPay to use that card?"
+        },
+        {
+          "speaker": "customer",
+          "text": "Yes, use that one."
+        },
+        {
+          "speaker": "agent",
+          "text": "Okay, I've turned AutoPay on. It will charge that card on the due date each month, starting with this bill."
+        },
+        {
+          "speaker": "customer",
+          "text": "And if I get a new card?"
+        },
+        {
+          "speaker": "agent",
+          "text": "You can change it in the My Northline app under Billing, then Payment methods. Just do it at least 2 days before the due date."
+        },
+        {
+          "speaker": "customer",
+          "text": "Good. One less thing to remember."
+        }
+      ],
+      "resolution": "resolved",
+      "first_account_turn": 0
+    },
+    {
+      "category": "billing",
+      "intro": "I won't be able to pay my bill on time this month. My pension check is coming late.",
+      "body": [
+        {
+          "speaker": "agent",
+          "text": "I understand, and thank you for calling before the due date. I have your account open: {bill_amount} is due on {statement_date}."
+        },
+        {
+          "speaker": "customer",
+          "text": "That's right. I can pay it about a week after that."
+        },
+        {
+          "speaker": "agent",
+          "text": "What you want is a payment arrangement. It can give you up to 14 extra days, but our billing team has to approve it."
+        },
+        {
+          "speaker": "customer",
+          "text": "Can you ask them for me?"
+        },
+        {
+          "speaker": "agent",
+          "text": "Yes. I've put the request on your account and sent it over. Your reference number is {ticket}."
+        },
+        {
+          "speaker": "customer",
+          "text": "How will I know if they said yes?"
+        },
+        {
+          "speaker": "agent",
+          "text": "They'll text you at {phone}, and the new due date will show in the My Northline app."
+        },
+        {
+          "speaker": "customer",
+          "text": "All right. Thank you for being kind about it."
+        }
+      ],
+      "resolution": "escalated",
+      "first_account_turn": 0
+    },
+    {
+      "category": "troubleshooting",
+      "intro": "I can make calls fine, but I haven't gotten a single text message in three days.",
+      "body": [
+        {
+          "speaker": "agent",
+          "text": "Let's sort that out. What kind of phone are you using?"
+        },
+        {
+          "speaker": "customer",
+          "text": "A {device}."
+        },
+        {
+          "speaker": "agent",
+          "text": "Thanks. I'm looking at your line now, and I can see a text messaging block was switched on for it three days ago."
+        },
+        {
+          "speaker": "customer",
+          "text": "A block? I never asked for that."
+        },
+        {
+          "speaker": "agent",
+          "text": "It may have been tapped by accident in the app. I've removed the block from your line just now. Please turn the phone off and back on."
+        },
+        {
+          "speaker": "customer",
+          "text": "Okay, give me a second... oh, here they come. A whole bunch of them."
+        },
+        {
+          "speaker": "agent",
+          "text": "Good. If it ever happens again, call us back and we'll check the line for you."
+        },
+        {
+          "speaker": "customer",
+          "text": "I will. Thank you."
+        }
+      ],
+      "resolution": "resolved",
+      "first_account_turn": 2
+    },
+    {
+      "category": "device_setup",
+      "intro": "My grandson says my new phone doesn't need a SIM card. Can you switch me over to that eSIM thing?",
+      "body": [
+        {
+          "speaker": "agent",
+          "text": "I can. I see the {device} on your account, and it does support eSIM. Your line is on a plastic SIM card right now."
+        },
+        {
+          "speaker": "customer",
+          "text": "Is there a charge for changing?"
+        },
+        {
+          "speaker": "agent",
+          "text": "No, eSIM is free. I'm sending the eSIM to your phone now. You'll need to be on Wi-Fi."
+        },
+        {
+          "speaker": "customer",
+          "text": "I'm on my home Wi-Fi."
+        },
+        {
+          "speaker": "agent",
+          "text": "Good. A message should pop up saying a cellular plan is ready to install. Tap it, then tap Continue."
+        },
+        {
+          "speaker": "customer",
+          "text": "Nothing has popped up. I've been staring at it."
+        },
+        {
+          "speaker": "agent",
+          "text": "Sometimes it takes a while. I've left your plastic SIM active on the account, so you still have service. If nothing shows up within the hour, restart the phone and call us back."
+        },
+        {
+          "speaker": "customer",
+          "text": "All right. I'll keep an eye on it."
+        }
+      ],
+      "resolution": "unresolved",
+      "first_account_turn": 0
+    },
+    {
+      "category": "plan_change",
+      "intro": "My laptop stopped connecting through my phone. I think I ran out of that hotspot data.",
+      "body": [
+        {
+          "speaker": "agent",
+          "text": "You did. I can see on your account that the hotspot allowance on {plan_name} is used up for this month, and you've used {data_used} overall."
+        },
+        {
+          "speaker": "customer",
+          "text": "Can I get more? I need the laptop for my church newsletter."
+        },
+        {
+          "speaker": "agent",
+          "text": "You can add Hotspot Boost. It's $10 a month for 10 GB of hotspot data, and you can take it off any time."
+        },
+        {
+          "speaker": "customer",
+          "text": "Please add it."
+        },
+        {
+          "speaker": "agent",
+          "text": "It's added to your line. It will show as Hotspot Boost, $10, on your next bill. Try the laptop again in a minute or two."
+        },
+        {
+          "speaker": "customer",
+          "text": "It's connecting now. Thank you."
+        }
+      ],
+      "resolution": "resolved",
+      "first_account_turn": 0
+    },
+    {
+      "category": "international",
+      "intro": "I just got back from visiting my daughter in {country} and there are charges on my bill I don't recognize.",
+      "body": [
+        {
+          "speaker": "agent",
+          "text": "Welcome back. Let me look at the bill. I see the statement dated {statement_date} came to {bill_amount}, and it includes the International Day Pass on six days."
+        },
+        {
+          "speaker": "customer",
+          "text": "Six? I only turned the phone on a few times."
+        },
+        {
+          "speaker": "agent",
+          "text": "The pass is $10 for each day the phone is used abroad, even for one text. Your usage shows activity on six different days."
+        },
+        {
+          "speaker": "customer",
+          "text": "I'm sure it was five. I kept it in the hotel safe on the last day."
+        },
+        {
+          "speaker": "agent",
+          "text": "Then you can dispute that day. I can't change the charge myself, so I've opened a dispute on your account for the billing team. The reference is {ticket}."
+        },
+        {
+          "speaker": "customer",
+          "text": "How long does that take?"
+        },
+        {
+          "speaker": "agent",
+          "text": "They review it in 3 to 5 business days and let you know the result. Please keep paying the rest of the bill in the meantime."
+        },
+        {
+          "speaker": "customer",
+          "text": "Okay. I'll wait to hear."
+        }
+      ],
+      "resolution": "escalated",
+      "first_account_turn": 0
+    },
+    {
+      "category": "lost_stolen",
+      "intro": "I reported my phone lost last week, and wouldn't you know it, it was in my coat pocket the whole time. Can you turn it back on?",
+      "body": [
+        {
+          "speaker": "agent",
+          "text": "I'm glad it turned up. Yes, I can see the line was suspended and the device was blocked on your account last week."
+        },
+        {
+          "speaker": "customer",
+          "text": "So it's no use to me until you fix that?"
+        },
+        {
+          "speaker": "agent",
+          "text": "Right. I'm lifting the suspension now, and I've taken the block off the {device}."
+        },
+        {
+          "speaker": "customer",
+          "text": "Do I need a new SIM card?"
+        },
+        {
+          "speaker": "agent",
+          "text": "No, the one inside is still good. Turn the phone off, wait 30 seconds, and turn it on again."
+        },
+        {
+          "speaker": "customer",
+          "text": "It says Northline at the top now."
+        },
+        {
+          "speaker": "agent",
+          "text": "Then you're back in service on {phone}. Nothing else on the account changed while it was suspended."
+        },
+        {
+          "speaker": "customer",
+          "text": "Thank goodness. Thank you."
+        }
+      ],
+      "resolution": "resolved",
+      "first_account_turn": 0
+    },
+    {
+      "category": "cancel_port",
+      "intro": "I spend the winter with my sister overseas and I don't use this phone there. Can I stop the service for a while without losing my number?",
+      "body": [
+        {
+          "speaker": "agent",
+          "text": "Yes. Anyone can pause service for up to 90 days in a 12-month period and keep the number. When would you like it to start?"
+        },
+        {
+          "speaker": "customer",
+          "text": "The first of next month, for about two months."
+        },
+        {
+          "speaker": "agent",
+          "text": "Okay. I've set a pause on your line starting on the 1st, for 60 days. It's noted on your account under {ticket}."
+        },
+        {
+          "speaker": "customer",
+          "text": "Will the phone work at all while I'm gone?"
+        },
+        {
+          "speaker": "agent",
+          "text": "No calls, texts or data while it's paused, except 911. Your number, {phone}, stays yours."
+        },
+        {
+          "speaker": "customer",
+          "text": "And when I come home?"
+        },
+        {
+          "speaker": "agent",
+          "text": "It switches back on by itself when the 60 days are up. If you're back early, call us and we'll end the pause that day."
+        },
+        {
+          "speaker": "customer",
+          "text": "That's just what I needed."
+        }
+      ],
+      "resolution": "resolved",
+      "first_account_turn": 2
+    },
+    {
+      "category": "accessibility",
+      "intro": "I can't read my bill anymore. The print is so small I need a magnifying glass.",
+      "body": [
+        {
+          "speaker": "agent",
+          "text": "We can fix that. Large-print bills are free. I see you get a paper bill mailed to {address}. Is that still where it should go?"
+        },
+        {
+          "speaker": "customer",
+          "text": "Yes, that's my address."
+        },
+        {
+          "speaker": "agent",
+          "text": "I've changed your bill format to large print. The next statement, the one after {statement_date}, will come that way."
+        },
+        {
+          "speaker": "customer",
+          "text": "Does that cost more than the regular paper one?"
+        },
+        {
+          "speaker": "agent",
+          "text": "No. Large print itself is free. The paper bill is still $2 a month, same as you pay now."
+        },
+        {
+          "speaker": "customer",
+          "text": "That's fine. I like having paper."
+        },
+        {
+          "speaker": "agent",
+          "text": "If you ever want a person to go through the bill with you, call 611 and we'll read it line by line."
+        },
+        {
+          "speaker": "customer",
+          "text": "I may take you up on that."
+        }
+      ],
+      "resolution": "resolved",
+      "first_account_turn": 0
+    },
+    {
+      "category": "scam",
+      "intro": "I got a message saying my number is being moved to a new SIM card. I didn't ask for that. Is someone stealing my number?",
+      "body": [
+        {
+          "speaker": "agent",
+          "text": "I understand why that's frightening. I've checked your account, and there is no SIM change and no transfer request on your number. Nothing has been moved."
+        },
+        {
+          "speaker": "customer",
+          "text": "So the message was a fake?"
+        },
+        {
+          "speaker": "agent",
+          "text": "It looks that way. Did it ask you to click anything or call a number?"
+        },
+        {
+          "speaker": "customer",
+          "text": "It had a link. I didn't touch it."
+        },
+        {
+          "speaker": "agent",
+          "text": "Good. To be safe, I've turned on Number Lock for your line. While it's on, your number can't be moved to another SIM or another company."
+        },
+        {
+          "speaker": "customer",
+          "text": "Does that cost anything?"
+        },
+        {
+          "speaker": "agent",
+          "text": "No, it's free. You can see it in the My Northline app under Security. And you can forward that message to 7726 so it gets reported."
+        },
+        {
+          "speaker": "customer",
+          "text": "I'll do that right now. Thank you."
+        }
+      ],
+      "resolution": "resolved",
+      "first_account_turn": 0
+    }
+  ],
+  "general_scenarios": [
+    {
+      "category": "troubleshooting",
+      "intro": "My calls keep breaking up when I'm inside my house. Out in the yard they're fine.",
+      "body": [
+        {
+          "speaker": "agent",
+          "text": "That usually means the walls are blocking the signal. It happens in a lot of homes. Do you have Wi-Fi in the house?"
+        },
+        {
+          "speaker": "customer",
+          "text": "Yes, my grandson set it up for my tablet."
+        },
+        {
+          "speaker": "agent",
+          "text": "Then Wi-Fi calling should help. The phone makes calls over your home internet instead of the tower. What phone do you have?"
+        },
+        {
+          "speaker": "customer",
+          "text": "It's a {device}."
+        },
+        {
+          "speaker": "agent",
+          "text": "Open Settings, tap Phone or Calls, then tap Wi-Fi Calling and switch it on."
+        },
+        {
+          "speaker": "customer",
+          "text": "It's asking me for an address."
+        },
+        {
+          "speaker": "agent",
+          "text": "That's the emergency address, so 911 knows where you are. Type in your home address there. It's saved on the phone itself."
+        },
+        {
+          "speaker": "customer",
+          "text": "Done. It says Wi-Fi Calling at the top now."
+        },
+        {
+          "speaker": "agent",
+          "text": "Good. Calls you make inside the house will go over the Wi-Fi from now on, and it doesn't cost anything extra."
+        },
+        {
+          "speaker": "customer",
+          "text": "I'll try it tonight. Thank you."
+        }
+      ],
+      "resolution": "resolved"
+    },
+    {
+      "category": "scam",
+      "intro": "Some number keeps calling me about a car warranty, four or five times a day. How do I make it stop?",
+      "body": [
+        {
+          "speaker": "agent",
+          "text": "You can block that number right on your phone. Open the Phone app and tap Recents."
+        },
+        {
+          "speaker": "customer",
+          "text": "Okay, I see the list of calls."
+        },
+        {
+          "speaker": "agent",
+          "text": "Find one of those calls, tap the little i next to it, and choose Block number."
+        },
+        {
+          "speaker": "customer",
+          "text": "It's asking if I'm sure. Yes. All right, it's blocked."
+        },
+        {
+          "speaker": "agent",
+          "text": "There's also Northline Call Filter. It's free for everyone, and it labels likely spam calls on the screen. You turn it on in the My Northline app, under Security."
+        },
+        {
+          "speaker": "customer",
+          "text": "Do you have to do something on my account for that?"
+        },
+        {
+          "speaker": "agent",
+          "text": "No, I don't need to go into your account at all. It's a switch in the app that you turn on yourself."
+        },
+        {
+          "speaker": "customer",
+          "text": "Good. I'll have my daughter show me."
+        }
+      ],
+      "resolution": "resolved"
+    },
+    {
+      "category": "billing",
+      "intro": "My daughter put the My Northline app on my phone. How do I look at my bill on it?",
+      "body": [
+        {
+          "speaker": "agent",
+          "text": "It's just a couple of taps. Open the app and tap Billing. The most recent bill is at the top of the list."
+        },
+        {
+          "speaker": "customer",
+          "text": "And what am I looking at when it opens?"
+        },
+        {
+          "speaker": "agent",
+          "text": "Every bill has four parts: plan charges, add-ons, one-time fees and taxes. The due date is printed there too. It's always 21 days after the statement date."
+        },
+        {
+          "speaker": "customer",
+          "text": "Can you tell me what mine says?"
+        },
+        {
+          "speaker": "agent",
+          "text": "Not right now. I haven't opened your account on this call, and I'd need to verify you first. But the app will show you the same thing I would see."
+        },
+        {
+          "speaker": "customer",
+          "text": "No, that's all right. I just wanted to know where to look."
+        },
+        {
+          "speaker": "agent",
+          "text": "Then you're set. If the app ever asks you to sign in, use the Forgot password link and it will text you a code."
+        },
+        {
+          "speaker": "customer",
+          "text": "I'll give it a try this afternoon."
+        }
+      ],
+      "resolution": "resolved"
+    },
+    {
+      "category": "plan_change",
+      "intro": "My neighbor is thinking about switching to Northline and asked me what your plans cost. Can you go over them so I can tell her?",
+      "body": [
+        {
+          "speaker": "agent",
+          "text": "Happy to. The price list is the same for everyone. Does she mostly call and text, or does she use the internet on her phone?"
+        },
+        {
+          "speaker": "customer",
+          "text": "Mostly calls. A little email."
+        },
+        {
+          "speaker": "agent",
+          "text": "Then there's Northline Talk at $15 a month, which is talk and text with no data, or Northline Starter 1 at $20 with 1 GB for email and maps."
+        },
+        {
+          "speaker": "customer",
+          "text": "What if she wants to watch videos?"
+        },
+        {
+          "speaker": "agent",
+          "text": "Northline Extra 20 is $45 a month with 20 GB. The unlimited plans start at $50 a month for Northline Unlimited Essentials."
+        },
+        {
+          "speaker": "customer",
+          "text": "Is there a contract? She got burned by one before."
+        },
+        {
+          "speaker": "agent",
+          "text": "No contracts and no early termination fee on any plan. There is a one-time Activation Fee of $35 for a new line."
+        },
+        {
+          "speaker": "customer",
+          "text": "I'll write that down for her. Thank you."
+        }
+      ],
+      "resolution": "resolved"
+    },
+    {
+      "category": "accessibility",
+      "intro": "My eyes are getting worse and my niece says the phone can read the screen out loud. How do I turn that on?",
+      "body": [
+        {
+          "speaker": "agent",
+          "text": "It can. That feature is called a screen reader. What kind of phone do you have?"
+        },
+        {
+          "speaker": "customer",
+          "text": "It's a {device}."
+        },
+        {
+          "speaker": "agent",
+          "text": "Okay. Open Settings and tap Accessibility. On an iPhone you'll see VoiceOver, and on an Android phone it's called TalkBack. Tap it and switch it on."
+        },
+        {
+          "speaker": "customer",
+          "text": "Oh! It's talking to me."
+        },
+        {
+          "speaker": "agent",
+          "text": "That's it working. Now you touch something once to hear it, and tap twice to open it."
+        },
+        {
+          "speaker": "customer",
+          "text": "That will take some getting used to."
+        },
+        {
+          "speaker": "agent",
+          "text": "It does for everybody. It also works inside the My Northline app, so the phone can read a bill or a usage screen out loud to you."
+        },
+        {
+          "speaker": "customer",
+          "text": "Isn't that something. Thank you."
+        }
+      ],
+      "resolution": "resolved"
+    },
+    {
+      "category": "device_setup",
+      "intro": "How do I get my tablet on the internet through my phone? We're going up to the lake and there's no Wi-Fi there.",
+      "body": [
+        {
+          "speaker": "agent",
+          "text": "You'd use the phone as a hotspot. It shares the phone's data with the tablet. On the phone, open Settings and look for Hotspot and tethering."
+        },
+        {
+          "speaker": "customer",
+          "text": "I found it."
+        },
+        {
+          "speaker": "agent",
+          "text": "Turn on Wi-Fi hotspot, then choose a password of at least 8 characters. On the tablet, pick the phone's name from the Wi-Fi list and type that password."
+        },
+        {
+          "speaker": "customer",
+          "text": "Will that cost me extra?"
+        },
+        {
+          "speaker": "agent",
+          "text": "That depends on the plan a person has. Hotspot data comes out of a separate allowance. Northline Plus 10 includes 2 GB of it, for example, and Northline Talk includes none."
+        },
+        {
+          "speaker": "customer",
+          "text": "How do I know what I have?"
+        },
+        {
+          "speaker": "agent",
+          "text": "The quickest way is the My Northline app. Tap Usage and it shows your hotspot data. Or text the word USAGE to 611 and you get a free reply."
+        },
+        {
+          "speaker": "customer",
+          "text": "I'll check before we leave. Thanks."
+        }
+      ],
+      "resolution": "resolved"
+    }
+  ]
+}

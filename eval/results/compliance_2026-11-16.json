@@ -1,0 +1,2178 @@
+{
+  "scored_at": "2026-11-16T04:40:27Z",
+  "git_sha": "e95af8a1350674c40600bc2f510aa073e36eba59",
+  "first_contact": true,
+  "earlier_results": [],
+  "spacy_model": "en_core_web_md",
+  "versions": {
+    "presidio-analyzer": "2.2.366",
+    "spacy": "3.8.18",
+    "en_core_web_md": "3.8.0",
+    "faker": "40.54.0"
+  },
+  "breach_seed": 2718,
+  "clean_seed": 42,
+  "data_sha256": {
+    "breach_transcripts": "ec11a6a067731a4636482878722c3350a7b5107d82359aea7ce97fa3ef2eb4a0",
+    "breach_labels": "ccfb3197d60a0981cf43fe0830cc22849f17af526439693ad72028ba56b093bb",
+    "clean_transcripts": "dd044ca9847155f8eec593ec75f74aab42ecc65a8cd326f50ec7c3fcc7306aa9",
+    "breach_wording_dev.json": "a4cdd8f7cc1b706cb37ada749e18c25ec3a068d823404578f824f247343a072c",
+    "breach_wording_held_out.json": "cce87b0a01d1c71806186df261d7fae01fde21d94e8bb369da997ff303d77207"
+  },
+  "dev": {
+    "calls": 182,
+    "breaches": 107,
+    "by_rule": {
+      "disclosure_before_verification": {
+        "recall": {
+          "count": 27,
+          "of": 27,
+          "rate": 1.0,
+          "ci95": [
+            0.8754409628553641,
+            1.0
+          ]
+        },
+        "precision": {
+          "count": 27,
+          "of": 27,
+          "rate": 1.0,
+          "ci95": [
+            0.8754409628553641,
+            1.0
+          ]
+        },
+        "right_turn": {
+          "count": 27,
+          "of": 27,
+          "rate": 1.0,
+          "ci95": [
+            0.8754409628553641,
+            1.0
+          ]
+        }
+      },
+      "verification_skipped": {
+        "recall": {
+          "count": 20,
+          "of": 20,
+          "rate": 1.0,
+          "ci95": [
+            0.8388698745050667,
+            1.0
+          ]
+        },
+        "precision": {
+          "count": 20,
+          "of": 20,
+          "rate": 1.0,
+          "ci95": [
+            0.8388698745050667,
+            1.0
+          ]
+        },
+        "right_turn": {
+          "count": 20,
+          "of": 20,
+          "rate": 1.0,
+          "ci95": [
+            0.8388698745050667,
+            1.0
+          ]
+        }
+      },
+      "card_read_back": {
+        "recall": {
+          "count": 20,
+          "of": 20,
+          "rate": 1.0,
+          "ci95": [
+            0.8388698745050667,
+            1.0
+          ]
+        },
+        "precision": {
+          "count": 20,
+          "of": 20,
+          "rate": 1.0,
+          "ci95": [
+            0.8388698745050667,
+            1.0
+          ]
+        },
+        "right_turn": {
+          "count": 20,
+          "of": 20,
+          "rate": 1.0,
+          "ci95": [
+            0.8388698745050667,
+            1.0
+          ]
+        }
+      },
+      "unauthorized_promise": {
+        "recall": {
+          "count": 20,
+          "of": 20,
+          "rate": 1.0,
+          "ci95": [
+            0.8388698745050667,
+            1.0
+          ]
+        },
+        "precision": {
+          "count": 20,
+          "of": 20,
+          "rate": 1.0,
+          "ci95": [
+            0.8388698745050667,
+            1.0
+          ]
+        },
+        "right_turn": {
+          "count": 20,
+          "of": 20,
+          "rate": 1.0,
+          "ci95": [
+            0.8388698745050667,
+            1.0
+          ]
+        }
+      },
+      "full_ssn_requested": {
+        "recall": {
+          "count": 20,
+          "of": 20,
+          "rate": 1.0,
+          "ci95": [
+            0.8388698745050667,
+            1.0
+          ]
+        },
+        "precision": {
+          "count": 20,
+          "of": 20,
+          "rate": 1.0,
+          "ci95": [
+            0.8388698745050667,
+            1.0
+          ]
+        },
+        "right_turn": {
+          "count": 20,
+          "of": 20,
+          "rate": 1.0,
+          "ci95": [
+            0.8388698745050667,
+            1.0
+          ]
+        }
+      }
+    },
+    "right_by_variant": {
+      "billing_team_decides": {
+        "count": 10,
+        "of": 10,
+        "rate": 1.0,
+        "ci95": [
+          0.7224598312333834,
+          1.0
+        ]
+      },
+      "card_not_repeated": {
+        "count": 10,
+        "of": 10,
+        "rate": 1.0,
+        "ci95": [
+          0.7224598312333834,
+          1.0
+        ]
+      },
+      "card_read_back": {
+        "count": 20,
+        "of": 20,
+        "rate": 1.0,
+        "ci95": [
+          0.8388698745050667,
+          1.0
+        ]
+      },
+      "catalogue_before_verification": {
+        "count": 10,
+        "of": 10,
+        "rate": 1.0,
+        "ci95": [
+          0.7224598312333834,
+          1.0
+        ]
+      },
+      "clean": {
+        "count": 29,
+        "of": 29,
+        "rate": 1.0,
+        "ci95": [
+          0.8830264055344442,
+          1.0
+        ]
+      },
+      "disclosure_inserted": {
+        "count": 20,
+        "of": 20,
+        "rate": 1.0,
+        "ci95": [
+          0.8388698745050667,
+          1.0
+        ]
+      },
+      "disclosure_moved": {
+        "count": 7,
+        "of": 7,
+        "rate": 1.0,
+        "ci95": [
+          0.6456611570247934,
+          1.0
+        ]
+      },
+      "full_ssn_requested": {
+        "count": 20,
+        "of": 20,
+        "rate": 1.0,
+        "ci95": [
+          0.8388698745050667,
+          1.0
+        ]
+      },
+      "general_no_verification": {
+        "count": 6,
+        "of": 6,
+        "rate": 1.0,
+        "ci95": [
+          0.6096569663469354,
+          1.0
+        ]
+      },
+      "last_four_only": {
+        "count": 10,
+        "of": 10,
+        "rate": 1.0,
+        "ci95": [
+          0.7224598312333834,
+          1.0
+        ]
+      },
+      "unauthorized_promise": {
+        "count": 20,
+        "of": 20,
+        "rate": 1.0,
+        "ci95": [
+          0.8388698745050667,
+          1.0
+        ]
+      },
+      "verification_skipped": {
+        "count": 20,
+        "of": 20,
+        "rate": 1.0,
+        "ci95": [
+          0.8388698745050667,
+          1.0
+        ]
+      }
+    },
+    "wrong": [],
+    "caught_at_another_turn": []
+  },
+  "held_out": {
+    "calls": 200,
+    "breaches": 113,
+    "by_rule": {
+      "disclosure_before_verification": {
+        "recall": {
+          "count": 21,
+          "of": 27,
+          "rate": 0.7777777777777778,
+          "ci95": [
+            0.5924270453692919,
+            0.8939290451059105
+          ]
+        },
+        "precision": {
+          "count": 21,
+          "of": 22,
+          "rate": 0.9545454545454546,
+          "ci95": [
+            0.7820151050048196,
+            0.9919307806988522
+          ]
+        },
+        "right_turn": {
+          "count": 21,
+          "of": 21,
+          "rate": 1.0,
+          "ci95": [
+            0.8453561767357979,
+            1.0
+          ]
+        }
+      },
+      "verification_skipped": {
+        "recall": {
+          "count": 26,
+          "of": 26,
+          "rate": 1.0,
+          "ci95": [
+            0.8712669561953784,
+            1.0
+          ]
+        },
+        "precision": {
+          "count": 26,
+          "of": 27,
+          "rate": 0.9629629629629629,
+          "ci95": [
+            0.8171614606584348,
+            0.9934320234669025
+          ]
+        },
+        "right_turn": {
+          "count": 26,
+          "of": 26,
+          "rate": 1.0,
+          "ci95": [
+            0.8712669561953784,
+            1.0
+          ]
+        }
+      },
+      "card_read_back": {
+        "recall": {
+          "count": 20,
+          "of": 20,
+          "rate": 1.0,
+          "ci95": [
+            0.8388698745050667,
+            1.0
+          ]
+        },
+        "precision": {
+          "count": 20,
+          "of": 20,
+          "rate": 1.0,
+          "ci95": [
+            0.8388698745050667,
+            1.0
+          ]
+        },
+        "right_turn": {
+          "count": 20,
+          "of": 20,
+          "rate": 1.0,
+          "ci95": [
+            0.8388698745050667,
+            1.0
+          ]
+        }
+      },
+      "unauthorized_promise": {
+        "recall": {
+          "count": 15,
+          "of": 20,
+          "rate": 0.75,
+          "ci95": [
+            0.5312949900419365,
+            0.888139947210597
+          ]
+        },
+        "precision": {
+          "count": 15,
+          "of": 16,
+          "rate": 0.9375,
+          "ci95": [
+            0.7167073163197013,
+            0.9888809426916687
+          ]
+        },
+        "right_turn": {
+          "count": 15,
+          "of": 15,
+          "rate": 1.0,
+          "ci95": [
+            0.7961107336956521,
+            1.0
+          ]
+        }
+      },
+      "full_ssn_requested": {
+        "recall": {
+          "count": 14,
+          "of": 20,
+          "rate": 0.7,
+          "ci95": [
+            0.4810232237710206,
+            0.854524726031006
+          ]
+        },
+        "precision": {
+          "count": 14,
+          "of": 16,
+          "rate": 0.875,
+          "ci95": [
+            0.6397666856325173,
+            0.9650232506629428
+          ]
+        },
+        "right_turn": {
+          "count": 14,
+          "of": 14,
+          "rate": 1.0,
+          "ci95": [
+            0.7846829880728186,
+            1.0
+          ]
+        }
+      }
+    },
+    "right_by_variant": {
+      "billing_team_decides": {
+        "count": 9,
+        "of": 10,
+        "rate": 0.9,
+        "ci95": [
+          0.5958436145024278,
+          0.9821242504842788
+        ]
+      },
+      "card_not_repeated": {
+        "count": 10,
+        "of": 10,
+        "rate": 1.0,
+        "ci95": [
+          0.7224598312333834,
+          1.0
+        ]
+      },
+      "card_read_back": {
+        "count": 20,
+        "of": 20,
+        "rate": 1.0,
+        "ci95": [
+          0.8388698745050667,
+          1.0
+        ]
+      },
+      "catalogue_before_verification": {
+        "count": 9,
+        "of": 10,
+        "rate": 0.9,
+        "ci95": [
+          0.5958436145024278,
+          0.9821242504842788
+        ]
+      },
+      "clean": {
+        "count": 38,
+        "of": 38,
+        "rate": 1.0,
+        "ci95": [
+          0.90818706741616,
+          1.0
+        ]
+      },
+      "disclosure_inserted": {
+        "count": 14,
+        "of": 20,
+        "rate": 0.7,
+        "ci95": [
+          0.4810232237710206,
+          0.854524726031006
+        ]
+      },
+      "disclosure_moved": {
+        "count": 7,
+        "of": 7,
+        "rate": 1.0,
+        "ci95": [
+          0.6456611570247934,
+          1.0
+        ]
+      },
+      "full_ssn_requested": {
+        "count": 14,
+        "of": 20,
+        "rate": 0.7,
+        "ci95": [
+          0.4810232237710206,
+          0.854524726031006
+        ]
+      },
+      "general_no_verification": {
+        "count": 8,
+        "of": 9,
+        "rate": 0.8888888888888888,
+        "ci95": [
+          0.5649937852319399,
+          0.9801096286728695
+        ]
+      },
+      "last_four_only": {
+        "count": 8,
+        "of": 10,
+        "rate": 0.8,
+        "ci95": [
+          0.49015684672072335,
+          0.9433190520193067
+        ]
+      },
+      "unauthorized_promise": {
+        "count": 15,
+        "of": 20,
+        "rate": 0.75,
+        "ci95": [
+          0.5312949900419365,
+          0.888139947210597
+        ]
+      },
+      "verification_skipped": {
+        "count": 26,
+        "of": 26,
+        "rate": 1.0,
+        "ci95": [
+          0.8712669561953784,
+          1.0
+        ]
+      }
+    },
+    "wrong": [
+      {
+        "transcript_id": "T0386",
+        "variant": "disclosure_inserted",
+        "scenario": "international/1",
+        "wording": "disclosure/13",
+        "rule": "disclosure_before_verification",
+        "found": []
+      },
+      {
+        "transcript_id": "T0405",
+        "variant": "full_ssn_requested",
+        "scenario": "lost_stolen/1",
+        "wording": "full_ssn/11",
+        "rule": "full_ssn_requested",
+        "found": []
+      },
+      {
+        "transcript_id": "T0412",
+        "variant": "full_ssn_requested",
+        "scenario": "troubleshooting/1",
+        "wording": "full_ssn/5",
+        "rule": "full_ssn_requested",
+        "found": []
+      },
+      {
+        "transcript_id": "T0413",
+        "variant": "billing_team_decides",
+        "scenario": "new/general/2",
+        "wording": "promise_safe/8",
+        "rule": null,
+        "found": [
+          "unauthorized_promise"
+        ]
+      },
+      {
+        "transcript_id": "T0426",
+        "variant": "unauthorized_promise",
+        "scenario": "troubleshooting/2",
+        "wording": "promise/7",
+        "rule": "unauthorized_promise",
+        "found": []
+      },
+      {
+        "transcript_id": "T0432",
+        "variant": "full_ssn_requested",
+        "scenario": "lost_stolen/0",
+        "wording": "full_ssn/17",
+        "rule": "full_ssn_requested",
+        "found": []
+      },
+      {
+        "transcript_id": "T0442",
+        "variant": "full_ssn_requested",
+        "scenario": "billing/2",
+        "wording": "full_ssn/7",
+        "rule": "full_ssn_requested",
+        "found": []
+      },
+      {
+        "transcript_id": "T0455",
+        "variant": "unauthorized_promise",
+        "scenario": "cancel_port/1",
+        "wording": "promise/11",
+        "rule": "unauthorized_promise",
+        "found": []
+      },
+      {
+        "transcript_id": "T0457",
+        "variant": "full_ssn_requested",
+        "scenario": "lost_stolen/1",
+        "wording": "full_ssn/8",
+        "rule": "full_ssn_requested",
+        "found": []
+      },
+      {
+        "transcript_id": "T0474",
+        "variant": "disclosure_inserted",
+        "scenario": "billing/0",
+        "wording": "disclosure/7",
+        "rule": "disclosure_before_verification",
+        "found": []
+      },
+      {
+        "transcript_id": "T0489",
+        "variant": "unauthorized_promise",
+        "scenario": "international/1",
+        "wording": "promise/19",
+        "rule": "unauthorized_promise",
+        "found": []
+      },
+      {
+        "transcript_id": "T0490",
+        "variant": "last_four_only",
+        "scenario": "new/account/3",
+        "wording": "ssn_safe/8",
+        "rule": null,
+        "found": [
+          "full_ssn_requested"
+        ]
+      },
+      {
+        "transcript_id": "T0515",
+        "variant": "unauthorized_promise",
+        "scenario": "new/account/1",
+        "wording": "promise/14",
+        "rule": "unauthorized_promise",
+        "found": []
+      },
+      {
+        "transcript_id": "T0527",
+        "variant": "disclosure_inserted",
+        "scenario": "international/1",
+        "wording": "disclosure/19",
+        "rule": "disclosure_before_verification",
+        "found": []
+      },
+      {
+        "transcript_id": "T0540",
+        "variant": "full_ssn_requested",
+        "scenario": "billing/0",
+        "wording": "full_ssn/14",
+        "rule": "full_ssn_requested",
+        "found": []
+      },
+      {
+        "transcript_id": "T0545",
+        "variant": "general_no_verification",
+        "scenario": "new/general/5",
+        "wording": null,
+        "rule": null,
+        "found": [
+          "verification_skipped"
+        ]
+      },
+      {
+        "transcript_id": "T0547",
+        "variant": "unauthorized_promise",
+        "scenario": "plan_change/1",
+        "wording": "promise/2",
+        "rule": "unauthorized_promise",
+        "found": []
+      },
+      {
+        "transcript_id": "T0552",
+        "variant": "last_four_only",
+        "scenario": "new/account/8",
+        "wording": "ssn_safe/9",
+        "rule": null,
+        "found": [
+          "full_ssn_requested"
+        ]
+      },
+      {
+        "transcript_id": "T0556",
+        "variant": "catalogue_before_verification",
+        "scenario": "billing/2",
+        "wording": "catalogue/8",
+        "rule": null,
+        "found": [
+          "disclosure_before_verification"
+        ]
+      },
+      {
+        "transcript_id": "T0560",
+        "variant": "disclosure_inserted",
+        "scenario": "international/1",
+        "wording": "disclosure/15",
+        "rule": "disclosure_before_verification",
+        "found": []
+      },
+      {
+        "transcript_id": "T0572",
+        "variant": "disclosure_inserted",
+        "scenario": "cancel_port/0",
+        "wording": "disclosure/8",
+        "rule": "disclosure_before_verification",
+        "found": []
+      },
+      {
+        "transcript_id": "T0573",
+        "variant": "disclosure_inserted",
+        "scenario": "international/1",
+        "wording": "disclosure/9",
+        "rule": "disclosure_before_verification",
+        "found": []
+      }
+    ],
+    "caught_at_another_turn": []
+  },
+  "clean": {
+    "calls_flagged": {
+      "count": 0,
+      "of": 200,
+      "rate": 0.0,
+      "ci95": [
+        0.0,
+        0.018846005918320894
+      ]
+    },
+    "by_rule": {
+      "disclosure_before_verification": 0,
+      "verification_skipped": 0,
+      "card_read_back": 0,
+      "unauthorized_promise": 0,
+      "full_ssn_requested": 0
+    },
+    "flagged": {}
+  },
+  "predictions": {
+    "T0201": [],
+    "T0202": [],
+    "T0203": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 9
+      }
+    ],
+    "T0204": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0205": [],
+    "T0206": [],
+    "T0207": [],
+    "T0208": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 9
+      }
+    ],
+    "T0209": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 9
+      }
+    ],
+    "T0210": [],
+    "T0211": [],
+    "T0212": [],
+    "T0213": [],
+    "T0214": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 5
+      }
+    ],
+    "T0215": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 11
+      }
+    ],
+    "T0216": [],
+    "T0217": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0218": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 19
+      }
+    ],
+    "T0219": [],
+    "T0220": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 5
+      }
+    ],
+    "T0221": [],
+    "T0222": [],
+    "T0223": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 16
+      }
+    ],
+    "T0224": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0225": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0226": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 5
+      }
+    ],
+    "T0227": [],
+    "T0228": [],
+    "T0229": [],
+    "T0230": [],
+    "T0231": [],
+    "T0232": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0233": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 6
+      }
+    ],
+    "T0234": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 7
+      }
+    ],
+    "T0235": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 16
+      }
+    ],
+    "T0236": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0237": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 7
+      }
+    ],
+    "T0238": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 11
+      }
+    ],
+    "T0239": [],
+    "T0240": [],
+    "T0241": [],
+    "T0242": [],
+    "T0243": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 16
+      }
+    ],
+    "T0244": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 7
+      }
+    ],
+    "T0245": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 13
+      }
+    ],
+    "T0246": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0247": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0248": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 16
+      }
+    ],
+    "T0249": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0250": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 5
+      }
+    ],
+    "T0251": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0252": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 11
+      }
+    ],
+    "T0253": [],
+    "T0254": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 11
+      }
+    ],
+    "T0255": [],
+    "T0256": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0257": [],
+    "T0258": [],
+    "T0259": [],
+    "T0260": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 5
+      }
+    ],
+    "T0261": [],
+    "T0262": [],
+    "T0263": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 13
+      }
+    ],
+    "T0264": [],
+    "T0265": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 18
+      }
+    ],
+    "T0266": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 9
+      }
+    ],
+    "T0267": [],
+    "T0268": [],
+    "T0269": [],
+    "T0270": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 16
+      }
+    ],
+    "T0271": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 18
+      }
+    ],
+    "T0272": [],
+    "T0273": [],
+    "T0274": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 11
+      }
+    ],
+    "T0275": [],
+    "T0276": [],
+    "T0277": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0278": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 5
+      }
+    ],
+    "T0279": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 11
+      }
+    ],
+    "T0280": [],
+    "T0281": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 21
+      }
+    ],
+    "T0282": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0283": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 14
+      }
+    ],
+    "T0284": [],
+    "T0285": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 11
+      }
+    ],
+    "T0286": [],
+    "T0287": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 8
+      }
+    ],
+    "T0288": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0289": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0290": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 9
+      }
+    ],
+    "T0291": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 9
+      }
+    ],
+    "T0292": [],
+    "T0293": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0294": [],
+    "T0295": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 8
+      }
+    ],
+    "T0296": [],
+    "T0297": [],
+    "T0298": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0299": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 11
+      }
+    ],
+    "T0300": [],
+    "T0301": [],
+    "T0302": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 19
+      }
+    ],
+    "T0303": [],
+    "T0304": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 7
+      }
+    ],
+    "T0305": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 9
+      }
+    ],
+    "T0306": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 5
+      }
+    ],
+    "T0307": [],
+    "T0308": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 11
+      }
+    ],
+    "T0309": [],
+    "T0310": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 14
+      }
+    ],
+    "T0311": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 5
+      }
+    ],
+    "T0312": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 13
+      }
+    ],
+    "T0313": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 18
+      }
+    ],
+    "T0314": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 7
+      }
+    ],
+    "T0315": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 16
+      }
+    ],
+    "T0316": [],
+    "T0317": [],
+    "T0318": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 9
+      }
+    ],
+    "T0319": [],
+    "T0320": [],
+    "T0321": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0322": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 11
+      }
+    ],
+    "T0323": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 18
+      }
+    ],
+    "T0324": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 9
+      }
+    ],
+    "T0325": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 11
+      }
+    ],
+    "T0326": [],
+    "T0327": [],
+    "T0328": [],
+    "T0329": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 16
+      }
+    ],
+    "T0330": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0331": [],
+    "T0332": [],
+    "T0333": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 7
+      }
+    ],
+    "T0334": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 11
+      }
+    ],
+    "T0335": [],
+    "T0336": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 16
+      }
+    ],
+    "T0337": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0338": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 5
+      }
+    ],
+    "T0339": [],
+    "T0340": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 11
+      }
+    ],
+    "T0341": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0342": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 11
+      }
+    ],
+    "T0343": [],
+    "T0344": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0345": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0346": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0347": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 5
+      }
+    ],
+    "T0348": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 18
+      }
+    ],
+    "T0349": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 13
+      }
+    ],
+    "T0350": [],
+    "T0351": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 4
+      }
+    ],
+    "T0352": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 5
+      }
+    ],
+    "T0353": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 18
+      }
+    ],
+    "T0354": [],
+    "T0355": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 7
+      }
+    ],
+    "T0356": [],
+    "T0357": [],
+    "T0358": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 4
+      }
+    ],
+    "T0359": [],
+    "T0360": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0361": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 5
+      }
+    ],
+    "T0362": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 5
+      }
+    ],
+    "T0363": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 13
+      }
+    ],
+    "T0364": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 7
+      }
+    ],
+    "T0365": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 5
+      }
+    ],
+    "T0366": [],
+    "T0367": [],
+    "T0368": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 7
+      }
+    ],
+    "T0369": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 18
+      }
+    ],
+    "T0370": [],
+    "T0371": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 9
+      }
+    ],
+    "T0372": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 13
+      }
+    ],
+    "T0373": [],
+    "T0374": [],
+    "T0375": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0376": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 11
+      }
+    ],
+    "T0377": [],
+    "T0378": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 11
+      }
+    ],
+    "T0379": [],
+    "T0380": [],
+    "T0381": [],
+    "T0382": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0383": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 7
+      }
+    ],
+    "T0384": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 13
+      }
+    ],
+    "T0385": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 6
+      }
+    ],
+    "T0386": [],
+    "T0387": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 11
+      }
+    ],
+    "T0388": [],
+    "T0389": [],
+    "T0390": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 16
+      }
+    ],
+    "T0391": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 11
+      }
+    ],
+    "T0392": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 14
+      }
+    ],
+    "T0393": [],
+    "T0394": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0395": [],
+    "T0396": [],
+    "T0397": [],
+    "T0398": [],
+    "T0399": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 13
+      }
+    ],
+    "T0400": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 7
+      }
+    ],
+    "T0401": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 13
+      }
+    ],
+    "T0402": [],
+    "T0403": [],
+    "T0404": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 11
+      }
+    ],
+    "T0405": [],
+    "T0406": [],
+    "T0407": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0408": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 11
+      }
+    ],
+    "T0409": [],
+    "T0410": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 9
+      }
+    ],
+    "T0411": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 13
+      }
+    ],
+    "T0412": [],
+    "T0413": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 18
+      }
+    ],
+    "T0414": [],
+    "T0415": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 18
+      }
+    ],
+    "T0416": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 10
+      }
+    ],
+    "T0417": [],
+    "T0418": [],
+    "T0419": [],
+    "T0420": [],
+    "T0421": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 18
+      }
+    ],
+    "T0422": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 11
+      }
+    ],
+    "T0423": [],
+    "T0424": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 18
+      }
+    ],
+    "T0425": [],
+    "T0426": [],
+    "T0427": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 19
+      }
+    ],
+    "T0428": [],
+    "T0429": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 8
+      }
+    ],
+    "T0430": [],
+    "T0431": [],
+    "T0432": [],
+    "T0433": [],
+    "T0434": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 18
+      }
+    ],
+    "T0435": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0436": [],
+    "T0437": [],
+    "T0438": [],
+    "T0439": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 5
+      }
+    ],
+    "T0440": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 5
+      }
+    ],
+    "T0441": [],
+    "T0442": [],
+    "T0443": [],
+    "T0444": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0445": [],
+    "T0446": [],
+    "T0447": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 9
+      }
+    ],
+    "T0448": [],
+    "T0449": [],
+    "T0450": [],
+    "T0451": [],
+    "T0452": [],
+    "T0453": [],
+    "T0454": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 5
+      }
+    ],
+    "T0455": [],
+    "T0456": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 11
+      }
+    ],
+    "T0457": [],
+    "T0458": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 5
+      }
+    ],
+    "T0459": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 13
+      }
+    ],
+    "T0460": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 13
+      }
+    ],
+    "T0461": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 11
+      }
+    ],
+    "T0462": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 5
+      }
+    ],
+    "T0463": [],
+    "T0464": [],
+    "T0465": [],
+    "T0466": [],
+    "T0467": [],
+    "T0468": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 5
+      }
+    ],
+    "T0469": [],
+    "T0470": [],
+    "T0471": [],
+    "T0472": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 4
+      }
+    ],
+    "T0473": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0474": [],
+    "T0475": [],
+    "T0476": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 4
+      }
+    ],
+    "T0477": [],
+    "T0478": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 5
+      }
+    ],
+    "T0479": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 11
+      }
+    ],
+    "T0480": [],
+    "T0481": [],
+    "T0482": [],
+    "T0483": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0484": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0485": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 4
+      }
+    ],
+    "T0486": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 11
+      }
+    ],
+    "T0487": [],
+    "T0488": [],
+    "T0489": [],
+    "T0490": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 9
+      }
+    ],
+    "T0491": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 5
+      }
+    ],
+    "T0492": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 13
+      }
+    ],
+    "T0493": [],
+    "T0494": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 16
+      }
+    ],
+    "T0495": [],
+    "T0496": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 13
+      }
+    ],
+    "T0497": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 7
+      }
+    ],
+    "T0498": [],
+    "T0499": [],
+    "T0500": [],
+    "T0501": [],
+    "T0502": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 9
+      }
+    ],
+    "T0503": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 5
+      }
+    ],
+    "T0504": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0505": [],
+    "T0506": [],
+    "T0507": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 4
+      }
+    ],
+    "T0508": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 4
+      }
+    ],
+    "T0509": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 9
+      }
+    ],
+    "T0510": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0511": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 18
+      }
+    ],
+    "T0512": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 5
+      }
+    ],
+    "T0513": [],
+    "T0514": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 4
+      }
+    ],
+    "T0515": [],
+    "T0516": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 12
+      }
+    ],
+    "T0517": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 9
+      }
+    ],
+    "T0518": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0519": [],
+    "T0520": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 8
+      }
+    ],
+    "T0521": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 16
+      }
+    ],
+    "T0522": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0523": [],
+    "T0524": [],
+    "T0525": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0526": [],
+    "T0527": [],
+    "T0528": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0529": [],
+    "T0530": [],
+    "T0531": [],
+    "T0532": [],
+    "T0533": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 5
+      }
+    ],
+    "T0534": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 20
+      }
+    ],
+    "T0535": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0536": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 18
+      }
+    ],
+    "T0537": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 14
+      }
+    ],
+    "T0538": [],
+    "T0539": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0540": [],
+    "T0541": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0542": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 5
+      }
+    ],
+    "T0543": [],
+    "T0544": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 5
+      }
+    ],
+    "T0545": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 10
+      }
+    ],
+    "T0546": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 5
+      }
+    ],
+    "T0547": [],
+    "T0548": [],
+    "T0549": [],
+    "T0550": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 11
+      }
+    ],
+    "T0551": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 7
+      }
+    ],
+    "T0552": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 9
+      }
+    ],
+    "T0553": [],
+    "T0554": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 20
+      }
+    ],
+    "T0555": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 11
+      }
+    ],
+    "T0556": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0557": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 7
+      }
+    ],
+    "T0558": [],
+    "T0559": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0560": [],
+    "T0561": [],
+    "T0562": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 5
+      }
+    ],
+    "T0563": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0564": [
+      {
+        "rule": "card_read_back",
+        "turn_index": 13
+      }
+    ],
+    "T0565": [
+      {
+        "rule": "unauthorized_promise",
+        "turn_index": 18
+      }
+    ],
+    "T0566": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 5
+      }
+    ],
+    "T0567": [],
+    "T0568": [],
+    "T0569": [
+      {
+        "rule": "full_ssn_requested",
+        "turn_index": 7
+      }
+    ],
+    "T0570": [],
+    "T0571": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0572": [],
+    "T0573": [],
+    "T0574": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ],
+    "T0575": [],
+    "T0576": [],
+    "T0577": [],
+    "T0578": [],
+    "T0579": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 4
+      }
+    ],
+    "T0580": [
+      {
+        "rule": "verification_skipped",
+        "turn_index": 5
+      }
+    ],
+    "T0581": [],
+    "T0582": [
+      {
+        "rule": "disclosure_before_verification",
+        "turn_index": 4
+      }
+    ]
+  }
+}
