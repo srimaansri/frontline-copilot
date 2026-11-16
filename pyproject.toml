@@ -118,7 +118,8 @@ known-first-party = ["api", "copilot", "data_gen", "eval", "mcp_server"]
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101", "D"]
+# Tests also use seeded `random`, to repeat a mutation; it is not used for security.
+"tests/**" = ["S101", "D", "S311"]
 # Seeded `random` is the point of the generators; it is not used for security.
 "data_gen/**" = ["S311"]
 # Databricks notebooks: `spark` and `dbutils` are injected globals (F821), cells are
