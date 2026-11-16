@@ -64,8 +64,10 @@ def redact_question(question: str, redactor: Redactor) -> RedactedInput:
 Route = Literal["agent", "escalate", "refuse"]
 
 # A request to do something, as opposed to a question about how something is done.
+# It may open the message or follow an earlier sentence ("She is upset. Waive the fee ...").
 _ACTION_VERB_RE = re.compile(
-    r"^\s*(?:please\s+)?(?:can you\s+|could you\s+|go ahead and\s+|i need you to\s+)?"
+    r"(?:^|[.!?;:]\s+|\n)\s*(?:please\s+)?"
+    r"(?:can you\s+|could you\s+|go ahead and\s+|i need you to\s+)?"
     r"(change|switch|move|upgrade|downgrade|refund|credit|waive|remove|cancel|close|suspend|"
     r"unsuspend|restore|reset|unlock|unblock|block|activate|deactivate|add|apply|update|port|"
     r"transfer|issue|process)\b",
@@ -78,26 +80,74 @@ _THIS_ACCOUNT_RE = re.compile(
     r"|\bon\s+(?:this|their|his|her)\s+account\b",
     re.IGNORECASE,
 )
-# Details only an account system holds.
-_ACCOUNT_DATA_RE = re.compile(
-    r"\b(?:pin|password|passcode|usage|used?|minutes|balance|owes?|owed|address|card number|"
-    r"payment history|call log|call history|last payment)\b",
+# One customer named by a pronoun: "waive the fee for her", "change his plan". This only
+# counts next to a request to act. In a question, "their" is usually customers in general
+# ("how do customers check their balance?").
+_PRONOUN_ACCOUNT_RE = re.compile(
+    r"\bfor\s+(?:him|her|them)\b"
+    r"|\b(?:his|her|their)\s+(?:account|line|bill|plan|phone|number|fee|charge|service)\b",
     re.IGNORECASE,
 )
+# Details only an account system holds. "Use" and "minutes" alone are not on the list:
+# "how much data can this customer use on the Plus plan?" is a question about the plan.
+_ACCOUNT_DATA_RE = re.compile(
+    r"\b(?:pin|password|passcode|usage|used|balance|owes?|owed|address|card number|"
+    r"payment history|call log|call history|last payment|"
+    r"minutes\s+(?:used|left|remaining))\b"
+    r"|\bdid\s+(?:this|that|the)\s+(?:customer|caller)\s+use\b",
+    re.IGNORECASE,
+)
+# A question about how something is done. It is answered from the help articles even when
+# it mentions one customer: "this customer forgot their PIN, how do they reset it?"
+_HOW_TO_RE = re.compile(
+    r"\bhow\s+(?:do|does|can|could|should|would|to)\b"
+    r"|\bwhat\s+(?:are|is)\s+the\s+steps?\b|\bsteps\s+to\b|\bis\s+there\s+a\s+way\b",
+    re.IGNORECASE,
+)
+# An attempt to override the copilot's instructions. Each pattern needs the words to be
+# aimed at the copilot ("your rules", "the instructions you were given"). Words that are
+# only mentioned are not enough: "show me the rules for roaming", "the phone shows a
+# system message" and "should the customer ignore the instructions in that text?" are
+# support questions, and the first version of these patterns refused all three.
+_OVERRIDE_VERBS = r"(?:ignore|disregard|forget|override)"
+_YOUR_RULES = r"(?:instructions?|rules?|prompts?|guidelines?)"
 _INJECTION_RES: tuple[re.Pattern[str], ...] = (
     re.compile(
-        r"\b(?:ignore|disregard|forget|override)\b.{0,40}"
-        r"\b(?:instructions?|rules?|prompts?|guidelines?)\b",
+        rf"\b{_OVERRIDE_VERBS}\s+(?:(?:all|any|every)\s+(?:of\s+)?)?"
+        r"(?:(?:your|my|previous|prior|earlier|above|these|those|system|"
+        r"the\s+(?:above|previous|prior|earlier|system))\s+){1,3}"
+        rf"(?:\w+\s+){{0,2}}?{_YOUR_RULES}\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        rf"\b{_OVERRIDE_VERBS}\s+(?:all|any|every)\s+(?:\w+\s+){{0,2}}?{_YOUR_RULES}\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        rf"\b{_OVERRIDE_VERBS}\s+(?:the\s+)?{_YOUR_RULES}\s+"
+        r"(?:above|so far|you\s+(?:were|are|have|follow))\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?:system|developer|hidden)\s+prompt\b"
+        r"|\b(?:developer|hidden)\s+(?:message|instructions?)\b"
+        r"|\byour\s+(?:system|initial|original)\s+(?:message|instructions?)\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?:reveal|print|show|repeat|output|tell me|what are)\b.{0,30}"
+        rf"(?:\byour\s+{_YOUR_RULES}\b"
+        rf"|\bthe\s+{_YOUR_RULES}\s+(?:above|you\s+(?:were|are|have|follow))\b)",
         re.IGNORECASE | re.DOTALL,
     ),
     re.compile(
-        r"\b(?:system|developer|hidden)\s+(?:prompt|message|instructions?)\b", re.IGNORECASE
+        r"\byou(?:'re|\s+are)\s+now\b.{0,30}"
+        r"\b(?:mode|no longer|unrestricted|free of|free from|a different|"
+        r"an?\s+(?:ai|assistant|bot|model))\b"
+        r"|\byou(?:'re|\s+are)\b.{0,20}\bdeveloper mode\b"
+        r"|\bjailbreak\s+(?:you|yourself|this\s+(?:bot|assistant|ai|copilot))\b",
+        re.IGNORECASE,
     ),
-    re.compile(
-        r"\b(?:reveal|print|show|repeat|output)\b.{0,30}\b(?:your|the)\s+(?:instructions|rules)\b",
-        re.IGNORECASE | re.DOTALL,
-    ),
-    re.compile(r"\byou are now\b|\bdeveloper mode\b|\bjailbreak\b", re.IGNORECASE),
 )
 # Checked in order; the first match names the kind of hand-off.
 _CATEGORY_RES: tuple[tuple[str, re.Pattern[str]], ...] = (
@@ -144,6 +194,11 @@ class InputCheck:
     category: str = "other"
 
 
+def is_override_attempt(text: str) -> bool:
+    """Does the text try to change, or read out, the copilot's instructions?"""
+    return any(pattern.search(text) for pattern in _INJECTION_RES)
+
+
 def check_input(text: str) -> InputCheck:
     """Decide where an already-redacted question goes.
 
@@ -151,11 +206,15 @@ def check_input(text: str) -> InputCheck:
     They catch the clear cases; the model can still call the hand-off tool
     itself for a request the rules do not recognise.
     """
-    if any(pattern.search(text) for pattern in _INJECTION_RES):
+    if is_override_attempt(text):
         return InputCheck("refuse", (FLAG_INJECTION,))
     about_this_account = bool(_THIS_ACCOUNT_RE.search(text))
-    wants_action = bool(_ACTION_VERB_RE.search(text)) and about_this_account
-    wants_account_data = about_this_account and bool(_ACCOUNT_DATA_RE.search(text))
+    wants_action = bool(_ACTION_VERB_RE.search(text)) and (
+        about_this_account or bool(_PRONOUN_ACCOUNT_RE.search(text))
+    )
+    wants_account_data = (
+        about_this_account and bool(_ACCOUNT_DATA_RE.search(text)) and not _HOW_TO_RE.search(text)
+    )
     if wants_action or wants_account_data:
         category = next((name for name, pattern in _CATEGORY_RES if pattern.search(text)), "other")
         return InputCheck("escalate", (FLAG_ACCOUNT_ACTION,), category)
