@@ -23,19 +23,19 @@ How to read it:
 | 2026-11-15 | m3-kb-v2 | gpt-oss-120b | rules | B | hybrid | v2 | 22 | 22/22 | n/a | 21/21 (84-100%) | 21/21 (84-100%) | 21/21 (84-100%) | 18/21 (65-96%) | 22/22 (85-100%) | 1/1 (20-100%) | 20/22 (72-98%) | n/a | n/a | n/a | `1a35afb` | 2026-11-15_m3-kb-v2-B-hybrid.json |
 | 2026-11-15 | m4-full | gpt-oss-120b | rules | A | ann | v3 | 40 | 40/40 | n/a | 22/22 (85-100%) | 22/22 (85-100%) | 22/22 (85-100%) | 27/31 (71-95%) | 31/31 (88-100%) | 11/11 (74-100%) | 37/40 (80-98%) | 40/40 (91-100%) | 36/37 (86-100%) | 40/40 (91-100%) | `8624268` | 2026-11-15_m4-full-A-ann.json |
 
-## Time to answer
+## Time and model work per answer
 
-Seconds from the question to the checked answer, one row at a time. The median hides the slow answers, so the 95th percentile and the slowest are shown too. Requests that need a person are answered by rules with no model call, which is why they are fast.
+Seconds from the question to the checked answer, one row at a time. The median hides the slow answers, so the 95th percentile and the slowest are shown too. Model calls and tokens are the medians per answer, as the copilot counted them: the router, the model that answers, and a rewrite if there was one. `n/a` is a run from before they were counted. A request that the rules hand off makes no model call.
 
-| Run | Questions | Rows | Median | 95th percentile | Slowest |
-|---|---|---|---|---|---|
-| 2026-11-14_m3-kb-A-ann.json | All | 22 | 2.3 | 2.9 | 3.7 |
-| 2026-11-14_m3-kb-v2-A-ann.json | All | 22 | 2.1 | 2.7 | 2.8 |
-| 2026-11-14_m3-kb-v2-B-ann.json | All | 22 | 2.1 | 2.8 | 3.1 |
-| 2026-11-15_m3-kb-v2-B-hybrid.json | All | 22 | 2.0 | 2.7 | 3.1 |
-| 2026-11-15_m4-full-A-ann.json | All | 40 | 2.5 | 4.3 | 13.4 |
-| 2026-11-15_m4-full-A-ann.json | Trick questions | 3 | 0.9 | 2.3 | 2.3 |
-| 2026-11-15_m4-full-A-ann.json | Call summaries | 4 | 4.0 | 5.4 | 5.4 |
-| 2026-11-15_m4-full-A-ann.json | Requests that need a person | 5 | 1.6 | 3.5 | 3.5 |
-| 2026-11-15_m4-full-A-ann.json | Help articles | 22 | 2.5 | 3.3 | 3.7 |
-| 2026-11-15_m4-full-A-ann.json | Plan lookups | 6 | 2.5 | 13.4 | 13.4 |
+| Run | Questions | Rows | Median | 95th percentile | Slowest | Model calls | Tokens |
+|---|---|---|---|---|---|---|---|
+| 2026-11-14_m3-kb-A-ann.json | All | 22 | 2.3 | 2.9 | 3.7 | n/a | n/a |
+| 2026-11-14_m3-kb-v2-A-ann.json | All | 22 | 2.1 | 2.7 | 2.8 | n/a | n/a |
+| 2026-11-14_m3-kb-v2-B-ann.json | All | 22 | 2.1 | 2.8 | 3.1 | n/a | n/a |
+| 2026-11-15_m3-kb-v2-B-hybrid.json | All | 22 | 2.0 | 2.7 | 3.1 | n/a | n/a |
+| 2026-11-15_m4-full-A-ann.json | All | 40 | 2.5 | 4.3 | 13.4 | n/a | n/a |
+| 2026-11-15_m4-full-A-ann.json | Trick questions | 3 | 0.9 | 2.3 | 2.3 | n/a | n/a |
+| 2026-11-15_m4-full-A-ann.json | Call summaries | 4 | 4.0 | 5.4 | 5.4 | n/a | n/a |
+| 2026-11-15_m4-full-A-ann.json | Requests that need a person | 5 | 1.6 | 3.5 | 3.5 | n/a | n/a |
+| 2026-11-15_m4-full-A-ann.json | Help articles | 22 | 2.5 | 3.3 | 3.7 | n/a | n/a |
+| 2026-11-15_m4-full-A-ann.json | Plan lookups | 6 | 2.5 | 13.4 | 13.4 | n/a | n/a |

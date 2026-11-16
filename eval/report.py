@@ -157,6 +157,15 @@ def _latencies(rows: Sequence[Mapping[str, Any]]) -> list[float]:
     return [float(value) / 1000 for value in values if isinstance(value, int | float)]
 
 
+def _median(rows: Sequence[Mapping[str, Any]], scorer: str) -> str:
+    """The median of a numeric scorer over rows, as a whole number, or ``n/a``."""
+    values = [row["scores"].get(scorer) for row in rows]
+    numbers = [float(value) for value in values if isinstance(value, int | float)]
+    if not numbers:
+        return "n/a"
+    return f"{percentile(numbers, 0.5):,.0f}"
+
+
 def _latency_cells(seconds: Sequence[float]) -> str:
     if not seconds:
         return "n/a | n/a | n/a"
@@ -193,15 +202,16 @@ def summary_markdown(results: Sequence[tuple[str, Mapping[str, Any]]]) -> str:
 
     lines += [
         "",
-        "## Time to answer",
+        "## Time and model work per answer",
         "",
         "Seconds from the question to the checked answer, one row at a time. The median hides "
-        "the slow answers, so the 95th percentile and the slowest are shown too. Requests "
-        "that need a person are answered by rules with no model call, which is why they "
-        "are fast.",
+        "the slow answers, so the 95th percentile and the slowest are shown too. Model calls "
+        "and tokens are the medians per answer, as the copilot counted them: the router, the "
+        "model that answers, and a rewrite if there was one. `n/a` is a run from before they "
+        "were counted. A request that the rules hand off makes no model call.",
         "",
-        "| Run | Questions | Rows | Median | 95th percentile | Slowest |",
-        "|---|---|---|---|---|---|",
+        "| Run | Questions | Rows | Median | 95th percentile | Slowest | Model calls | Tokens |",
+        "|---|---|---|---|---|---|---|---|",
     ]
     for file_name, report in results:
         by_category: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
@@ -214,7 +224,10 @@ def summary_markdown(results: Sequence[tuple[str, Mapping[str, Any]]]) -> str:
             ]
         for label, rows in groups:
             seconds = _latencies(rows)
-            lines.append(f"| {file_name} | {label} | {len(seconds)} | {_latency_cells(seconds)} |")
+            lines.append(
+                f"| {file_name} | {label} | {len(seconds)} | {_latency_cells(seconds)} | "
+                f"{_median(rows, 'model_calls')} | {_median(rows, 'total_tokens')} |"
+            )
     return "\n".join(lines) + "\n"
 
 

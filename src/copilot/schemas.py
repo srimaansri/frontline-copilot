@@ -84,6 +84,47 @@ class EscalationTicket(BaseModel):
     recorded: bool
 
 
+class Usage(BaseModel):
+    """What one answer cost in model work.
+
+    Tokens are the counts the serving endpoint reports. A call whose reply
+    carries no count adds to ``model_calls`` and to nothing else, so the token
+    totals are a lower bound when ``calls_without_counts`` is not zero.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    model_calls: int = 0
+    input_tokens: int = 0
+    output_tokens: int = 0
+    calls_without_counts: int = 0
+
+    @property
+    def total_tokens(self) -> int:
+        """Input and output tokens together."""
+        return self.input_tokens + self.output_tokens
+
+    def plus(self, reply: object) -> Usage:
+        """This usage with one more model call, read from a chat model's reply."""
+        counts = getattr(reply, "usage_metadata", None) or {}
+        try:
+            read = int(counts["input_tokens"]), int(counts["output_tokens"])
+        except (KeyError, TypeError, ValueError):
+            return self.model_copy(
+                update={
+                    "model_calls": self.model_calls + 1,
+                    "calls_without_counts": self.calls_without_counts + 1,
+                }
+            )
+        return self.model_copy(
+            update={
+                "model_calls": self.model_calls + 1,
+                "input_tokens": self.input_tokens + read[0],
+                "output_tokens": self.output_tokens + read[1],
+            }
+        )
+
+
 class HandOffDraft(BaseModel):
     """A hand-off the copilot proposes. Nothing is written until a person approves it.
 
@@ -114,6 +155,9 @@ class CopilotAnswer(BaseModel):
     # A hand-off waiting for the agent's approval. When this is set, ``escalated``
     # means the copilot decided a person is needed, and no ticket exists yet.
     handoff_draft: HandOffDraft | None = None
+    # Model calls and tokens spent on this answer: the router, the model that
+    # answers, and a rewrite if there was one.
+    usage: Usage = Field(default_factory=Usage)
     # The text the answer was checked against: sources, tool results and the
     # conversation. Kept for evaluation only, so it is left out when the answer is
     # written to a trace or sent to the interface.

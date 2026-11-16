@@ -291,6 +291,22 @@ def figures_supported(trace: Trace) -> Feedback:
     )
 
 
+@scorer
+def usage(trace: Trace) -> list[Feedback]:
+    """Model calls and tokens the answer took, as the copilot counted them."""
+    counted = root_output(trace).get("usage") or {}
+    calls = int(counted.get("model_calls") or 0)
+    tokens = int(counted.get("input_tokens") or 0) + int(counted.get("output_tokens") or 0)
+    feedback = [Feedback(name="model_calls", value=float(calls))]
+    # A reply with no count would make the total look smaller than it was.
+    if calls and not counted.get("calls_without_counts"):
+        feedback.append(Feedback(name="total_tokens", value=float(tokens)))
+        feedback.append(
+            Feedback(name="output_tokens", value=float(counted.get("output_tokens") or 0))
+        )
+    return feedback
+
+
 DETERMINISTIC_SCORERS: tuple[Scorer, ...] = (
     answer_recorded,
     reading_level,
@@ -301,6 +317,7 @@ DETERMINISTIC_SCORERS: tuple[Scorer, ...] = (
     tool_choice,
     no_pii_leak,
     figures_supported,
+    usage,
 )
 
 

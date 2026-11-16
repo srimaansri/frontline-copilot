@@ -12,7 +12,7 @@ The message is always redacted before it gets here.
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Literal
 
 from copilot.guardrails import check_input
@@ -86,6 +86,8 @@ class RouteDecision:
     decided_by: str = "rules"
     # False when the model's reply could not be read and a fallback was used.
     parsed: bool = True
+    # The model's reply, kept so that the caller can count its tokens. Not compared.
+    reply: Any = field(default=None, compare=False, repr=False)
 
 
 def route_with_rules(text: str) -> RouteDecision:
@@ -117,13 +119,13 @@ def route_with_model(text: str, model: ChatModel) -> RouteDecision:
     fields = _read_reply(message_text(reply))
     route = fields.get("route") if fields else None
     if route not in ROUTE_LABELS:
-        return RouteDecision("answer", None, "model", parsed=False)
+        return RouteDecision("answer", None, "model", parsed=False, reply=reply)
     category = fields.get("category") if fields else None
     if route != "hand_off":
         category = None
     elif category not in HAND_OFF_CATEGORIES:
         category = "other"
-    return RouteDecision(route, category, "model")
+    return RouteDecision(route, category, "model", reply=reply)
 
 
 def route_with_both(text: str, model: ChatModel) -> RouteDecision:

@@ -38,6 +38,7 @@ from eval.scorers import (
     retrieved_uris,
     root_output,
     source_rank,
+    usage,
     when_expected,
 )
 
@@ -343,11 +344,47 @@ def test_an_answer_the_copilot_flagged_for_a_figure_fails_figures_supported() ->
     assert result.rationale == "unsupported_claim:money"
 
 
+def test_usage_reports_calls_and_reports_tokens_only_when_every_call_was_counted() -> None:
+    counted = fake_trace(
+        answer={
+            "answer": "A.",
+            "usage": {
+                "model_calls": 3,
+                "input_tokens": 2100,
+                "output_tokens": 240,
+                "calls_without_counts": 0,
+            },
+        }
+    )
+    partly = fake_trace(
+        answer={
+            "answer": "A.",
+            "usage": {
+                "model_calls": 2,
+                "input_tokens": 900,
+                "output_tokens": 80,
+                "calls_without_counts": 1,
+            },
+        }
+    )
+
+    assert {item.name: item.value for item in usage(trace=counted)} == {
+        "model_calls": 3.0,
+        "total_tokens": 2340.0,
+        "output_tokens": 240.0,
+    }
+    # A total that leaves a call out would look cheaper than the answer was.
+    assert {item.name: item.value for item in usage(trace=partly)} == {"model_calls": 2.0}
+    assert {item.name: item.value for item in usage(trace=fake_trace(answer={"answer": "A."}))} == {
+        "model_calls": 0.0
+    }
+
+
 def test_judges_use_the_judge_endpoint_and_leave_out_ragas_faithfulness() -> None:
     judges = llm_judges("my-judge")
     names = {judge.name for judge in judges}
 
-    assert len(DETERMINISTIC_SCORERS) == 9
+    assert len(DETERMINISTIC_SCORERS) == 10
     assert {"retrieval_groundedness", "correctness", "relevance_to_query", "safety"} <= names
     assert "expectations_guidelines" in names
     assert {"retrieval_relevance", "retrieval_sufficiency"} <= names

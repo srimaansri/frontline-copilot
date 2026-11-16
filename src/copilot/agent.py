@@ -59,7 +59,7 @@ from copilot.prompts import (
 from copilot.redaction import Redactor, get_redactor
 from copilot.retriever import Retriever
 from copilot.router import ROUTER_PROMPT_VERSION, route_with_model
-from copilot.schemas import Citation, CopilotAnswer, HandOffDraft, KBHit, Urgency
+from copilot.schemas import Citation, CopilotAnswer, HandOffDraft, KBHit, Urgency, Usage
 from copilot.tools import ESCALATION_TEAMS, ToolError, Tools
 
 logger = logging.getLogger(__name__)
@@ -251,6 +251,8 @@ class CopilotState(TypedDict):
     evidence: list[str]
     # A hand-off waiting for the agent's approval, if one was drafted.
     handoff_draft: HandOffDraft | None
+    # Model calls and tokens so far.
+    usage: Usage
 
 
 def format_sources(hits: Sequence[KBHit], first_number: int) -> str:
@@ -260,6 +262,13 @@ def format_sources(hits: Sequence[KBHit], first_number: int) -> str:
         for number, hit in enumerate(hits, start=first_number)
     ]
     return "<context>\n" + "\n\n".join(blocks) + "\n</context>"
+
+
+def _with_replies(usage: Usage, replies: Sequence[Any]) -> Usage:
+    """``usage`` with each of ``replies`` counted as one more model call."""
+    for reply in replies:
+        usage = usage.plus(reply)
+    return usage
 
 
 def _as_number(value: Any) -> float | None:
@@ -394,6 +403,7 @@ class Copilot:
             "cited": [],
             "evidence": [],
             "handoff_draft": None,
+            "usage": Usage(),
         }
         with mlflow.start_span(name="run_copilot", span_type=SpanType.AGENT) as root:
             root.set_inputs({"question": question, "history_turns": len(history)})
@@ -431,6 +441,14 @@ class Copilot:
                 question_as_processed=question,
                 evidence=final["evidence"],
                 handoff_draft=final["handoff_draft"],
+                usage=final["usage"],
+            )
+            root.set_attributes(
+                {
+                    "copilot.model_calls": answer.usage.model_calls,
+                    "copilot.input_tokens": answer.usage.input_tokens,
+                    "copilot.output_tokens": answer.usage.output_tokens,
+                }
             )
             root.set_outputs(answer.model_dump())
         return answer
@@ -497,25 +515,36 @@ class Copilot:
                     "used": readable,
                 }
             )
+        # A router that answered, readably or not, was a model call. One that could not
+        # be reached was not.
+        usage = state["usage"].plus(decision.reply) if decision is not None else state["usage"]
         if decision is None or not decision.parsed:
             return {
                 "route": check.route,
                 "category": check.category,
                 "flags": [*state["flags"], *check.flags, FLAG_ROUTER_FALLBACK],
+                "usage": usage,
             }
         if decision.route == "hand_off":
             return {
                 "route": "escalate",
                 "category": decision.category or "other",
                 "flags": [*state["flags"], FLAG_ACCOUNT_ACTION],
+                "usage": usage,
             }
         if decision.route == "refuse":
             return {
                 "route": "refuse",
                 "category": "other",
                 "flags": [*state["flags"], FLAG_INJECTION],
+                "usage": usage,
             }
-        return {"route": "agent", "category": "other", "flags": list(state["flags"])}
+        return {
+            "route": "agent",
+            "category": "other",
+            "flags": list(state["flags"]),
+            "usage": usage,
+        }
 
     def _escalate(self, state: CopilotState) -> dict[str, Any]:
         """Hand the request to a person without asking the model. The request is the reason.
@@ -610,9 +639,10 @@ class Copilot:
                     "tool_calls": [call["name"] for call in calls],
                 }
             )
+        usage = state["usage"].plus(reply)
         if not isinstance(reply, AIMessage):
             reply = AIMessage(message_text(reply))
-        return {"messages": [reply], "iterations": iterations, "flags": flags}
+        return {"messages": [reply], "iterations": iterations, "flags": flags, "usage": usage}
 
     def _after_agent(self, state: CopilotState) -> str:
         last = state["messages"][-1]
@@ -742,6 +772,8 @@ class Copilot:
             from_model = False
         retrieved = state["retrieved"]
         sources = [*(hit.text for hit in retrieved), *state["sources"]]
+        # A rewrite is a model call too. Its reply is kept here so it can be counted.
+        rewrites: list[Any] = []
         # A figure may also come from the conversation: the question, or an earlier turn.
         # The system prompt is left out, so its own numbers do not count as evidence.
         conversation = [
@@ -756,7 +788,7 @@ class Copilot:
             redactor=self._get_redactor(),
             sources=sources,
             target_grade=self.settings.reading_grade_target,
-            simplify=(lambda text: self._simplify(text, sources)) if from_model else None,
+            simplify=(lambda text: self._simplify(text, sources, rewrites)) if from_model else None,
             # A fixed reply (a hand-off, a refusal) is not the model's, so it is not checked.
             evidence=evidence if from_model else None,
         )
@@ -773,13 +805,15 @@ class Copilot:
             "cited": list(checked.cited),
             "flags": flags,
             "evidence": evidence,
+            "usage": _with_replies(state["usage"], rewrites),
         }
 
-    def _simplify(self, text: str, sources: Sequence[str]) -> str:
+    def _simplify(self, text: str, sources: Sequence[str], replies: list[Any]) -> str:
         _emit("simplify")
         with mlflow.start_span(name="simplify_answer", span_type=SpanType.CHAT_MODEL) as span:
             span.set_inputs({"answer": self._for_trace(text, sources)})
             reply = self._get_model().invoke([SystemMessage(SIMPLIFY_PROMPT), HumanMessage(text)])
+            replies.append(reply)
             rewritten = message_text(reply)
             span.set_outputs(self._for_trace(rewritten, sources))
         return rewritten
