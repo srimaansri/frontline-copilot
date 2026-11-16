@@ -55,7 +55,9 @@ export function RunningDetails({ meta }: RunningDetailsProps) {
       <h2 className="display-title">What&apos;s running</h2>
       {USE_MOCK && (
         <p className="mt-3 border border-dashed border-line-strong px-2 py-1 text-label leading-snug font-semibold text-ink-2">
-          Mock mode. These values and every answer come from built-in fixtures, not from a server.
+          {meta.status === "ready" && meta.data.recorded
+            ? `Recorded answers. Every answer here was produced by the live copilot on ${meta.data.recorded.at.slice(0, 10)}, at commit ${meta.data.recorded.git_sha.slice(0, 7)}, and is replayed by this page. Nothing you type is sent anywhere.`
+            : "Recorded answers. This page replays what the live copilot returned. Nothing you type is sent anywhere."}
         </p>
       )}
       <div className="mt-2">

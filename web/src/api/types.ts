@@ -30,6 +30,11 @@ export interface Meta {
   tools: ToolInfo[];
   examples: ExampleQuestion[];
   disclaimer: string;
+  /**
+   * Set only by the demo, which replays recordings of the live copilot: when the
+   * recording was made (UTC) and the commit of the code that produced it.
+   */
+  recorded?: { at: string; git_sha: string };
 }
 
 export type ChatRole = "user" | "assistant";

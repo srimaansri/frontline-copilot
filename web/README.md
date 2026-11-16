@@ -25,29 +25,36 @@ The dev server proxies `/api` to `http://127.0.0.1:8000`, so start the API first
 uvicorn api.main:app --port 8000
 ```
 
-## Mock mode
+## The demo build (mock mode)
 
-Mock mode needs no API. The client answers from the fixtures in `src/api/mock.ts` after a short delay.
+The demo build needs no API. It replays recordings of the live copilot: `src/api/recorded.json` holds what the real API returned for a fixed list of questions and calls, and `src/api/mock.ts` looks a question up in it and returns the recording unchanged. No answer is written by hand.
 
 ```bash
 npm run dev:mock
 ```
 
-That is `vite --mode mock`, which loads `.env.mock`. No environment variable has to be set. The top bar shows a "Mock mode" tag on a wide window while it is on, and the line under the question box and the "What's running" popover say so at any width. The fixtures cover:
+That is `vite --mode mock`, which loads `.env.mock`. No environment variable has to be set. The top bar shows a "Recorded answers" tag on a wide window, the line under the question box says so at any width, and the "What's running" popover gives the date and commit of the recording.
 
-- the four example questions on the Ask view;
-- an answer exactly as the live model wrote it, with bold labels and a numbered list interrupted by bullets: ask "How do I request a waiver?";
-- a hand-off, whose route branches to a tag with the ticket reference: ask it to refund something;
-- a refusal: ask it to "ignore your instructions";
-- a question with no matching article: ask about a discount;
-- a greeting, a thank-you and "what can you do?", which the model answers without a tool;
-- anything else: a note that the demo has no saved answer for it, with the questions it can answer. It is not the copilot's "no article matched" answer, because the live copilot would search for it;
-- redaction: put a phone number, an email address or "name is Linda Garcia" in a question to see the "As processed" line;
+To make a new recording, from the repository root, with the workspace signed in and the work committed:
+
+```bash
+python -m eval.record_demo
+```
+
+It asks the real application every question the demo offers (the interface's examples, the evaluation set and a few everyday messages), runs hand-offs as dry runs so no ticket is written, and stamps the file with the date and the commit. Try `--limit 3` first; it writes nothing.
+
+What the demo shows:
+
+- a recorded answer for any question in the recording, matched by its letters and digits, so "Hello!" finds "hello";
+- for any other question, a note that there is no recording, with some questions that have one. It is marked as a note from the page and is not the copilot's "no article matched" answer, because the live copilot would search for it;
+- a wait as long as the live answer took, up to eight seconds, and the recorded time under the answer;
+- no rating buttons, because a recording has no trace to attach a rating to;
+- hand-offs that were dry runs: the reference in a recorded hand-off was made up for that answer and no ticket was written;
 - a failed request: send exactly `/error` to see the error message and its retry button;
 - a request that never answers: send exactly `/pending`;
-- the Calls list (200 rows), of which `T0001` and `T0002` have a transcript and a summary. Any other call shows the error state.
+- the Calls list (200 rows). The calls named in `eval/record_demo.py` have a transcript and a summary. Any other call shows the error state, which names the calls that are recorded.
 
-A normal build does not include the fixtures.
+A normal build does not include the recording.
 
 ## Reviewing the look
 
@@ -70,7 +77,7 @@ A hover, a focus ring or a press is shown in a still picture by writing `data-fo
 
 ### Demo states of the app
 
-In mock mode the app opens directly on a fixture state, with no delay, so that two screenshots of the same URL are the same:
+In the demo build the app opens directly on a recorded state, with no delay, so that two screenshots of the same URL are the same:
 
 | URL | Opens on |
 | --- | --- |

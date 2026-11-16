@@ -18,6 +18,7 @@ import type { AnsweredExchange } from "@/features/ask/useConversation";
 import {
   CITED,
   decline,
+  MULTI_CITED,
   ERROR_MESSAGE,
   EXAMPLES,
   HANDOFF,
@@ -142,7 +143,7 @@ export function AnswerSection() {
         <AnswerSpecimen exchange={CITED} />
       </Row>
       <Row label="cited, selected, source 2 in focus">
-        <AnswerSpecimen exchange={CITED} selected activeCitation={2} />
+        <AnswerSpecimen exchange={MULTI_CITED} selected activeCitation={2} />
       </Row>
       <Row label="waiver steps, as the live model wrote it">
         <AnswerSpecimen exchange={WAIVER} />

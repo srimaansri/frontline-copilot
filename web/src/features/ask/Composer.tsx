@@ -88,9 +88,12 @@ export function Composer({ inputRef, onSend, waiting, initialValue = "" }: Compo
         {/* A touch screen has no Shift+Enter, and the line costs a row of a small screen. */}
         <span className="pointer-coarse:hidden">Enter to send, Shift+Enter for a new line. </span>
         Personal details are replaced before a question is processed or logged.
-        {/* The top bar's "Mock mode" tag is hidden on a narrow window. This is shown at any width. */}
+        {/* The top bar's "Recorded answers" tag is hidden on a narrow window. This is shown at any width. */}
         {USE_MOCK && (
-          <span className="font-semibold text-ink-2"> Mock mode: answers are saved samples.</span>
+          <span className="font-semibold text-ink-2">
+            {" "}
+            Demo: answers are recordings of the live copilot.
+          </span>
         )}
       </p>
     </form>

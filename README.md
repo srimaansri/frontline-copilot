@@ -6,9 +6,9 @@
 
 An AI copilot for frontline support agents at a wireless carrier, built end to end on **Databricks Free Edition**. An agent asks a question in plain words and gets a short, plain-language answer with cited help articles, a plan lookup grounded in SQL, a summary of a redacted call transcript, or a hand-off to a human when the request needs real account access.
 
-[![The copilot answering a billing question. The answer highlights the facts to say out loud and numbers its sources; a side rail lists the two sources and the six steps taken.](docs/img/cue-answer.png)](https://srimaansri.github.io/frontline-copilot/)
+[![The copilot answering a billing question. The answer highlights the facts to say out loud and numbers its sources; a side rail lists its source and the five steps taken.](docs/img/cue-answer.png)](https://srimaansri.github.io/frontline-copilot/)
 
-**See it in a browser:** <https://srimaansri.github.io/frontline-copilot/> is a public demo of the interface. It runs in mock mode: it answers from sample responses built into the page, calls no server, and says "Mock mode" in its top bar. The picture above is from it. The live app, which calls the real agent, runs on Databricks Apps and needs a sign-in to the workspace; see [Try it](#try-it).
+**See it in a browser:** <https://srimaansri.github.io/frontline-copilot/> is a public demo. The page is static and calls no server, so it cannot run the copilot: it replays recordings. Every answer in it is what the live copilot returned for that question, recorded by [eval/record_demo.py](eval/record_demo.py) with the date and the commit, which the page shows under "What's running". A question with no recording gets a note that says so. The picture above is from it. The live app, which calls the real agent, runs on Databricks Apps and needs a sign-in to the workspace; see [Try it](#try-it).
 
 ## Status
 
@@ -154,12 +154,12 @@ All 40 evaluation rows, with the default setting (A, vector search), prompt v3, 
 
 ![A hand-off in the dark theme. The agent's question held a name and a phone number; the line under it shows them replaced by placeholders, and the route of steps branches to a tag that says a person has the request.](docs/img/cue-hand-off.png)
 
-It is a REST API ([api/main.py](api/main.py), FastAPI) that calls the same agent code the evaluation measures, and a front end in [web](web) (React, TypeScript, Vite, Tailwind) that the API serves. The look is specified in [web/DESIGN.md](web/DESIGN.md), and the mockups and decisions behind it are in [design](design). Both pictures on this page are from mock mode, so the answers in them are samples, not model output.
+It is a REST API ([api/main.py](api/main.py), FastAPI) that calls the same agent code the evaluation measures, and a front end in [web](web) (React, TypeScript, Vite, Tailwind) that the API serves. The look is specified in [web/DESIGN.md](web/DESIGN.md), and the mockups and decisions behind it are in [design](design). Both pictures on this page are from the public demo, so the answers in them are recordings of the live copilot's output.
 
 Three ways to open it:
 
-1. **The public demo**, with no setup: <https://srimaansri.github.io/frontline-copilot/>. Mock mode, as described at the top. The four example questions work, and so do a hand-off ("refund..."), a refusal ("ignore your instructions") and the Calls view (calls `T0001` and `T0002` have a transcript and a summary).
-2. **Mock mode on your machine**, with Node and no Databricks workspace:
+1. **The public demo**, with no setup: <https://srimaansri.github.io/frontline-copilot/>. Recorded answers, as described at the top: the four example questions, every question in the evaluation set, and a few everyday messages such as "hello". The Calls view lists all 200 calls, and the ones named in [eval/record_demo.py](eval/record_demo.py) have a transcript and a summary.
+2. **The same demo on your machine**, with Node and no Databricks workspace:
 
    ```bash
    cd web && npm install && npm run dev:mock

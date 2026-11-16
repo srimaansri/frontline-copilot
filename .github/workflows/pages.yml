@@ -1,9 +1,10 @@
 name: Public demo
 
-# Publishes the web interface to GitHub Pages in mock mode: the page answers
-# from the fixtures built into it and calls no server, so anyone can open it
-# and nothing on Databricks is reachable from it. The page says "Mock mode" in
-# its top bar. The same build also holds the component gallery (gallery.html).
+# Publishes the web interface to GitHub Pages as a static page. It replays
+# recordings of the live copilot (web/src/api/recorded.json) and calls no
+# server, so anyone can open it and nothing on Databricks is reachable from
+# it. The page says "Recorded answers" in its top bar. The same build also
+# holds the component gallery (gallery.html).
 
 on:
   push:

@@ -88,7 +88,7 @@ Each device means one thing. Do not use a device for anything outside its row.
 | Cobalt | You can press this. | Send, the primary button, links, citation chips, the arrow on an example and on a source, the bars while live, the focus ring, and the mark. Never a status, never a background wash. The selected call is the one exception to "wash": it takes `brand-tint` with an ink outline, so the status colours inside it stay legible. |
 | Route (`.route`) | What the copilot did, in order: one line, a station per step. | "What the copilot did" only. Drawn in `line-strong`; the status shapes carry the colour. |
 | Solid leg / dashed leg | Solid: done by the copilot. Dashed: passed to a person. | The route and its legend. The hand-off leaves the main line at 45 degrees on a solid leg, then runs dashed to its tag, while the main line carries on to the answer checks. |
-| Dashed outline | A label about the data itself: it is synthetic, or mocked. | The "Demo, synthetic data" tag, and the "Mock mode" tag and note. |
+| Dashed outline | A label about the data itself: it is synthetic, or replayed. | The "Demo, synthetic data" tag, and the "Recorded answers" tag and note. |
 | Sunken tone | The copilot's working, as opposed to its answer. | The side rail with sources and steps, the summary rail, and the panel under an answer on a narrow screen. Also the agent's question and a customer's turn. |
 
 Which bold is highlighted. The model uses bold for facts, for labels and for stray words, and the highlighter is only for facts. The rule is one function, `boldKind` in `src/lib/boldKind.ts`:

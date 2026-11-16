@@ -138,7 +138,7 @@ export function TopBar({
           <p className="truncate display-title max-sm:text-read">Cue</p>
         </div>
         <DataTag className="hidden lg:inline">Demo, synthetic data</DataTag>
-        {USE_MOCK && <DataTag className="hidden xl:inline">Mock mode</DataTag>}
+        {USE_MOCK && <DataTag className="hidden xl:inline">Recorded answers</DataTag>}
 
         <ViewSwitcher
           view={view}

@@ -168,7 +168,7 @@ export function TagsSection() {
       <Row label="data tags" on="surface">
         <Specimens>
           <DataTag>Demo, synthetic data</DataTag>
-          <DataTag>Mock mode</DataTag>
+          <DataTag>Recorded answers</DataTag>
         </Specimens>
       </Row>
       <Row label="tool badges">
