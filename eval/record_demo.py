@@ -15,6 +15,12 @@ interface calls, so a recording has exactly the shape of a live response. It
 makes about one model call per question, runs hand-offs as dry runs so no
 ticket is written, and refuses to save from a working tree with uncommitted
 changes, so the commit it names is the code that produced the answers.
+
+For the Calls view it records the list of calls, each with the rules the rule
+check fired on it, and a few calls in full: transcript, summary, wrap-up draft
+and the findings of the rule check. Those calls include one for each rule that
+is broken in it, so the demo has findings to show. The rule check calls no
+model.
 """
 
 from __future__ import annotations
@@ -60,10 +66,18 @@ WARM_UP_QUESTIONS: tuple[str, ...] = (
     "How do I set up voicemail?",
     "How much is the Plus 10 plan?",
 )
-# Calls whose transcript, summary and wrap-up draft are recorded for the Calls view.
+# Calls whose transcript, summary, wrap-up draft and rule-check findings are recorded
+# for the Calls view.
 CALL_IDS: tuple[str, ...] = ("T0001", "T0002", "T0007", "T0020")
 # One call of each ending is added to these from the list, so each kind can be opened.
 RESOLUTIONS: tuple[str, ...] = ("resolved", "escalated", "unresolved")
+# Calls with a seeded breach (`data_gen.synth_breaches`), one for each rule, all from
+# the development half: a card number read back, verification skipped, an account
+# detail given before verification, a fee the agent says they waived, and a request
+# for the full Social Security number. The first is the call `?demo=calls-findings`
+# opens (`FLAGGED_CALL` in web/src/lib/devHooks.ts). A recording made before these
+# calls were in the workspace does not have them, and the demo says so.
+BREACH_CALL_IDS: tuple[str, ...] = ("T0215", "T0203", "T0204", "T0218", "T0208")
 
 
 class Client(Protocol):
@@ -153,6 +167,7 @@ def record(
         match = next((call for call in calls if call.get("resolution") == resolution), None)
         if match and match["transcript_id"] not in wanted:
             wanted.append(match["transcript_id"])
+    wanted += [call_id for call_id in BREACH_CALL_IDS if call_id not in wanted]
     known = {call["transcript_id"] for call in calls}
     wanted = [call_id for call_id in wanted if call_id in known]
     if limit is not None:
@@ -160,8 +175,18 @@ def record(
     transcripts: dict[str, Any] = {}
     summaries: dict[str, Any] = {}
     wrapups: dict[str, Any] = {}
+    findings: dict[str, Any] = {}
     for call_id in wanted:
         transcripts[call_id] = _checked(client.get(f"/api/calls/{call_id}"), f"call {call_id}")
+        # What the rule check finds in the call, worked out by the application from the
+        # same redacted turns. No model is called, so a failure here is a fault and stops
+        # the recording.
+        findings[call_id] = _checked(
+            client.get(f"/api/calls/{call_id}/findings"), f"rule check of {call_id}"
+        )
+        if call_id in BREACH_CALL_IDS and not findings[call_id].get("findings"):
+            # Recorded as it is. The demo will show that no rule fired on this call.
+            print(f"  no finding on {call_id}, which was chosen to show one", flush=True)
         summaries[call_id] = _checked(
             client.post(f"/api/calls/{call_id}/summary"), f"summary of {call_id}"
         )
@@ -181,6 +206,7 @@ def record(
         "transcripts": transcripts,
         "summaries": summaries,
         "wrapups": wrapups,
+        "findings": findings,
     }
 
 

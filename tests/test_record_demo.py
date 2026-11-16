@@ -5,7 +5,20 @@ from typing import Any
 
 import pytest
 
-from eval.record_demo import CALL_IDS, EXTRA_QUESTIONS, demo_questions, question_key, record
+from eval.record_demo import (
+    BREACH_CALL_IDS,
+    CALL_IDS,
+    EXTRA_QUESTIONS,
+    demo_questions,
+    question_key,
+    record,
+)
+
+CARD_READ_BACK = {
+    "rule": "card_read_back",
+    "turn_index": 12,
+    "reason": "The agent says a full payment card number.",
+}
 
 
 def sse(*events: tuple[str, Any]) -> str:
@@ -23,30 +36,55 @@ class FakeResponse:
 
 
 class FakeClient:
-    """Answers the five endpoints the recorder calls, and notes what was asked."""
+    """Answers the six endpoints the recorder calls, and notes what was asked."""
 
     def __init__(
         self,
         fail_on: str | None = None,
         error_on: str | None = None,
         no_wrap_up_for: str | None = None,
+        breach_calls: tuple[str, ...] = (),
+        clean_breach_call: str | None = None,
+        rule_check_fails: bool = False,
     ) -> None:
         self.asked: list[str] = []
         self.posted: list[str] = []
+        self.fetched: list[str] = []
         self.fail_on = fail_on
         self.error_on = error_on
         self.no_wrap_up_for = no_wrap_up_for
+        # Calls with a seeded breach that the workspace holds, beside the ordinary ones.
+        self.breach_calls = breach_calls
+        self.clean_breach_call = clean_breach_call
+        self.rule_check_fails = rule_check_fails
 
     def get(self, url: str) -> FakeResponse:
+        self.fetched.append(url)
         if url == "/api/meta":
             return FakeResponse({"examples": [{"question": "How much is the late fee?"}]})
         if url == "/api/calls":
             return FakeResponse(
                 [
-                    {"transcript_id": "T0001", "resolution": "resolved"},
-                    {"transcript_id": "T0002", "resolution": "resolved"},
-                    {"transcript_id": "T0003", "resolution": "escalated"},
+                    {"transcript_id": "T0001", "resolution": "resolved", "findings": []},
+                    {"transcript_id": "T0002", "resolution": "resolved", "findings": []},
+                    {"transcript_id": "T0003", "resolution": "escalated", "findings": []},
+                    *(
+                        {
+                            "transcript_id": call_id,
+                            "resolution": "resolved",
+                            "findings": ["card_read_back"],
+                        }
+                        for call_id in self.breach_calls
+                    ),
                 ]
+            )
+        if url.endswith("/findings"):
+            call_id = url.split("/")[3]
+            if self.rule_check_fails:
+                return FakeResponse({"detail": "no"}, 502)
+            flagged = call_id in self.breach_calls and call_id != self.clean_breach_call
+            return FakeResponse(
+                {"transcript_id": call_id, "findings": [CARD_READ_BACK] if flagged else []}
             )
         return FakeResponse({"transcript_id": url.rsplit("/", 1)[1], "turns": []})
 
@@ -110,6 +148,54 @@ def test_a_recording_holds_what_the_application_returned() -> None:
     assert list(recording["wrapups"]) == ["T0001", "T0002", "T0003"]
     # A draft is asked for and nothing else: the recorder never saves a wrap-up.
     assert not [url for url in client.posted if url.endswith("/save")]
+    # Each recorded call has the rule check's findings, also when no rule fired.
+    assert recording["findings"] == {
+        call_id: {"transcript_id": call_id, "findings": []}
+        for call_id in ("T0001", "T0002", "T0003")
+    }
+
+
+def test_a_call_for_each_rule_is_recorded_when_the_workspace_has_the_breach_calls() -> None:
+    client = FakeClient(breach_calls=("T0202", *BREACH_CALL_IDS))
+
+    recording = record(client, [])
+
+    # The ordinary calls first, then the chosen breach calls. T0202 is listed and not chosen.
+    assert list(recording["transcripts"]) == ["T0001", "T0002", "T0003", *BREACH_CALL_IDS]
+    assert list(recording["findings"]) == list(recording["transcripts"])
+    assert list(recording["summaries"]) == list(recording["transcripts"])
+    assert recording["findings"]["T0215"]["findings"] == [CARD_READ_BACK]
+    assert recording["findings"]["T0001"]["findings"] == []
+    # The list is recorded as the application gave it, with each call's rules.
+    assert len(recording["calls"]) == 9
+    assert recording["calls"][-1]["findings"] == ["card_read_back"]
+    # The rule check is read, never written: every request for it is a GET.
+    assert not [url for url in client.posted if "findings" in url]
+
+
+def test_the_chosen_breach_calls_are_one_for_each_rule_and_the_demo_opens_on_the_first() -> None:
+    assert len(BREACH_CALL_IDS) == len(set(BREACH_CALL_IDS)) == 5
+    assert not set(BREACH_CALL_IDS) & set(CALL_IDS)
+    # `FLAGGED_CALL` in web/src/lib/devHooks.ts names the same call.
+    assert BREACH_CALL_IDS[0] == "T0215"
+
+
+def test_a_breach_call_with_no_finding_is_recorded_as_it_is_and_said_so(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    client = FakeClient(breach_calls=BREACH_CALL_IDS, clean_breach_call="T0203")
+
+    recording = record(client, [])
+
+    assert recording["findings"]["T0203"]["findings"] == []
+    assert "no finding on T0203, which was chosen to show one" in capsys.readouterr().out
+
+
+def test_a_rule_check_that_fails_stops_the_recording() -> None:
+    client = FakeClient(rule_check_fails=True)
+
+    with pytest.raises(RuntimeError, match="rule check of T0001 failed with HTTP 502"):
+        record(client, [])
 
 
 def test_a_wrap_up_that_cannot_be_drafted_is_left_out_and_the_recording_goes_on(
