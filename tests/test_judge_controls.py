@@ -663,13 +663,22 @@ def fake_judges(endpoint: str) -> dict[str, Any]:
 def test_a_trial_judges_only_the_controls_named_and_saves_nothing(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    monkeypatch.setattr(controls_module, "_live_judges", fake_judges)
+    built: dict[str, Any] = {}
+
+    def judges_kept(endpoint: str) -> dict[str, Any]:
+        built.update(fake_judges(endpoint))
+        return built
+
+    monkeypatch.setattr(controls_module, "_live_judges", judges_kept)
     monkeypatch.setattr(controls_module, "control_trace", no_trace)
     monkeypatch.setattr(controls_module, "RESULTS_DIR", tmp_path / "results")
-    monkeypatch.setattr(controls_module.time, "sleep", lambda _: None)
 
     main(["--ids", "C01,C22", "--pause", "0"])
 
+    # The groundedness judge got the trace the command built for the changed answer.
+    (given,) = built[GROUNDEDNESS].calls
+    assert given["trace"]["trace_for"] == "C01"
+    assert "$15" in given["trace"]["answer"]
     printed = capsys.readouterr().out
     assert "2 of 23 controls, judged by databricks-meta-llama-3-3-70b-instruct." in printed
     assert "The copilot is not called." in printed
@@ -687,7 +696,6 @@ def test_saving_writes_every_verdict_and_a_sheet_to_label(
     monkeypatch.setattr(controls_module, "control_trace", no_trace)
     monkeypatch.setattr(controls_module, "RESULTS_DIR", tmp_path / "results")
     monkeypatch.setattr(controls_module, "LABELS_DIR", tmp_path / "labels")
-    monkeypatch.setattr(controls_module.time, "sleep", lambda _: None)
     monkeypatch.setattr(
         controls_module, "_git", lambda *args: "" if args[0] == "status" else "abc1234def"
     )

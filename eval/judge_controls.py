@@ -920,6 +920,8 @@ def main(argv: list[str] | None = None) -> None:
         originals=args.originals,
         pause_seconds=args.pause,
         progress=lambda line: print(f"  {line}", flush=True),
+        # Looked up here, when the command runs, and not when the module is read.
+        make_trace=control_trace,
     )
     summary = summarise(verdicts)
     print()
