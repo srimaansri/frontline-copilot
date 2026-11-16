@@ -28,6 +28,7 @@ How to read it:
 | 2026-11-16 | models-qwen35-122b-a10b | qwen35-122b-a10b | llama-4-maverick | A | ann | v3 | 40 | 40/40 | 40/40 (91-100%) | 19/22 (66-96%) | n/a | n/a | 23/31 (56-87%) | n/a | 10/11 (62-99%) | 38/40 (83-99%) | 39/40 (87-100%) | 34/37 (78-98%) | 40/40 (91-100%) | `8478690` | 2026-11-16_models-qwen35-122b-a10b-A-ann.json |
 | 2026-11-16 | models-gemma-3-12b | gemma-3-12b | llama-4-maverick | A | ann | v3 | 40 | 40/40 | 39/40 (87-100%) | 15/22 (47-84%) | n/a | n/a | 21/31 (50-82%) | n/a | 9/11 (52-95%) | 37/40 (80-98%) | 38/40 (83-99%) | 29/37 (62-89%) | 40/40 (91-100%) | `8478690` | 2026-11-16_models-gemma-3-12b-A-ann.json |
 | 2026-11-16 | m8-full | gpt-oss-120b | llama-4-maverick | A | ann | v3 | 40 | 40/40 | 40/40 (91-100%) | 22/22 (85-100%) | 22/22 (85-100%) | 21/22 (78-100%) | 25/31 (63-91%) | 31/31 (88-100%) | 10/11 (62-99%) | 36/40 (76-97%) | 40/40 (91-100%) | 36/37 (86-100%) | 40/40 (91-100%) | `a881459` | 2026-11-16_m8-full-A-ann.json |
+| 2026-11-16 | m9-full | gpt-oss-120b | llama-4-maverick | A | ann | v3 | 40 | 40/40 | 40/40 (91-100%) | 22/22 (85-100%) | 22/22 (85-100%) | 21/22 (78-100%) | 25/31 (63-91%) | 31/31 (88-100%) | 9/11 (52-95%) | 36/40 (76-97%) | 40/40 (91-100%) | 36/37 (86-100%) | 40/40 (91-100%) | `05bbad9` | 2026-11-16_m9-full-A-ann.json |
 
 ## Time and model work per answer
 
@@ -81,3 +82,9 @@ Seconds from the question to the checked answer, one row at a time. The median h
 | 2026-11-16_m8-full-A-ann.json | Requests that need a person | 5 | 0.0 | 0.0 | 0.0 | 0 | n/a |
 | 2026-11-16_m8-full-A-ann.json | Help articles | 22 | 4.2 | 98.2 | 103.0 | 3 | 4,820 |
 | 2026-11-16_m8-full-A-ann.json | Plan lookups | 6 | 6.3 | 14.2 | 14.2 | 3 | 2,733 |
+| 2026-11-16_m9-full-A-ann.json | All | 40 | 4.4 | 9.5 | 58.0 | 3 | 4,765 |
+| 2026-11-16_m9-full-A-ann.json | Trick questions | 3 | 2.7 | 58.0 | 58.0 | 2 | 1,568 |
+| 2026-11-16_m9-full-A-ann.json | Call summaries | 4 | 5.1 | 7.7 | 7.7 | 3 | 2,730 |
+| 2026-11-16_m9-full-A-ann.json | Requests that need a person | 5 | 0.0 | 0.0 | 0.0 | 0 | n/a |
+| 2026-11-16_m9-full-A-ann.json | Help articles | 22 | 4.4 | 9.5 | 14.3 | 3 | 4,796 |
+| 2026-11-16_m9-full-A-ann.json | Plan lookups | 6 | 5.6 | 7.2 | 7.2 | 3 | 2,727 |
