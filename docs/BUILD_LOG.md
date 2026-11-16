@@ -597,6 +597,7 @@ They also found defects, each confirmed by running the code before it was change
   - `llama-4-maverick` 133, `qwen3-next-80b-a3b-instruct` 132, `gpt-oss-20b` 130, `gemma-3-12b` 124, `llama-3.1-8b-instruct` 117
   - the copilot now 129 right, at commit `57c8092`
 - Annotators agree on 146 of 150 (Cohen's kappa 0.96). All four disagreements are on messages the writer had marked borderline.
+- The public demo was recorded again on 2026-11-16 at 02:04 UTC, commit `2744452`, with the router on: 59 questions, all answered, median 2.3 seconds, slowest 5.1. Four of them are phrasings no rule was written for ("pls cancel his line" is handed off in 0.5 seconds; a question that quotes a scam text is answered). In one of the 59 the router was rate-limited and the rules decided, and the recording shows that step as it happened. Both README pictures were retaken from it.
 
 **Decisions**
 
