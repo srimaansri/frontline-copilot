@@ -7,7 +7,9 @@ from copilot.guardrails import (
     FLAG_ACCOUNT_ACTION,
     FLAG_INJECTION,
     FLAG_NO_CITATION,
+    FLAG_REWRITE_CHANGED_FACTS,
     FLAG_SIMPLIFIED,
+    FLAG_UNSUPPORTED_CLAIM,
     appears_in_sources,
     check_input,
     check_output,
@@ -215,7 +217,7 @@ def test_an_easy_answer_is_not_sent_for_a_rewrite(redactor: Redactor) -> None:
 
 
 def test_citations_are_checked_after_the_rewrite_and_pii_last(redactor: Redactor) -> None:
-    rewritten = "Open the app [7]. Or call 480-555-0132."
+    rewritten = "Open the app [7]. Or write to linda@mail.example.com."
 
     checked = check_output(
         HARD, source_count=1, redactor=redactor, sources=[ARTICLE], target_grade=8.0,
@@ -223,14 +225,51 @@ def test_citations_are_checked_after_the_rewrite_and_pii_last(redactor: Redactor
     )  # fmt: skip
 
     assert "[7]" not in checked.text
-    assert "480-555-0132" not in checked.text
+    assert "linda@mail.example.com" not in checked.text
     assert checked.cited == ()
     assert set(checked.flags) == {
         FLAG_SIMPLIFIED,
         "invalid_citation_removed",
         FLAG_NO_CITATION,
-        "pii_removed_from_answer:PHONE_NUMBER",
+        "pii_removed_from_answer:EMAIL_ADDRESS",
     }
+
+
+def test_a_rewrite_that_changes_a_figure_is_thrown_away(redactor: Redactor) -> None:
+    hard = HARD.replace("[1]", "within a period of 10 days [1]")
+
+    checked = check_output(
+        hard, source_count=1, redactor=redactor, sources=[ARTICLE], target_grade=8.0,
+        simplify=lambda text: "Open the app and pay within 30 days [1].",
+    )  # fmt: skip
+
+    assert checked.text == hard
+    assert FLAG_REWRITE_CHANGED_FACTS in checked.flags
+    assert FLAG_SIMPLIFIED not in checked.flags
+
+
+def test_a_figure_that_is_not_in_the_evidence_is_flagged_and_the_answer_kept(
+    redactor: Redactor,
+) -> None:
+    answer = "The Late Payment Fee is $7. Call 611 [1]."
+
+    checked = check_output(
+        answer, source_count=1, redactor=redactor, sources=[ARTICLE], target_grade=8.0,
+        evidence=[ARTICLE],
+    )  # fmt: skip
+
+    assert checked.text == answer
+    assert checked.flags == (f"{FLAG_UNSUPPORTED_CLAIM}:money",)
+
+
+def test_figures_from_the_evidence_raise_no_flag(redactor: Redactor) -> None:
+    checked = check_output(
+        "The Late Payment Fee is $5. Call 611 or 1-800-555-0199 [1].",
+        source_count=1, redactor=redactor, sources=[ARTICLE], target_grade=8.0,
+        evidence=[ARTICLE],
+    )  # fmt: skip
+
+    assert checked.flags == ()
 
 
 def test_without_a_rewriter_only_citations_and_pii_are_checked(redactor: Redactor) -> None:

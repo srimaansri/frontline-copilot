@@ -15,6 +15,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Literal
 
+from copilot.claims import same_claims, unsupported_claims
 from copilot.readability import reading_grade
 from copilot.redaction import PlaceholderMap, Redactor
 from copilot.text import to_plain_punctuation
@@ -26,6 +27,10 @@ FLAG_ACCOUNT_ACTION = "account_action_requested"
 FLAG_INJECTION = "injection_suspected"
 FLAG_SIMPLIFIED = "answer_simplified"
 FLAG_PII_IN_ANSWER = "pii_removed_from_answer"
+# A figure in the answer that is in none of the text the copilot was given.
+FLAG_UNSUPPORTED_CLAIM = "unsupported_claim"
+# A plainer rewrite was thrown away because it changed, dropped or added a figure.
+FLAG_REWRITE_CHANGED_FACTS = "rewrite_changed_facts"
 
 # An answer is rewritten only when it is well above the target grade, so that
 # an answer a little over the line is not sent round the model a second time.
@@ -416,14 +421,19 @@ def check_output(
     sources: Sequence[str],
     target_grade: float,
     simplify: Callable[[str], str] | None = None,
+    evidence: Sequence[str] | None = None,
 ) -> CheckedAnswer:
     """Run the output checks in the order that keeps each one valid.
 
     1. Reading level. An answer more than ``REWRITE_MARGIN`` grades above the
        target is rewritten once by ``simplify``. The rewrite is kept only if it
-       is easier to read.
+       is easier to read and states the same figures as the draft.
     2. Citations, after the rewrite, because a rewrite can drop or renumber them.
-    3. Personal data, last, so nothing a rewrite adds is missed.
+    3. Personal data, so nothing a rewrite adds is missed.
+    4. Figures, last, on the text the agent will see: every price, amount, phone
+       number and web address must be in ``evidence``. One that is not is
+       flagged by kind. The answer is not changed: how often this check is
+       wrong is measured before it is allowed to block anything.
 
     Args:
         answer: The model's answer.
@@ -432,6 +442,8 @@ def check_output(
         sources: The text the answer was written from: retrieved chunks and tool results.
         target_grade: The reading grade answers should be at or below.
         simplify: Rewrites an answer in plainer language. None skips the rewrite.
+        evidence: Everything the answer may take a figure from: the sources and the
+            conversation. None skips the check on figures.
     """
     flags: list[str] = []
     text = answer
@@ -440,10 +452,16 @@ def check_output(
         if grade > target_grade + REWRITE_MARGIN:
             rewritten = simplify(text).strip()
             if rewritten and reading_grade(rewritten) < grade:
-                text = rewritten
-                flags.append(FLAG_SIMPLIFIED)
+                if same_claims(text, rewritten):
+                    text = rewritten
+                    flags.append(FLAG_SIMPLIFIED)
+                else:
+                    flags.append(FLAG_REWRITE_CHANGED_FACTS)
     citations = check_citations(text, source_count)
     flags.extend(citations.flags)
     redacted = redact_answer(citations.text, redactor, sources)
     flags.extend(f"{FLAG_PII_IN_ANSWER}:{entity_type}" for entity_type in redacted.removed)
+    if evidence is not None:
+        kinds = sorted({claim.kind for claim in unsupported_claims(redacted.text, evidence)})
+        flags.extend(f"{FLAG_UNSUPPORTED_CLAIM}:{kind}" for kind in kinds)
     return CheckedAnswer(redacted.text, citations.cited, tuple(flags))

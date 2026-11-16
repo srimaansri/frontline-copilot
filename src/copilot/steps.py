@@ -33,6 +33,15 @@ PERSONAL_DETAILS: dict[str, str] = {
     "CPNI_AMOUNT": "a bill amount",
     "CPNI_USAGE": "a usage figure",
 }
+# How each kind of checkable value is named to a reader.
+CLAIM_KINDS: dict[str, str] = {
+    "money": "a price",
+    "quantity": "an amount",
+    "percent": "a percentage",
+    "phone": "a phone number",
+    "code": "a number to dial",
+    "url": "a web address",
+}
 # Tool name -> (what it did, what that means).
 TOOL_STEPS: dict[str, tuple[str, str]] = {
     "search_kb": ("Searched the help articles", ""),
@@ -221,6 +230,32 @@ def describe_steps(answer: CopilotAnswer) -> list[Step]:
                 title="Citations checked",
                 detail="Every citation points to a retrieved source.",
                 status="ok",
+            )
+        )
+    if "rewrite_changed_facts" in names:
+        steps.append(
+            Step(
+                stage="output_check",
+                title="A plainer rewrite was thrown away",
+                detail="It changed a figure, so the first draft was kept.",
+                status="notice",
+            )
+        )
+    unsupported = [
+        CLAIM_KINDS.get(flag.split(":", 1)[1], "a figure")
+        for flag in flags
+        if flag.startswith("unsupported_claim:")
+    ]
+    if unsupported:
+        verb = "is" if len(unsupported) == 1 else "are"
+        text = _listed(unsupported)
+        steps.append(
+            Step(
+                stage="output_check",
+                title="Check a figure before you say it",
+                detail=f"{text[0].upper()}{text[1:]} in the answer {verb} not in the text "
+                "it was written from.",
+                status="warning",
             )
         )
     kept_out = _details(flags, "pii_removed_from_answer")

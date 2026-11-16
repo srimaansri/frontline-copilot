@@ -192,6 +192,8 @@ class CopilotState(TypedDict):
     iterations: int
     draft: str
     cited: list[int]
+    # Everything a figure in the answer may come from: the sources and the conversation.
+    evidence: list[str]
 
 
 def format_sources(hits: Sequence[KBHit], first_number: int) -> str:
@@ -316,6 +318,7 @@ class Copilot:
             "iterations": 0,
             "draft": "",
             "cited": [],
+            "evidence": [],
         }
         with mlflow.start_span(name="run_copilot", span_type=SpanType.AGENT) as root:
             root.set_inputs({"question": question, "history_turns": len(history)})
@@ -346,6 +349,7 @@ class Copilot:
                 escalated=final["escalated"],
                 guardrail_flags=final["flags"],
                 question_as_processed=question,
+                evidence=final["evidence"],
             )
             root.set_outputs(answer.model_dump())
         return answer
@@ -546,13 +550,24 @@ class Copilot:
             flags.append(FLAG_EMPTY_ANSWER)
             from_model = False
         retrieved = state["retrieved"]
+        sources = [*(hit.text for hit in retrieved), *state["sources"]]
+        # A figure may also come from the conversation: the question, or an earlier turn.
+        # The system prompt is left out, so its own numbers do not count as evidence.
+        conversation = [
+            message_text(message)
+            for message in state["messages"][:-1]
+            if message.type in {"human", "ai"}
+        ]
+        evidence = [*sources, *conversation]
         checked = check_output(
             draft,
             source_count=len(retrieved),
             redactor=self._get_redactor(),
-            sources=[*(hit.text for hit in retrieved), *state["sources"]],
+            sources=sources,
             target_grade=self.settings.reading_grade_target,
             simplify=self._simplify if from_model else None,
+            # A fixed reply (a hand-off, a refusal) is not the model's, so it is not checked.
+            evidence=evidence if from_model else None,
         )
         searched = TOOL_SEARCH_KB in state["tools_used"]
         for flag in checked.flags:
@@ -562,7 +577,12 @@ class Copilot:
             flags.append(flag)
         if searched and not retrieved:
             flags.append(FLAG_NO_CONTEXT)
-        return {"draft": checked.text, "cited": list(checked.cited), "flags": flags}
+        return {
+            "draft": checked.text,
+            "cited": list(checked.cited),
+            "flags": flags,
+            "evidence": evidence,
+        }
 
     def _simplify(self, text: str) -> str:
         with mlflow.start_span(name="simplify_answer", span_type=SpanType.CHAT_MODEL) as span:

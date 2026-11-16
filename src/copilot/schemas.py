@@ -97,3 +97,7 @@ class CopilotAnswer(BaseModel):
     # The question as the copilot processed it: redacted, with placeholder numbers that
     # agree with the rest of the conversation.
     question_as_processed: str = ""
+    # The text the answer was checked against: sources, tool results and the
+    # conversation. Kept for evaluation only, so it is left out when the answer is
+    # written to a trace or sent to the interface.
+    evidence: list[str] = Field(default_factory=list, exclude=True, repr=False)

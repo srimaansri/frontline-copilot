@@ -168,3 +168,21 @@ def test_a_dropped_earlier_message_is_reported() -> None:
         "No personal details in the answer",
     ]
     assert steps[2].status == "notice"
+
+
+def test_an_unsupported_figure_is_a_warning_the_agent_can_act_on() -> None:
+    steps = describe_steps(
+        answer(guardrail_flags=["unsupported_claim:money", "unsupported_claim:phone"])
+    )
+
+    warning = next(step for step in steps if step.title == "Check a figure before you say it")
+    assert warning.status == "warning"
+    assert warning.detail == (
+        "A price and a phone number in the answer are not in the text it was written from."
+    )
+
+
+def test_a_rejected_rewrite_is_reported() -> None:
+    steps = describe_steps(answer(guardrail_flags=["rewrite_changed_facts"]))
+
+    assert "A plainer rewrite was thrown away" in titles(steps)
