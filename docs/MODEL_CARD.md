@@ -46,14 +46,14 @@ Every number is from a real run, recorded with its date and git commit in [eval/
 |---|---|
 | Correct against the expected facts | 27/31 |
 | Followed the row's rules (hand-offs, refusals, no invented answer) | 11/11 |
-| Hand-off opened exactly when needed | 40/40 |
+| Hand-off opened exactly when needed | 40/40. In-sample: the rules were written with the 5 hand-off rows in view |
 | Right tool used | 36/37 |
-| No personal data in the answer | 40/40 |
+| No personal data in the answer | 40/40. One row plants personal data; the other 39 have none to leak |
 | Expected help article retrieved and cited | 22/22 |
 | Grounded in the retrieved text | 22/22 |
 | Citations valid | 40/40 |
 | Reading grade 8 or below | 37/40, mean grade 5.7 |
-| Median time to answer | 2.5 seconds |
+| Time to answer | Median 2.5 seconds, 95th percentile 4.3, slowest 13.4 |
 
 ## Known limitations and failure modes
 

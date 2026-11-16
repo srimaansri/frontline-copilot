@@ -31,7 +31,7 @@ It is **not** for:
 |---|---|
 | Stored transcripts | Redacted in the pipeline. Only the redacted table is read at answer time |
 | The question an agent types | Redacted before any traced code runs, because a trace records a function's inputs as soon as it is called |
-| MLflow traces | Hold only redacted text. A test inspects a real recorded trace for a planted phone number and email |
+| MLflow traces | Receive only text that has been through the redactor. A test inspects a real recorded trace for a planted phone number and email. A value the redactor does not detect would still be recorded: on phrasings it had not seen it found 30 of 39 values, and 36 of 39 after fixes |
 | The evaluation dataset | MLflow is given redacted questions, because it stores the dataset with the run |
 | Hand-off tickets | The reason is redacted before the insert |
 | Answers | Checked last. Anything the redactor finds that is not written in the sources is replaced |

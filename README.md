@@ -12,7 +12,7 @@ An AI copilot for frontline support agents at a wireless carrier, built end to e
 
 ## Status
 
-This repo is being built milestone by milestone. Every number here comes from a real run, with its date and git SHA, and the full reports are in [eval/results](eval/results).
+This repo is being built milestone by milestone. Every number here comes from a real run, with its date and git SHA. The full reports are in [eval/results](eval/results): [SUMMARY.md](eval/results/SUMMARY.md) has every rate with its 95% interval, and [ERRORS.md](eval/results/ERRORS.md) lists every row that failed.
 
 | Milestone | What | State |
 |---|---|---|
@@ -22,7 +22,8 @@ This repo is being built milestone by milestone. Every number here comes from a 
 | M3 | Retrieval-augmented answers and the first evaluation | Done |
 | M4 | Agent with tools, guardrails, escalation | Done |
 | M5 | App, MCP server | Both run locally against the live workspace. The MCP Docker image builds and starts. The app is deployed on Databricks Apps and answers there (checked 2026-11-15, see [Try it](#try-it)). It began as a Streamlit page and is now a REST API with a React front end |
-| M6 | Results, model and data cards, responsible-AI notes | Done: [model card](docs/MODEL_CARD.md), [data card](docs/DATA_CARD.md), [responsible-AI notes](docs/RESPONSIBLE_AI.md) |
+| M6 | Results, model and data cards, responsible-AI notes | The cards are written: [model card](docs/MODEL_CARD.md), [data card](docs/DATA_CARD.md), [responsible-AI notes](docs/RESPONSIBLE_AI.md). Not done: the demo video, and a check of the judge against hand labels |
+| M7 to M10 | Second phase: an evaluation that can fail, a measured router, live progress, approval before a ticket is written, after-call work, call assist | M7 in progress. Planned in [PLAN.md section 16](PLAN.md), after five reviews found the first phase sound but too easy |
 
 The full specification is in [PLAN.md](PLAN.md).
 
@@ -41,7 +42,7 @@ Five notebooks in [pipelines](pipelines) run as one serverless job, defined in [
 | Step | What it does | Result |
 |---|---|---|
 | 01 Ingest | Landing volume to bronze Delta tables | 87 articles, 200 transcripts, 221 labels, 18 plan rows |
-| 02 Redact | Presidio + spaCy inside Spark (`mapInPandas`), then scores itself on the labeled transcripts | 200 transcripts redacted, 1,472 values replaced. PII recall 1.000 (209/209), precision 1.000. Same as the local test-set run. |
+| 02 Redact | Presidio + spaCy inside Spark (`mapInPandas`), then scores itself on the labeled transcripts | 200 transcripts redacted, 1,472 values replaced. PII recall 1.000 (209/209), precision 1.000. Same as the local test-set run, and an upper bound: these transcripts use phrasings the redactor was tuned on. On phrasings it had not seen, recall was 0.769 ([redaction results](#redaction-results-so-far)). |
 | 03 Chunk | Heading-aware chunks into `gold.kb_chunks`, Change Data Feed on, merged by key | 87 chunks at 800/100 tokens, 168 at 350/60 |
 | 04 Index | Delta Sync index on Databricks AI Search with `databricks-gte-large-en` embeddings | 255 of 255 rows indexed |
 | 05 Quality checks | Keys, chunk sizes, coverage, and a scan of redacted transcripts for leftover phone numbers, emails and long digit runs | 18 of 18 checks passed, 0 leak hits |
@@ -56,7 +57,7 @@ After the knowledge-base corrections the job was run again, on 2026-11-14 at com
 
 The copilot at this stage retrieves the five best chunks, answers with `databricks-gpt-oss-120b`, cites its sources, and has its citations checked. It was scored on 22 knowledge-base questions: 21 that one help article answers, and 1 that no article answers. Every question and its expected facts were reviewed by hand before the runs.
 
-Three runs, so that each step changes one thing. All three are from 2026-11-14 at commit `1a35afb`, with prompt v2, MLflow 3.18.0 and RAGAS 0.4.4. The judge is `databricks-meta-llama-3-3-70b-instruct`, a different model family from the one that answers.
+Three runs, so that each step changes one thing. The two vector-search runs are from 2026-11-14 and the hybrid run is from 2026-11-15 (UTC), all at commit `1a35afb`, with prompt v2, MLflow 3.18.0 and RAGAS 0.4.4. The judge is `databricks-meta-llama-3-3-70b-instruct`, a different model family from the one that answers.
 
 | Measure | A: 800-token chunks, vector search | B: 350-token chunks, vector search | B: 350-token chunks, hybrid search |
 |---|---|---|---|
@@ -80,7 +81,7 @@ Rates are passed/scored. The retrieval measures are scored on the 21 questions t
 
 - No setting is clearly better. With 21 questions, a difference of one row is noise, and no claim is made that one setting beats another.
 - Smaller chunks made retrieval more focused: the share of retrieved chunks judged relevant rose from 0.53 to 0.64. They did not make answers more correct, because the larger chunks already held the answer for every question.
-- Hybrid search found the one article that vector search over small chunks missed.
+- In this run, hybrid search retrieved the one article that vector search over small chunks missed. One row in one run is an observation, not a finding.
 - Setting A with vector search stays the default. It has the fewest chunks to maintain and nothing here argues for a change.
 
 **The answers marked incorrect**
@@ -97,7 +98,7 @@ The table reports the marks as the judge gave them.
 
 - 22 questions is a small set, and the knowledge base is synthetic and was written by the same model that answers.
 - The judge is a language model and is wrong some of the time, as above. A hand check of the judge on 10 rows, with an agreement rate, has not been done yet.
-- These runs cover knowledge-base questions only. Plan lookups, call summaries, hand-offs and trick questions are scored once the agent and guardrails exist (Milestone 4).
+- These runs cover knowledge-base questions only. Plan lookups, call summaries, hand-offs and trick questions are scored in the 40-row run of the agent, below.
 - An earlier draft run is kept in [eval/results](eval/results) for the record. It used questions that had not been reviewed and articles that had not been corrected, and the grading has changed since, so it is not comparable with the runs above.
 
 Reproduce one run (it makes about 350 model calls and takes about 25 minutes on Free Edition; try `--limit 5` first):
@@ -116,8 +117,8 @@ question -> redact -> input guard -+-> hand-off (account requests) ------+
                                    +-> model <-> tools (capped rounds) --+
 ```
 
-- **Redaction comes first**, outside any trace, so personal data in a question never reaches the model, a log or MLflow.
-- **The input guard** uses plain rules. A request to change, refund, cancel, unlock or look up something on one customer's account goes straight to a hand-off, and an attempt to override the instructions gets a fixed refusal. Neither costs a model call.
+- **Redaction comes first**, outside any trace, so the personal data it detects in a question never reaches the model, a log or MLflow. What it does not detect gets through: on phrasings it had not seen, it found 30 of 39 values, and 36 of 39 after fixes ([redaction results](#redaction-results-so-far)).
+- **The input guard** uses plain rules. A request to change, refund, cancel, unlock or look up something on one customer's account goes straight to a hand-off, and an attempt to override the instructions gets a fixed refusal. Neither costs a model call. The rules are a first filter and have known gaps: the first version refused "can you show me the rules for international roaming?" as an override attempt. That is fixed, and a router measured on a held-out set is the next milestone.
 - **The output guard** rewrites an answer that is well above the reading target, then checks citations, then removes personal data. The carrier's public contact details are kept, so an answer can still say which number to call.
 
 All 40 evaluation rows, with the default setting (A, vector search), prompt v3, at commit `8624268`. The run finished on 2026-11-15 at 00:58 UTC.
@@ -131,12 +132,14 @@ All 40 evaluation rows, with the default setting (A, vector search), prompt v3, 
 | Trick questions | 3 | 1/1 | 3/3 | 3/3 | 1/1 | 3/3 |
 | **All** | **40** | **27/31** | **11/11** | **40/40** | **36/37** | **40/40** |
 
-"Correct" is scored where a row lists expected facts, and "rules followed" where it lists rules, so the counts differ by column. Also across all rows: an answer was recorded for 40/40, citations were valid for 40/40, the expected article was found and cited for 22/22, 37/40 answers were at reading grade 8 or below (mean 5.7), and the median time to answer was 2.5 seconds.
+"Correct" is scored where a row lists expected facts, and "rules followed" where it lists rules, so the counts differ by column. Also across all rows: an answer was recorded for 40/40, citations were valid for 40/40, the expected article was found and cited for 22/22, 37/40 answers were at reading grade 8 or below (mean 5.7), and the median time to answer was 2.5 seconds (95th percentile 4.3, slowest 13.4, which was a plan lookup).
 
 **Reading these numbers**
 
 - **Hand-offs.** All five account requests were handed off and none of the other 35 questions was. The routing rules were written with those five rows in view, so this shows the rules work on them. It is not an independent measure.
-- **Personal data.** No answer repeated a personal detail from its question or stated one that was not in its sources. One row plants a name, a phone number and Social Security digits in the question to test exactly this.
+- **How sure these are.** With this few rows the ranges are wide. 27/31 correct is consistent with a true rate anywhere from 71% to 95%, and a perfect 22/22 with anything from 85% up. [SUMMARY.md](eval/results/SUMMARY.md) gives the interval for every figure.
+- **Columns at 100%.** They show the check found no failure. Whether the judge would catch a wrong answer has not been tested with deliberately wrong ones, and the judge has not been checked against hand labels.
+- **Personal data.** No answer repeated a personal detail from its question or stated one that was not in its sources. One row plants a name, a phone number and Social Security digits in the question to test exactly this. So the 40/40 is one real test and 39 rows with nothing to leak, and the scorer uses the same redactor as the output check, so it cannot catch what that redactor misses.
 - **The four "incorrect" marks.** In two (a phone with no service, calls going to voicemail) the answer contains every expected fact and the judge objected that the article lists more steps: the same judge mistake as in the earlier runs. In one (the account PIN) the judge wanted the wording "support asks for it" where the answer said it is used "to prove who you are when you call support". In one (a call summary) the judge found the summary did not say the customer had already typed in their card number.
 - **The tool miss.** One plan question was answered from the help articles and not from the plan table. The answer was right.
 - **Not the same system as the three runs above.** Those used a retrieve-then-answer chain with prompt v2. The agent's 18/21 on help-article questions is within one row of them.
@@ -195,7 +198,7 @@ The redactor replaces personal data in support transcripts with typed placeholde
 | Set | What it tells you | PII recall | PII precision | CPNI recall | Commit |
 |---|---|---|---|---|---|
 | Test: 30 transcripts, 209 PII values | New names and numbers in phrasings the redactor was tuned on. An upper bound. | 1.000 (209/209) | 1.000 | 1.000 (12/12) | `b0a26de` |
-| Challenge, first run: 50 hand-written lines, 39 PII values | Phrasings the redactor had never seen. **The number to trust.** | 0.769 (30/39) | 0.857 | 0.333 (2/6) | `ed7ad27` |
+| Challenge, first run: 50 hand-written lines, 39 PII values | Phrasings the redactor had never seen. **The number to trust**, though 39 values is few: the 95% interval is 61 to 88%. | 0.769 (30/39) | 0.857 | 0.333 (2/6) | `ed7ad27` |
 | Challenge, after fixes | The same lines after fixing the gaps they exposed. No longer held out. | 0.923 (36/39) | 0.973 | 0.667 (4/6) | `b0a26de` |
 
 A detection counts when it overlaps the label by at least half (intersection over union) and has the right type.
