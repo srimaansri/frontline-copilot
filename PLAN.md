@@ -625,6 +625,8 @@ Done when:
 - The copilot abstains when retrieval is weak. The threshold is tuned on a development split and reported as a risk-coverage curve.
 - Latency is reported as p50 and p95 by route, with tokens and model calls per answer.
 
+**State on 2026-11-16.** Done: the routing set (150 messages, written and labelled blind, `eval/routing_set.jsonl`), six routers and the whole copilot scored on it, the best router wired into the agent with the rules as its fallback, and the claim check with its mutation test. Differences from the criteria above: the set is 150 messages, not 100; "rules, then the model" was scored and rejected, because the rules' refusals are wrong on questions that quote an override attempt, so the agent uses the rules for hand-offs only; five small models were compared, not one. Not done: the 300-row evaluation set, the judge against hand labels, abstention, and tokens and model calls per answer. The claim check flags and does not block.
+
 ### 16.4 M9. Live progress, approval, and after-call work
 Done when:
 - The API streams the agent's real stages to the page as they happen (LangGraph `astream` over server-sent events). The timed list of stage names in the interface is removed.

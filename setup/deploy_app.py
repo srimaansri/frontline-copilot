@@ -34,6 +34,7 @@ from dotenv import load_dotenv
 from copilot.config import Settings, load_settings
 
 APP_NAME = "frontline-copilot"
+APP_DESCRIPTION = "Frontline Copilot demo. Synthetic data only."
 ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / "web"
 # What the app needs at run time. Tests, data, evaluation and pipelines stay out.
@@ -171,10 +172,22 @@ def main() -> None:
         client.apps.create(
             apps.App(
                 name=APP_NAME,
-                description="Frontline Copilot demo. Synthetic data only.",
+                description=APP_DESCRIPTION,
                 resources=app_resources(client, settings),
             )
         ).result()
+    else:
+        # The app's access is exactly what this file lists. An app made by an earlier
+        # version is brought up to date, so that a resource added since (the router's
+        # endpoint) is granted to its service principal.
+        client.apps.update(
+            APP_NAME,
+            apps.App(
+                name=APP_NAME,
+                description=APP_DESCRIPTION,
+                resources=app_resources(client, settings),
+            ),
+        )
     app = client.apps.get(APP_NAME)
     compute = app.compute_status.state if app.compute_status else None
     print(f"app: {app.name} | compute: {compute}", flush=True)

@@ -573,3 +573,63 @@ They also found defects, each confirmed by running the code before it was change
 - `PLAN.md` section 16, especially the list of what is not built.
 - `eval/results/inspected.json`: the causes recorded there are the ones the README gave for the M4 run and one row of an M3 run. The other failed rows are listed as not inspected.
 - Whether the README should say which decisions were mine. The cold-read reviewer's point: this log opens each entry with the tool that was used, and a reader will ask what the author decided.
+
+## 2026-11-16 — M8, first part: a held-out routing set, a model router, and a check on figures
+
+**Tool:** Claude Code, with two more agents: one to write the routing set and one to label it again.
+
+**Asked:** start stage 2. Part way through: also look at which models are available now, in case there are better ones.
+
+**What was built**
+
+- `src/copilot/claims.py`: reads prices, amounts with a unit, percentages, phone numbers, numbers to dial and web addresses out of an answer and looks each up in the evidence (retrieved text, tool results, the conversation). Wired into `check_output`: an unsupported figure is flagged by kind and shown to the agent as a warning. A plainer rewrite is now kept only if it states the same figures as the draft.
+- `eval/claim_check_eval.py` and `eval/data/claim_corpus.json`: 43 answers collected from the live copilot with the evidence each was written from, and a mutation test over them.
+- `eval/routing_set.jsonl` and `eval/routing_labels_second.jsonl`: 150 messages and a second, blind labelling.
+- `src/copilot/router.py`: a small model routes a message from the policy in words. `eval/routing_eval.py` scores a router, a model, or the whole copilot on the set.
+- `src/copilot/agent.py`: the agent now routes with the rules for a clear account request, then the router, then the rules again if the router fails. `config/settings.yaml` sets `router: model` and `router_endpoint: databricks-llama-4-maverick`.
+
+**Results** (all in `eval/results`, each with its commit)
+
+- Check on figures, corpus of 2026-11-16 at `7f8961d`: 0 of 76 real figures reported; 170 of 194 changed figures caught. All 24 misses are prices and amounts whose changed value also appears elsewhere in the evidence.
+- Routing, 133 clear messages, first contact for everything:
+  - rules alone 67 right; 34 of 45 hand-off requests and 29 of 37 override attempts missed
+  - the copilot before (rules, then the main model) 95 right; the main model opened 28 of the 34 hand-offs the rules missed
+  - `llama-4-maverick` 133, `qwen3-next-80b-a3b-instruct` 132, `gpt-oss-20b` 130, `gemma-3-12b` 124, `llama-3.1-8b-instruct` 117
+  - the copilot now 129 right, at commit `57c8092`
+- Annotators agree on 146 of 150 (Cohen's kappa 0.96). All four disagreements are on messages the writer had marked borderline.
+
+**Decisions**
+
+- **I wrote the rules, so I did not write their test.** An independent agent wrote the set from the policy in words and was not allowed to open the rules, their tests, the evaluation set or the docs. I did not read the messages before the first results were saved, and wrote the router's prompt without them.
+- **Borderline messages are scored apart.** The writer flagged 17 where a careful person could defend two labels. The headline is the other 133, on which both annotators agree.
+- **The rules stay, for hand-offs only.** "Rules, then the model" scored lower than the model alone (127 against 130 with `gpt-oss-20b`), because the rules refused three questions and two of them only quoted a scam message. The rules' hand-off matches were right 11 times out of 11 and cost nothing, so those are kept in front of the router.
+- **The rules are the fallback.** If the router is slow, rate-limited or unreadable, the rules decide and the answer carries a notice. A request must never fail because routing failed.
+- **`llama-4-maverick`, not the first model that looked good.** `gpt-oss-20b` was scored first and got 130. The owner asked whether better models existed. Four more were scored with the same prompt; one got all 133 and is slightly faster.
+- **The check on figures warns and does not block.** It reported none of 76 real figures, but 76 is too few to let it stop an answer.
+- **A figure may come from the conversation.** The evidence includes the question and earlier turns, so an answer may repeat a price the agent typed. It does not include the system prompt.
+
+**Docs checked**
+
+- Databricks supported-models page (updated 2026-11-13) and function-calling page (updated 2026-11-11). The docs list about 70 hosted models. This Free Edition workspace lists eight chat endpoints, and `databricks-glm-5-3`, `databricks-deepseek-v4-1-flash-1017` and `databricks-kimi-k3` each returned `ENDPOINT_NOT_FOUND` when called once on 2026-11-15.
+- The function-calling page lists all eight as supporting tool calls, says parallel tool calls are not supported, and says function calling is "optimized for single turn".
+
+**Things that went wrong on the way**
+
+- **The first end-to-end run was lost.** It ran the copilot on all 150 messages, hit a rate limit on the main model at message 55 after two retries, and had saved nothing. It was rerun with eight retries. The runner should save as it goes.
+- **A unit test reached the real router.** With `router: model` as the default, one test that builds a copilot from default settings called the live endpoint. It passed, because the fallback works, and was only noticed because the suite got slower.
+- **`qwen35-122b-a10b` could not be scored.** Its reply arrives as one string holding a JSON list of reasoning and text blocks, and at 600 output tokens it stops while still reasoning. `message_text` now reads that form, but the router's token limit was not raised for one model.
+- **The router was rate-limited three times in 150 back-to-back messages.** The fallback took over each time, and those are three of the copilot's four misses.
+- **Three more patches lost their backslashes in shell heredocs**, and one of them truncated a test file, which was restored from git.
+
+**Not done**
+
+- The 40-row evaluation has not been re-run with the router on. Its figures in the README are from before.
+- How many override attempts the main model declined on its own, before the router, was not measured. The run recorded the route, not the reply.
+- The 300-row evaluation set, the judge against hand labels, abstention, tokens per answer.
+- The deployed Databricks app still runs commit `5642678`. Its resources do not yet include the router's endpoint. `setup/deploy_app.py` now lists it and updates an existing app's resources before deploying, but that update has not been run against the workspace yet. Until it is, the deployed app would fall back to the rules on every message.
+
+**For me to review**
+
+- `eval/routing_set.jsonl`, especially the 17 borderline messages and the four the annotators disagree on (R024, R056, R084, R118). Your label settles those.
+- Whether 0.8 seconds on most messages is a price worth paying for the routing. `router: rules` in `config/settings.yaml` turns it off.
+- `databricks-llama-4-maverick` as the router. It is under the Llama 4 Community License.

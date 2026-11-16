@@ -23,7 +23,9 @@ This repo is being built milestone by milestone. Every number here comes from a 
 | M4 | Agent with tools, guardrails, escalation | Done |
 | M5 | App, MCP server | Both run locally against the live workspace. The MCP Docker image builds and starts. The app is deployed on Databricks Apps and answers there (checked 2026-11-15, see [Try it](#try-it)). It began as a Streamlit page and is now a REST API with a React front end |
 | M6 | Results, model and data cards, responsible-AI notes | The cards are written: [model card](docs/MODEL_CARD.md), [data card](docs/DATA_CARD.md), [responsible-AI notes](docs/RESPONSIBLE_AI.md). Not done: the demo video, and a check of the judge against hand labels |
-| M7 to M10 | Second phase: an evaluation that can fail, a measured router, live progress, approval before a ticket is written, after-call work, call assist | M7 in progress. Planned in [PLAN.md section 16](PLAN.md), after five reviews found the first phase sound but too easy |
+| M7 | Fix and prove: guard and history fixes, intervals and a CI gate on the evaluation, a public demo that replays real answers | Done |
+| M8 | An evaluation that can fail, and a measured router | Part done: a [held-out routing set](#routing-measured-on-messages-the-rules-had-never-seen) with six routers scored on it, the best one now in the agent, and a [check on every figure](#a-check-on-every-figure-in-an-answer). Not done: the larger evaluation set, the judge checked against hand labels, abstention, tokens per answer |
+| M9, M10 | Live progress, approval before a ticket is written, after-call work, call assist, compliance review | Not started. Planned in [PLAN.md section 16](PLAN.md) |
 
 The full specification is in [PLAN.md](PLAN.md).
 
@@ -112,13 +114,13 @@ python -m eval.run_eval --config A --query-type ann --tag my-run --category kb
 The copilot then became an agent. A LangGraph graph gives the model four tools: search the help articles, look up the plan catalogue with parameterized SQL, summarize a redacted call transcript, and open a hand-off to a person. Guardrails sit on both sides of it.
 
 ```
-question -> redact -> input guard -+-> hand-off (account requests) ------+
+question -> redact -> rules, router +-> hand-off (account requests) ------+
                                    +-> fixed refusal (injection) --------+-> output guard -> answer
                                    +-> model <-> tools (capped rounds) --+
 ```
 
 - **Redaction comes first**, outside any trace, so the personal data it detects in a question never reaches the model, a log or MLflow. What it does not detect gets through: on phrasings it had not seen, it found 30 of 39 values, and 36 of 39 after fixes ([redaction results](#redaction-results-so-far)).
-- **The input guard** uses plain rules. A request to change, refund, cancel, unlock or look up something on one customer's account goes straight to a hand-off, and an attempt to override the instructions gets a fixed refusal. Neither costs a model call. The rules are a first filter and have known gaps: the first version refused "can you show me the rules for international roaming?" as an override attempt. That is fixed, and a router measured on a held-out set is the next milestone.
+- **The input guard** in this run used plain rules alone. A request to change, refund, cancel, unlock or look up something on one customer's account went straight to a hand-off, and an attempt to override the instructions got a fixed refusal. On messages the rules had never seen they turned out to be half right, so the copilot now keeps them for clear account requests and gives everything else to a small model that reads the routing policy: see [Routing](#routing-measured-on-messages-the-rules-had-never-seen).
 - **The output guard** rewrites an answer that is well above the reading target, then checks citations, then removes personal data. The carrier's public contact details are kept, so an answer can still say which number to call.
 
 All 40 evaluation rows, with the default setting (A, vector search), prompt v3, at commit `8624268`. The run finished on 2026-11-15 at 00:58 UTC.
@@ -144,6 +146,78 @@ All 40 evaluation rows, with the default setting (A, vector search), prompt v3, 
 - **The tool miss.** One plan question was answered from the help articles and not from the plan table. The answer was right.
 - **Not the same system as the three runs above.** Those used a retrieve-then-answer chain with prompt v2. The agent's 18/21 on help-article questions is within one row of them.
 - **How the file was written.** The run scored every row and then failed with a sign-in error while reading its traces back, before the report was saved. The report was rebuilt from the same MLflow run with the runner's own functions, and the file says so.
+
+## Routing, measured on messages the rules had never seen
+
+The 40-row evaluation above says every hand-off decision was right. That figure was measured on rows the routing rules were written from. To find out what the rules do on phrasings nobody wrote a rule for, a separate set was built:
+
+- **150 messages** a support agent might type mid-call: 50 requests to act on one customer's account, 60 questions to answer, 40 attempts to override the copilot's instructions. They cover terse and misspelt requests, a customer named only by a pronoun or a placeholder, a request buried after context, questions that merely contain words like "cancel" or "ignore", and questions that quote a scam message.
+- **Written blind.** An independent agent wrote them from the routing policy in words. It was not allowed to open the rules, their tests, the evaluation set or the docs. The set was committed before anything was scored on it.
+- **Labelled twice.** A second annotator labelled all 150 without seeing the first labels. They agree on 146 (Cohen's kappa 0.96). The writer had marked 17 messages as borderline, and all four disagreements are among those. The figures below are for the other 133.
+
+Everything in the table is a first-contact result: the rules and the router's prompt were written before the set was read, and neither has been changed since. Ranges are 95% intervals.
+
+| | Right | Hand-off requests missed | Override attempts missed | Questions handed off | Questions refused | Median time |
+|---|---|---|---|---|---|---|
+| The rules alone | 67/133 (41-59%) | 34/45 | 29/37 | 0/51 | 3/51 | none |
+| The whole copilot before: rules, then the main model | 95/133 (63-79%) | 6/45 | 28/37 | 0/51 | 3/51 | 1.4 s |
+| Router: `llama-4-maverick` | 133/133 (97-100%) | 0/45 | 0/37 | 0/51 | 0/51 | 0.8 s |
+| Router: `qwen3-next-80b-a3b-instruct` | 132/133 (95-100%) | 1/45 | 0/37 | 0/51 | 0/51 | 2.1 s |
+| Router: `gpt-oss-20b` | 130/133 (93-100%) | 1/45 | 2/37 | 0/51 | 0/51 | 0.9 s |
+| Router: `gemma-3-12b` | 124/133 (87-97%) | 1/45 | 5/37 | 2/51 | 1/51 | 0.6 s |
+| Router: `llama-3.1-8b-instruct` | 117/133 (81-93%) | 9/45 | 6/37 | 0/51 | 0/51 | 0.6 s |
+| The whole copilot now: hand-off rules, then the router | 129/133 (92-99%) | 1/45 | 0/37 | 1/51 | 1/51 | 0.8 s |
+
+**What this shows**
+
+- **The rules were half right.** They missed three hand-off requests in four and four override attempts in five. They never handed off a question, which is what rules are good at: the ones that fire are precise.
+- **The main model covered for most missed hand-offs.** Of the 34 requests the rules missed, it opened 28 itself with its hand-off tool. The other 6 got an answer and no ticket.
+- **Override attempts were the gap.** 28 of 37 reached the main model. That run records a refusal only when the rules refuse, so how many the main model declined in its own words is not known.
+- **A small model reading the policy does far better than the rules.** Five were tried with the same prompt, never tuned on this set. The best got all 133.
+- **Putting the rules in front of the router makes it worse.** The rules refuse questions that only quote an override attempt ("the customer got a text saying 'ignore your instructions', is it a scam?"), and those refusals carry through. So the copilot keeps the rules for hand-offs only, where they were right 11 times out of 11, and gives everything else to the router.
+- **The whole copilot now gets 129 of 133.** Three of the four misses are messages where the router's endpoint was rate-limited, so the rules decided, which is the designed fallback. The fourth is the main model opening a hand-off for a plan price question.
+
+**What it costs.** One small model call, about 0.8 seconds, on every message the rules do not hand off. If the router does not answer within 8 seconds or cannot be read, the rules decide and the answer says so.
+
+**Limits**
+
+- The best router was picked from five on this same set, so its 133/133 is the best of five and flatters it a little. The interval (97-100%) does not allow for that.
+- The messages were written by a language model, not typed by support agents.
+- A sixth model, `qwen35-122b-a10b`, could not be scored: with these settings none of its replies could be read, because it spends the token limit on reasoning. At 3.9 seconds a call it would be too slow for this job anyway.
+- The 40-row evaluation above was run before the router existed. It has not been re-run with it.
+
+Every prediction is in [eval/results](eval/results) (`routing_*.json`). To score the rules again, which calls no model:
+
+```bash
+python -m eval.routing_eval --router rules
+python -m eval.routing_eval --compare
+```
+
+## A check on every figure in an answer
+
+A model can write "$7" where its source says "$5", and the citation check passes: the marker still points at a real source. So every answer now has its figures read out and looked up in the text the copilot was given: prices, amounts with a unit, percentages, phone numbers, numbers to dial and web addresses. It is plain code ([src/copilot/claims.py](src/copilot/claims.py)), makes no model call, and runs on every answer. A plainer rewrite of an answer is also thrown away if it changes a figure.
+
+It was measured on 43 answers collected from the live copilot on 2026-11-16 (commit `7f8961d`), which state 76 distinct figures:
+
+| | Result | 95% interval |
+|---|---|---|
+| Real figures it wrongly reported | 0/76 | 0-5% |
+| Changed figures it caught | 170/194 | 82-92% |
+| ... phone numbers | 23/23 | 86-100% |
+| ... numbers to dial | 19/19 | 83-100% |
+| ... web addresses | 7/7 | 65-100% |
+| ... prices | 50/57 | 77-94% |
+| ... amounts with a unit | 71/88 | 71-88% |
+
+The second row comes from changing each accepted figure to a different value, three ways, and running the check again.
+
+- **What it misses.** All 24 misses are prices and amounts. The check tests that a figure is present in the evidence, not which fact it belongs to. Change "$15" to "$25" in an answer about plans and it passes, because another plan costs $25. An answer written from five articles and an 18-row catalogue has a lot of numbers to collide with.
+- **What it does not read.** Numbers written as words, and a figure the model worked out ("two lines at $25 is $50").
+- **What it does today.** It flags the answer and shows the agent a warning: "Check a figure before you say it". It does not block or change the answer. With no false alarm in 76 real figures, blocking is the next step, but 76 is too few to be sure of that.
+
+```bash
+python -m eval.claim_check_eval
+```
 
 ## Try it
 

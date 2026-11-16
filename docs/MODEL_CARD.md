@@ -9,6 +9,7 @@ An assistant for frontline support agents at a wireless carrier. The agent types
 | Part | What is used |
 |---|---|
 | Answering model | `databricks-gpt-oss-120b`, an open-weight model served by Databricks Foundation Model APIs. Temperature 0.1, up to 700 output tokens |
+| Routing model | `databricks-llama-4-maverick`, with router prompt r1 (`src/copilot/router.py`). Temperature 0. It decides whether a message is a question, a request that needs a person, or an attempt to override the instructions. Chosen from five on the held-out routing set: 133 of 133 clear messages, median 0.8 s a call. Added on 2026-11-16, after the 40-row evaluation below, which has not been re-run with it |
 | Embeddings | `databricks-gte-large-en`, through a Delta Sync index on Databricks AI Search |
 | Judge, for evaluation only | `databricks-meta-llama-3-3-70b-instruct`, a different model family from the one that answers |
 | Redaction | Presidio 2.2.366 with spaCy `en_core_web_md` 3.8.0 and project-specific recognizers |

@@ -18,7 +18,8 @@ It is **not** for:
 
 - **The agent is always in the loop.** The copilot answers the agent, not the customer.
 - **It cannot act on an account.** Its four tools search articles, read the plan catalogue, summarize a redacted transcript and open a hand-off. None writes to an account.
-- **Account requests go to a person.** A request to change, refund, cancel, unlock or look up something on one customer's account is routed to a hand-off by plain rules, before any model is called. The model can also open a hand-off for a request the rules miss.
+- **Account requests go to a person.** A request to change, refund, cancel, unlock or look up something on one customer's account is routed to a hand-off before the model that answers is called: by plain rules when the request is a clear one, and otherwise by a small model that reads the routing policy. If that model cannot be reached, the rules decide alone. On 133 held-out messages the rules alone missed 34 of 45 such requests, and the copilot as it now routes missed 1 ([README](../README.md#routing-measured-on-messages-the-rules-had-never-seen)).
+- **Figures are checked against the sources.** Every price, amount, phone number and web address in an answer is looked up in the text the answer was written from, by plain code. One that is not there is shown to the agent as a warning. It caught 170 of 194 deliberately changed figures and reported none of 76 real ones.
 - **A failed hand-off is not silent.** If the ticket cannot be written, the agent is told to transfer the customer by hand.
 
 ## Personal data and CPNI
@@ -75,7 +76,9 @@ The data is synthetic and carries no demographic information, so fairness across
 
 - Every reported number comes from a real run, with its date and git commit.
 - The judge is a language model from a different family than the one that answers. It makes mistakes; two were found by inspecting failures and are described in the README. A hand check of the judge on 10 rows has not been done yet.
-- The rules that route account requests to a hand-off were written with the evaluation's hand-off rows in view. The hand-off score on those rows shows the rules work on them; it is not an independent measure.
+- The rules that route account requests to a hand-off were written with the evaluation's hand-off rows in view. The hand-off score on those rows shows the rules work on them; it is not an independent measure. The independent measure is the held-out routing set, on which the rules alone were right on 67 of 133 messages.
+- The routing set was written by a language model from the policy, not typed by support agents, and the router was chosen as the best of five on that same set.
+- The check on figures tests that a figure is in the sources, not that it is attached to the right fact, and it warns without blocking.
 - The evaluation set is small and no significance is claimed for any difference.
 
 ## Mapping to the NIST AI Risk Management Framework
