@@ -53,13 +53,14 @@ Rule 1 is in its second version, and the change was made with calls in view.
 The first version took the last three turns of both speakers. A trial on five
 calls (T0001 to T0005, 2026-11-15) showed what the 14 lines had not: an agent's
 greeting that names the company ("Thank you for calling Northline Wireless, how
-can I help?") matched the "Contact Northline support" article at 0.62 to 0.65,
-above most real issues, so every call opened with that article and paid for a
-next step about it, and one of the five still had it on show when the customer
-stated the issue. A turn whose window held no word of the issue ("It's a
-Galaxy A15.") also moved the article away and back. Following the customer's
-own words fixes both. Those five calls, and the opening and closing lines that
-every scripted call shares, are therefore not held out for this rule.
+can I help?") matched an article, "Contact Northline support" in four of the
+five, at 0.62 to 0.65, as high as a real issue matches its own. So every call
+opened with an article nobody needed and paid for a next step about it, and in
+one of the five it was still on show when the customer stated the issue. A turn
+whose window held no word of the issue ("It's a Galaxy A15.") also moved the
+article away and back. With the customer's own words as the query, neither
+happened on the same five calls. Those five calls, and the opening and closing
+lines that every scripted call shares, are therefore not held out for this rule.
 
 A reminder is raised at the turn it happens, judged on the turns up to then,
 because a live call has no later turns to read. It is not taken back. The

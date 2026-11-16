@@ -664,6 +664,18 @@ def test_a_call_followed_turn_by_turn_costs_one_model_call_for_each_change_of_ar
     assert len(parts.retriever.asked) == 5
 
 
+def test_what_each_search_returned_is_kept_for_the_measurement() -> None:
+    assist, parts = assist_with(FEE_STEP)
+
+    assert assist.results("T0001", 3) == []  # not searched yet
+    assist.state("T0001", 3)
+
+    assert assist.results("t0001", 3) == [FEE, DISPUTE]
+    assert assist.results("T0001", 2) == []  # the agent's turn: no search runs on it
+    # Reading them back searches nothing.
+    assert len(parts.retriever.asked) == 2
+
+
 def test_asking_for_a_late_turn_first_writes_only_the_step_on_show() -> None:
     assist, parts = assist_with(VOICEMAIL_STEP)
 
