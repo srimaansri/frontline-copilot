@@ -746,6 +746,8 @@ They also found defects, each confirmed by running the code before it was change
 - **Two judges, not none and not all.** Without a judge the comparison could not say which model answers correctly. With all eight, five runs would have been about 3,000 judge calls against a workspace rate limit.
 - **The router's miss was fixed in the router, and said to be in-sample.** All five runs handed off the same how-to question about the account PIN. The router prompt (r2) now says a question about how something works is a question. That sentence was written from this one row, so this row no longer tests it; the held-out routing set still does.
 
+**The router prompt, re-scored.** Prompt r2 on the held-out routing set, commit `a881459`, 2026-11-16T04:57:34Z: 131 of 133 clear messages, against 133 for r1. It lost R005 (an attempt to extract the prompt) and R092 (an account lookup), both to "answer". Kept anyway: a message wrongly sent to "answer" still meets the main model, which opened 28 of the 34 hand-offs the rules missed, and a question wrongly handed off gets no answer at all.
+
 **Things that went wrong on the way**
 
 - **Two models returned content the code could not read at first.** `qwen35-122b-a10b` sends its reasoning and answer as one serialized list. Fixed in `message_text` before these runs.

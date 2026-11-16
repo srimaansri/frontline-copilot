@@ -163,6 +163,7 @@ Everything in the table is a first-contact result: the rules and the router's pr
 | The rules alone | 67/133 (41-59%) | 34/45 | 29/37 | 0/51 | 3/51 | none |
 | The whole copilot before: rules, then the main model | 95/133 (63-79%) | 6/45 | 28/37 | 0/51 | 3/51 | 1.4 s |
 | Router: `llama-4-maverick` | 133/133 (97-100%) | 0/45 | 0/37 | 0/51 | 0/51 | 0.8 s |
+| Router: `llama-4-maverick`, prompt r2 (the one in use) | 131/133 (94-100%) | 1/45 | 1/37 | 0/51 | 0/51 | 0.8 s |
 | Router: `qwen3-next-80b-a3b-instruct` | 132/133 (95-100%) | 1/45 | 0/37 | 0/51 | 0/51 | 2.1 s |
 | Router: `gpt-oss-20b` | 130/133 (93-100%) | 1/45 | 2/37 | 0/51 | 0/51 | 0.9 s |
 | Router: `gemma-3-12b` | 124/133 (87-97%) | 1/45 | 5/37 | 2/51 | 1/51 | 0.6 s |
@@ -177,6 +178,8 @@ Everything in the table is a first-contact result: the rules and the router's pr
 - **A small model reading the policy does far better than the rules.** Five were tried with the same prompt, never tuned on this set. The best got all 133.
 - **Putting the rules in front of the router makes it worse.** The rules refuse questions that only quote an override attempt ("the customer got a text saying 'ignore your instructions', is it a scam?"), and those refusals carry through. So the copilot keeps the rules for hand-offs only, where they were right 11 times out of 11, and gives everything else to the router.
 - **The whole copilot now gets 129 of 133.** Three of the four misses are messages where the router's endpoint was rate-limited, so the rules decided, which is the designed fallback. The fourth is the main model opening a hand-off for a plan price question.
+
+- **The router's prompt was changed once, and it cost two rows here.** On the 40 evaluation questions the first prompt handed off "What is the account PIN and where does a customer change it?", a how-to question. The second prompt (r2) says outright that asking how something works is a question. It was then scored on this set: 131 of 133, against 133 for the first. Both of its misses went to "answer", where the model that answers is a second check and can still open a hand-off; a question wrongly handed off has no second check, because the agent just gets no answer. So r2 is the one in use. No message of this set was read to write it, so the comparison is fair; two rows out of 133 is also within what running the same prompt twice could give. The "whole copilot now" row above was measured with the first prompt.
 
 **What it costs.** One small model call, about 0.8 seconds, on every message the rules do not hand off. If the router does not answer within 8 seconds or cannot be read, the rules decide and the answer says so.
 
