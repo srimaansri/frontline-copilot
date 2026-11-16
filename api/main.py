@@ -8,7 +8,8 @@ This is a thin layer. Every endpoint calls the same ``copilot.agent`` and
 view's summary and its after-call wrap-up call their tools directly, not through
 the agent graph; each tool applies the output check for personal data itself. A
 wrap-up is drafted by one request and stored by another, which the agent sends
-once they have checked it. The built web interface in
+once they have checked it. Call assist (``copilot.assist``) is asked for one
+turn of a call at a time and holds no session. The built web interface in
 ``web/dist`` is served at ``/``, and the API lives under ``/api``.
 """
 
@@ -26,13 +27,14 @@ from typing import Annotated, Any, Literal
 
 import mlflow
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from mlflow.entities import AssessmentSource, AssessmentSourceType, SpanType
 from pydantic import BaseModel, Field
 
 from copilot.agent import Copilot
+from copilot.assist import ASSIST_PROMPT_VERSION, MAX_TURN, AssistState, CallAssist
 from copilot.config import Settings, load_settings
 from copilot.guardrails import redact_question
 from copilot.prompts import PROMPT_VERSION, WRAP_UP_PROMPT_VERSION
@@ -48,6 +50,7 @@ from copilot.schemas import (
     HandOffDraft,
     SavedWrapUp,
     Sentiment,
+    Usage,
 )
 from copilot.steps import Step, describe_steps
 from copilot.tools import MAX_WRAP_UP_CHARS, ToolError, valid_transcript_id
@@ -61,8 +64,16 @@ DISCLAIMER = (
     "Northline Wireless is fictional and all data is synthetic."
 )
 ASK_FAILED = "The copilot could not answer just now. Please try again."
+# How a tool's message starts when the fault is on this side: the model wrote
+# something unreadable, or the warehouse did not answer or is not set up.
+SERVER_FAULTS = ("The model", "The data lookup", "SQL_WAREHOUSE_ID")
 WRAP_UP_FAILED = "The wrap-up could not be drafted just now. Please try again."
 SAVE_FAILED = "The wrap-up could not be saved just now. Please try again."
+CALLS_FAILED = "The calls could not be read just now. Please try again."
+SUMMARY_FAILED = "The summary could not be written just now. Please try again."
+HAND_OFF_FAILED = "The hand-off could not be opened just now. Please try again."
+FEEDBACK_FAILED = "The rating could not be saved just now. Please try again."
+ASSIST_FAILED = "Call assist could not read this turn just now. Please try again."
 TOOLS: tuple[tuple[str, str], ...] = (
     ("search_kb", "Help articles"),
     ("get_plan_details", "Plan catalogue"),
@@ -111,6 +122,8 @@ class AskResponse(BaseModel):
     guardrail_flags: list[str]
     # A hand-off the copilot drafted. It is written only by POST /api/handoffs.
     handoff_draft: HandOffDraft | None = None
+    # Model calls and tokens this answer took.
+    usage: Usage = Field(default_factory=Usage)
     seconds: float
     trace_id: str | None
     steps: list[Step]
@@ -150,6 +163,12 @@ class WrapUpSaveRequest(BaseModel):
     sentiment: Sentiment
 
 
+class AssistResponse(AssistState):
+    """What the assist panel shows at one turn of a call, and how long it took to work out."""
+
+    seconds: float
+
+
 class FeedbackRequest(BaseModel):
     """A thumbs up or down on one answer."""
 
@@ -183,10 +202,27 @@ def start_tracing(settings: Settings) -> bool:
 class Runtime:
     """The copilot and its settings, built on the first request that needs them."""
 
-    def __init__(self, copilot: Copilot | None = None, tracing: bool | None = None) -> None:
-        """Use ``copilot`` and ``tracing`` if given; otherwise build them when first needed."""
+    def __init__(
+        self,
+        copilot: Copilot | None = None,
+        tracing: bool | None = None,
+        assist: CallAssist | None = None,
+    ) -> None:
+        """Use what is given; build the rest when it is first needed."""
         self._copilot = copilot
         self._tracing = tracing
+        self._assist = assist
+
+    @property
+    def assist(self) -> CallAssist:
+        """Call assist, on the copilot's own retriever, model, redactor and SQL runner.
+
+        It is one object for the life of the server because it remembers the
+        searches and next steps it has already paid for. It holds no session.
+        """
+        if self._assist is None:
+            self._assist = CallAssist(self.copilot.tools)
+        return self._assist
 
     @property
     def copilot(self) -> Copilot:
@@ -212,6 +248,7 @@ def create_app(
     *,
     tracing: bool | None = None,
     static_dir: Path | None = STATIC_DIR,
+    assist: CallAssist | None = None,
 ) -> FastAPI:
     """Build the application.
 
@@ -219,8 +256,9 @@ def create_app(
         copilot: The copilot to serve. Built from settings on first use if omitted.
         tracing: Whether answers are traced. Worked out from settings if omitted.
         static_dir: The built web interface. Not served if the folder does not exist.
+        assist: Call assist. Built on the copilot's tools on first use if omitted.
     """
-    runtime = Runtime(copilot, tracing)
+    runtime = Runtime(copilot, tracing, assist)
     app = FastAPI(title="Frontline Copilot API", version="1.0.0", docs_url="/api/docs")
 
     @app.get("/api/health")
@@ -324,7 +362,13 @@ def create_app(
     @app.get("/api/calls")
     def calls() -> list[dict[str, str]]:
         copilot_now = runtime.copilot
-        return list_transcripts(copilot_now.tools.sql, copilot_now.settings)
+        try:
+            return list_transcripts(copilot_now.tools.sql, copilot_now.settings)
+        except ToolError as error:
+            raise _tool_error(error) from error
+        except Exception as error:
+            _log_failure(error)
+            raise HTTPException(status_code=502, detail=CALLS_FAILED) from error
 
     @app.get("/api/calls/{transcript_id}")
     def call(transcript_id: str) -> dict[str, Any]:
@@ -333,6 +377,9 @@ def create_app(
             turns = get_transcript(copilot_now.tools.sql, copilot_now.settings, transcript_id)
         except ToolError as error:
             raise _tool_error(error) from error
+        except Exception as error:
+            _log_failure(error)
+            raise HTTPException(status_code=502, detail=CALLS_FAILED) from error
         return {"transcript_id": transcript_id.strip().upper(), "turns": turns}
 
     @app.post("/api/calls/{transcript_id}/summary")
@@ -352,6 +399,9 @@ def create_app(
             return result
         except ToolError as error:
             raise _tool_error(error) from error
+        except Exception as error:
+            _log_failure(error)
+            raise HTTPException(status_code=502, detail=SUMMARY_FAILED) from error
 
     @app.post("/api/calls/{transcript_id}/wrapup")
     def wrap_up(transcript_id: str) -> CallWrapUp:
@@ -421,6 +471,47 @@ def create_app(
             _log_failure(error)
             raise HTTPException(status_code=502, detail=SAVE_FAILED) from error
 
+    @app.get("/api/calls/{transcript_id}/assist")
+    def assist_at(
+        transcript_id: str, turn: Annotated[int, Query(ge=0, le=MAX_TURN)]
+    ) -> AssistResponse:
+        """What call assist shows once a call has reached ``turn``, counted from 0.
+
+        The page asks again as the replay moves on. Nothing about a replay is
+        kept here: the answer for a turn is worked out from the call's first
+        turn each time, and only finished searches and next steps are remembered,
+        so asking twice costs nothing.
+
+        The transcript comes from the redacted table, never from the request.
+        The id is checked before anything else, so only a well-formed id and a
+        number are put on a trace. What goes on the span as output has passed
+        the output check: an article's own text, fixed words from the rules, and
+        a next step with personal details replaced.
+        """
+        started = time.perf_counter()
+        try:
+            call_id = valid_transcript_id(transcript_id)
+            if not runtime.tracing:
+                state = runtime.assist.state(call_id, turn)
+            else:
+                with mlflow.start_span(name="call_assist", span_type=SpanType.TOOL) as span:
+                    span.set_inputs({"transcript_id": call_id, "turn": turn})
+                    mlflow.update_current_trace(
+                        tags={
+                            "source": "web",
+                            "view": "call_assist",
+                            "assist_prompt_version": ASSIST_PROMPT_VERSION,
+                        }
+                    )
+                    state = runtime.assist.state(call_id, turn)
+                    span.set_outputs(state.model_dump())
+        except ToolError as error:
+            raise _tool_error(error) from error
+        except Exception as error:
+            _log_failure(error)
+            raise HTTPException(status_code=502, detail=ASSIST_FAILED) from error
+        return AssistResponse(**state.model_dump(), seconds=round(time.perf_counter() - started, 2))
+
     @app.post("/api/handoffs")
     def open_hand_off(body: HandOffRequest) -> EscalationTicket:
         """Write the hand-off the agent approved, and return its reference and script.
@@ -443,17 +534,26 @@ def create_app(
             return ticket
         except ToolError as error:
             raise _tool_error(error) from error
+        except Exception as error:
+            _log_failure(error)
+            raise HTTPException(status_code=502, detail=HAND_OFF_FAILED) from error
 
     @app.post("/api/feedback")
     def feedback(body: FeedbackRequest) -> dict[str, bool]:
         if not runtime.tracing:
             raise HTTPException(status_code=503, detail="Feedback is off because tracing is off.")
-        mlflow.log_feedback(
-            trace_id=body.trace_id,
-            name="agent_feedback",
-            value=body.helpful,
-            source=AssessmentSource(source_type=AssessmentSourceType.HUMAN, source_id="web-user"),
-        )
+        try:
+            mlflow.log_feedback(
+                trace_id=body.trace_id,
+                name="agent_feedback",
+                value=body.helpful,
+                source=AssessmentSource(
+                    source_type=AssessmentSourceType.HUMAN, source_id="web-user"
+                ),
+            )
+        except Exception as error:
+            _log_failure(error)
+            raise HTTPException(status_code=502, detail=FEEDBACK_FAILED) from error
         return {"saved": True}
 
     if static_dir is not None and static_dir.is_dir():
@@ -493,9 +593,19 @@ def _ask_response(
 
 
 def _tool_error(error: ToolError) -> HTTPException:
-    """A missing transcript is 404. Anything else a tool rejects is the caller's mistake."""
-    status = 404 if str(error).startswith("No transcript") else 400
-    return HTTPException(status_code=status, detail=str(error))
+    """A missing transcript is 404. A fault of the model or the warehouse is 502.
+
+    Anything else a tool rejects is the caller's mistake. A tool's own messages
+    are fixed words and an id, so they are safe to return.
+    """
+    message = str(error)
+    if message.startswith("No transcript"):
+        status = 404
+    elif message.startswith(SERVER_FAULTS):
+        status = 502
+    else:
+        status = 400
+    return HTTPException(status_code=status, detail=message)
 
 
 app = create_app()

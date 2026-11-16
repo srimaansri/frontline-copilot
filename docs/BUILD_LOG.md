@@ -718,3 +718,126 @@ They also found defects, each confirmed by running the code before it was change
 
 - The wording on the draft card (`web/src/features/ask/HandOffDraftCard.tsx`), and the six team names in it.
 - Whether a declined hand-off should be recorded anywhere. Today it leaves no trace.
+
+## 2026-11-16 — Five models compared as the one that answers
+
+**Tool:** Claude Code.
+
+**Asked:** "also research latest models, there might be updated and better ones too now", then "yes, compare them".
+
+**What was done**
+
+- `eval/run_eval.py` takes `--llm-endpoint` and `--judges`. `eval/scorers.py` gains `figures_supported`. The CI gate reads only runs that every judge scored, so a comparison cannot stand in for an evaluation. `SUMMARY.md` names the model and the router of each run.
+- Five runs of the 40 questions, one per model, with the router on, two judges, at commit `8478690`.
+
+**Results** (from `eval/results/*_models-*.json`)
+
+| Answering model | Correct | Rules followed | Right tool | Source cited | Reading level ok | Figures in sources | Reading grade | Median time | 95th percentile |
+|---|---|---|---|---|---|---|---|---|---|
+| `gpt-oss-120b` | 25/31 (63-91%) | 10/11 (62-99%) | 35/37 (82-99%) | 21/22 (78-100%) | 38/40 (83-99%) | 40/40 (91-100%) | 5.6 | 3.8 s | 5.3 s |
+| `llama-4-maverick` | 23/31 (56-87%) | 9/11 (52-95%) | 33/37 (75-96%) | 18/22 (61-93%) | 34/40 (70-93%) | 40/40 (91-100%) | 7.5 | 4.9 s | 6.8 s |
+| `qwen3-next-80b-a3b-instruct` | 23/31 (56-87%) | 9/11 (52-95%) | 31/37 (68-93%) | 16/22 (51-87%) | 37/40 (80-98%) | 39/40 (87-100%) | 5.7 | 3.3 s | 4.7 s |
+| `qwen35-122b-a10b` | 23/31 (56-87%) | 10/11 (62-99%) | 34/37 (78-98%) | 19/22 (66-96%) | 38/40 (83-99%) | 40/40 (91-100%) | 5.7 | 3.8 s | 8.2 s |
+| `gemma-3-12b` | 21/31 (50-82%) | 9/11 (52-95%) | 29/37 (62-89%) | 15/22 (47-84%) | 37/40 (80-98%) | 39/40 (87-100%) | 5.5 | 3.5 s | 5.6 s |
+
+**Decisions**
+
+- **`gpt-oss-120b` stays.** No other model did better on correctness, tool choice or citation.
+- **Two judges, not none and not all.** Without a judge the comparison could not say which model answers correctly. With all eight, five runs would have been about 3,000 judge calls against a workspace rate limit.
+- **The router's miss was fixed in the router, and said to be in-sample.** All five runs handed off the same how-to question about the account PIN. The router prompt (r2) now says a question about how something works is a question. That sentence was written from this one row, so this row no longer tests it; the held-out routing set still does.
+
+**The router prompt, re-scored.** Prompt r2 on the held-out routing set, commit `a881459`, 2026-11-16T04:57:34Z: 131 of 133 clear messages, against 133 for r1. It lost R005 (an attempt to extract the prompt) and R092 (an account lookup), both to "answer". Kept anyway: a message wrongly sent to "answer" still meets the main model, which opened 28 of the 34 hand-offs the rules missed, and a question wrongly handed off gets no answer at all.
+
+**Things that went wrong on the way**
+
+- **Two models returned content the code could not read at first.** `qwen35-122b-a10b` sends its reasoning and answer as one serialized list. Fixed in `message_text` before these runs.
+- **My own live checks ran on the same endpoints during two of these runs.** The router may have been rate-limited for a few rows as a result, in which case the rules decided those rows. For these 40 questions the rules and the router agree on all but one, so the scores should not move, but the times may be a little high.
+
+**Not done**
+
+- No repeat runs, so no measure of run-to-run noise.
+- Not judged for groundedness or relevance.
+
+## 2026-11-16 — Three pieces built in parallel: a larger evaluation set, a compliance review, the after-call wrap-up
+
+**Tool:** Claude Code, with three agents, each in its own git worktree, while five model-comparison runs held the main checkout.
+
+**Asked:** do not wait on long runs; build whatever can be built at the same time, with agents if that is faster.
+
+**What was built**
+
+- **A larger evaluation set.** `eval/eval_set_extended.jsonl`: 260 rows in eight strata (60 paraphrases, 30 terse, 40 unanswerable, 30 multi-hop, 25 with personal data in the question, 40 follow-ups with a conversation, 20 hand-offs, 15 override attempts), ids E101 to E360. Every expected fact carries the sentence it was copied from, and `eval/check_eval_set.py` checks each quote against its article or catalogue row. `eval/run_eval.py` can now run it: `--eval-set`, `--stratum`, `--sample`, and it passes a row's conversation to the copilot.
+- **A compliance review.** `data_gen/synth_breaches.py` (382 labelled calls), `src/copilot/compliance.py` (five rules, no model call), `eval/compliance_eval.py`.
+- **The after-call wrap-up.** `Tools.wrap_up_call` and `save_wrap_up`, two API endpoints, `eval/wrapup_eval.py`, and a form in the Calls view where each part reads "Cue's draft" until the agent changes it.
+
+**Results**
+
+- Compliance, held-out half (200 calls, 113 breaches), first contact, commit `e95af8a`:
+
+| Rule | Breaches caught | Findings that were right |
+|---|---|---|
+| The agent reads a full card number back | 20/20 (83-100%) | 20/20 (83-100%) |
+| Account work with no identity check anywhere in the call | 26/26 (87-100%) | 26/27 (81-100%) |
+| Account details stated before the identity check | 21/27 (59-90%) | 21/22 (78-100%) |
+| The agent says they have waived or refunded a charge themselves | 15/20 (53-89%) | 15/16 (71-99%) |
+| The agent asks for the full Social Security number | 14/20 (48-86%) | 14/16 (63-97%) |
+
+- Compliance, the 200 original calls: 0 of 200 flagged.
+- Wrap-up: a five-call trial against the live model on 2026-11-15 ran clean (4 of 5 dispositions and 5 of 5 categories matched the labels). Five calls show that the path works and nothing more. The 200-call measurement had not been run when this was written.
+- The larger set: not run yet.
+
+**Decisions**
+
+- **Each agent got its own worktree and a list of files it must not touch.** The evaluation runs save only from a clean checkout, so nothing could be written into the main one for an hour and a half.
+- **Rows of the larger set are marked unreviewed.** The plan says a person reviews every row. The evidence quotes make that fast, but it has not happened, so results on this set will say "0 of 260 reviewed", and the CI gate does not read them.
+- **The compliance rules were kept as measured.** The 22 held-out errors were read after the result was saved, and fixing them now would turn the held-out half into a second development half.
+- **The wrap-up prompt is not told the answer.** The summary prompt is given the call's recorded category and outcome. The wrap-up's lookup does not select them, and a test checks the prompt for both.
+- **The wrap-up is saved by the agent, like a hand-off.** The copilot drafts; a person approves; only then is a row written.
+
+**Things that went wrong on the way**
+
+- **The agents' worktrees made the main checkout look dirty.** They are created under `.claude/`, which showed as untracked, and the next evaluation run would have refused to start. `.claude/` is now in `.git/info/exclude`.
+- **The compliance held-out half is not perfectly blind.** Its writer's summary named a few phrasings before the rules were finished. The agent kept those phrases out of the rules and says so; four of the six missed Social Security requests are exactly those phrases.
+- **The redactor leaves some account figures in plain text.** The compliance work found amounts and usage with no cue word nearby that were not replaced ("$33.62 still outstanding", "16.5 gigs"). That is a redaction gap, recorded here and not yet fixed.
+- **A wrap-up line came back with a non-breaking hyphen** ("3-5 days"). Lines are now brought to plain punctuation. That fix has unit tests and has not been re-run live.
+
+**Checked, with dates**
+
+- 2026-11-15: `ops.call_wrapups` was created in the workspace from `setup/00_setup.sql`, and the insert's `from_json` form returned the two lists it was given.
+- 2026-11-15: seed 42 still produces byte-identical transcripts. A test pins both hashes.
+- 889 unit tests pass on the merged code.
+
+**Not done**
+
+- No row has been saved to `ops.call_wrapups` through the app. The insert has run on a warehouse only as the `from_json` check above.
+- A saved wrap-up is not read back: after a reload the app does not know a call was wrapped up.
+- The compliance checker is not shown anywhere in the interface.
+- The larger set has not been run, and nobody has reviewed its rows.
+
+**For me to review**
+
+- `eval/eval_set_extended.jsonl`. Each row has `evidence`; the unanswerable rows are the ones to look at hardest, because "the article leaves this detail out" is a judgement.
+- The five compliance rules and their definitions at the top of `src/copilot/compliance.py`.
+- The wrap-up form's wording in `web/src/features/calls/WrapUpPanel.tsx`.
+
+## 2026-11-16 — Deployed, and checked through the app's own address
+
+**Tool:** Claude Code.
+
+**What was done:** `python setup/deploy_app.py` at commit `5448544`. The script updated the existing app's resources (the router's endpoint and `ops.call_wrapups` are new), built the interface, uploaded 39 files and started the app. The deployment succeeded in 247 seconds.
+
+**Checked on 2026-11-15, through the app's address with a workspace sign-in:**
+
+- The app's resources now include `router-model` and `ops-call-wrapups`.
+- **The stage events arrive as they happen.** This was the open question: a proxy that buffered the reply would deliver every stage at once at the end. For "How much is the late payment fee, and can it be waived?" each event reached the client within 0.1 second of the time the server stamped on it (request check at 0.01 s, first model call at 0.80 s, the search at 1.24 s, writing at 1.63 s, the output check at 2.75 s, the answer at 2.85 s), with a trace.
+- "pls cancel his line", which no rule matches, came back in 0.79 seconds as a cancellation draft for the account team, with nothing written. The router is reachable from the app.
+- A wrap-up draft for call T0002 came back in 2.7 seconds: resolved, troubleshooting, positive.
+
+**Found by this check:** the count of model calls and tokens was on the trace and not in what the API sends, because the response model did not list it. Fixed.
+
+**Not done**
+
+- Nobody has clicked through the deployed page in a browser while signed in. These checks went through the API.
+- Saving a wrap-up and opening a hand-off were not exercised on the deployed app, only on a local one.
+- This deploy predates the fix above and the second router prompt's result file. Free Edition stops the app 24 hours after it starts.
+

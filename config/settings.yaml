@@ -72,3 +72,4 @@ product_names:
 # Behaviour.
 reading_grade_target: 8.0
 max_tool_iterations: 4
+max_tool_calls_per_round: 6

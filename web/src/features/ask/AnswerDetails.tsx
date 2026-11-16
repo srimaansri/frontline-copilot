@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import type { AskResponse, Step, StepStatus, ToolInfo } from "@/api/types";
+import type { AskResponse, Step, StepStatus, ToolInfo, Usage } from "@/api/types";
 import { StatusStamp } from "@/components/icons/StatusStamp";
 import { countOf } from "@/lib/format";
 
@@ -22,6 +22,23 @@ function describeRun(steps: readonly Step[]): string {
   })
     .filter((part) => part !== null)
     .join(", ");
+}
+
+/**
+ * What the answer cost in model work, as the copilot counted it: the router, the
+ * model that answers, and a rewrite if there was one. A request the rules handle
+ * makes no model call at all. Tokens are shown only when every call reported them.
+ */
+function describeUsage(usage: Usage): string {
+  if (usage.model_calls === 0) {
+    return "No model call. The rules handled this.";
+  }
+  const calls = countOf(usage.model_calls, "model call");
+  if (usage.calls_without_counts > 0) {
+    return calls;
+  }
+  const tokens = (usage.input_tokens + usage.output_tokens).toLocaleString("en-US");
+  return `${calls}, ${tokens} tokens`;
 }
 
 /** A row of status shapes, one per step: the whole run at a glance, before its detail. */
@@ -86,6 +103,9 @@ export function AnswerDetails({ response, tools, highlight }: AnswerDetailsProps
         }
       >
         <StepsRoute steps={steps} tools={tools} />
+        {response.usage && (
+          <p className="mt-4 font-mono text-meta text-ink-3">{describeUsage(response.usage)}</p>
+        )}
       </Section>
     </div>
   );

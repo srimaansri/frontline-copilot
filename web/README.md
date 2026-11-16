@@ -3,7 +3,7 @@
 The browser front end for Frontline Copilot. In the interface the copilot has a name, Cue. It is a single page with two views:
 
 - **Ask**: a conversation with the copilot. Each answer shows its sources and the route of steps the copilot took to produce it.
-- **Calls**: the redacted call transcripts, with a summary on request, and an after-call wrap-up that the copilot drafts and the agent checks and saves.
+- **Calls**: the redacted call transcripts, with a summary on request, and an after-call wrap-up that the copilot drafts and the agent checks and saves. A call can also be replayed turn by turn with call assist beside it: the help article that matches what the customer is saying, a suggested next step, and reminders from the rules, none of it asked for.
 
 It talks to the Python API under `/api`. The API contract is typed in `src/api/types.ts`. The look is described in [`DESIGN.md`](DESIGN.md).
 
@@ -56,6 +56,7 @@ What the demo shows:
 - a request that never answers: send exactly `/pending`;
 - the Calls list (200 rows). The calls named in `eval/record_demo.py` have a transcript and a summary. Any other call shows the error state, which names the calls that are recorded.
 - a wrap-up draft for a recorded call, if the recording has one under `wrapups`. A recording made before the recorder drafted wrap-ups has none, and "Wrap up" then says so. Pressing "Save wrap-up" in the demo says that the demo does not save wrap-ups, which is true.
+- "Replay with assist" on a recorded call: the call plays one turn at a time, and the assist panel shows what the live copilot showed at each turn, if the recording has the call under `assist`. Each turn waits as long as the live copilot took over it. A recording made before the recorder followed calls with assist has none; the call still replays, and the panel says there is no recording. No state is made up.
 
 A normal build does not include the recording.
 
@@ -74,7 +75,7 @@ Then open `http://localhost:5173/gallery.html`. It draws every component in ever
 - `?theme=light` or `?theme=dark` pins the theme, whatever is stored or set in the system, and writes nothing to storage.
 - `?section=<id>` shows one section. For example `http://localhost:5173/gallery.html?theme=dark&section=route`.
 
-The section ids: `tokens`, `buttons`, `view-switcher`, `theme-toggle`, `tags`, `status`, `citation`, `redaction`, `signal-bars`, `composer`, `question`, `answer`, `answer-footer`, `sources`, `route`, `examples`, `running`, `call-rows`, `filters`, `search`, `transcript`, `summary`, `wrap-up`, `calls-states`, `icons`.
+The section ids: `tokens`, `buttons`, `view-switcher`, `theme-toggle`, `tags`, `status`, `citation`, `redaction`, `signal-bars`, `composer`, `question`, `answer`, `answer-footer`, `sources`, `route`, `examples`, `running`, `call-rows`, `filters`, `search`, `transcript`, `summary`, `wrap-up`, `replay`, `assist`, `calls-states`, `icons`.
 
 A hover, a focus ring or a press is shown in a still picture by writing `data-force="hover"`, `"focus"` or `"pressed"` on the element. Every such style in the app answers to that attribute as well as to the real state.
 
@@ -93,6 +94,7 @@ In the demo build the app opens directly on a recorded state, with no delay, so 
 | `http://localhost:5173/?demo=pending` | A question still waiting for its answer |
 | `http://localhost:5173/?demo=calls` | The Calls view with a call open |
 | `http://localhost:5173/?demo=calls-summary` | The same, with its summary |
+| `http://localhost:5173/?demo=calls-assist` | The same call in its replay, with the whole call on show and call assist beside it |
 
 Add `&theme=light` or `&theme=dark` to pin the theme.
 

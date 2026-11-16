@@ -3,17 +3,19 @@ import { flushSync } from "react-dom";
 
 import { api, errorMessage } from "@/api/client";
 import type { CallListItem, CallSummary } from "@/api/types";
-import { BackIcon, CallsIcon, PrivacyIcon } from "@/components/icons/glyphs";
+import { BackIcon, CallsIcon, PlayIcon, PrivacyIcon } from "@/components/icons/glyphs";
+import { Button } from "@/components/ui/button";
 import { IconButton } from "@/components/ui/icon-button";
 import { useLoad, type Loadable } from "@/hooks/useLoad";
 import { EXTRA_WIDE_SCREEN, useMediaQuery } from "@/hooks/useMediaQuery";
 import { cn } from "@/lib/cn";
-import { DEMO_CALL, DEMO_CALL_SUMMARY } from "@/lib/devHooks";
+import { DEMO_CALL, DEMO_CALL_ASSIST, DEMO_CALL_SUMMARY } from "@/lib/devHooks";
 import { humanize } from "@/lib/format";
 
 import { CallList } from "./CallList";
 import { callRowId } from "./callRowId";
 import { CallStatus } from "./CallStatus";
+import { ReplayView } from "./ReplayView";
 import { SummaryPanel } from "./SummaryPanel";
 import { TranscriptPanel } from "./TranscriptPanel";
 import { useWrapUps } from "./useWrapUps";
@@ -33,10 +35,18 @@ export interface CallHeaderProps {
   /** Shown on narrow screens, where the call replaces the list. */
   onBack?: () => void;
   backButton?: React.Ref<HTMLButtonElement>;
+  /** A control that acts on the whole call, such as the switch to the replay. */
+  action?: React.ReactNode;
+  /**
+   * On a phone, leave the note on redaction out. The replay sets it: there the call
+   * and the assist panel share the height of the screen, and the redaction bars in
+   * the call already say what the note says.
+   */
+  compact?: boolean;
 }
 
 /** The head of a call: its id, its category, how it ended, and the note on redaction. */
-export function CallHeader({ call, onBack, backButton }: CallHeaderProps) {
+export function CallHeader({ call, onBack, backButton, action, compact = false }: CallHeaderProps) {
   return (
     <header className="shrink-0 border-b border-line px-4 pt-5 pb-4 sm:px-8 sm:pt-6">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -45,7 +55,8 @@ export function CallHeader({ call, onBack, backButton }: CallHeaderProps) {
             <BackIcon />
           </IconButton>
         )}
-        <h2 className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-4">
+        {/* The basis makes the status and the action wrap under the title on a phone. */}
+        <h2 className="flex min-w-0 flex-1 basis-56 flex-wrap items-baseline gap-x-4">
           <span className="font-mono text-read font-semibold text-ink-2 sm:text-title">
             {call.transcript_id}
           </span>
@@ -53,9 +64,12 @@ export function CallHeader({ call, onBack, backButton }: CallHeaderProps) {
             {humanize(call.category)}
           </span>
         </h2>
-        <CallStatus resolution={call.resolution} />
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <CallStatus resolution={call.resolution} />
+          {action}
+        </div>
       </div>
-      <p className="mt-2 flex gap-2 text-meta text-ink-2">
+      <p className={cn("mt-2 gap-2 text-meta text-ink-2", compact ? "hidden sm:flex" : "flex")}>
         <PrivacyIcon size={16} className="mt-0.5" />
         Personal details were replaced with placeholders before this was saved.
       </p>
@@ -73,7 +87,8 @@ interface CallDetailProps {
 
 /**
  * One call: its transcript, with its summary and its wrap-up beside it or, on
- * smaller screens, above it.
+ * smaller screens, above it. "Replay with assist" swaps both for the call played
+ * back turn by turn with call assist following it.
  */
 function CallDetail({ call, summary, onSummarize, wrapUps, onBack }: CallDetailProps) {
   const { transcript_id: transcriptId } = call;
@@ -84,6 +99,9 @@ function CallDetail({ call, summary, onSummarize, wrapUps, onBack }: CallDetailP
     [transcriptId],
   );
   const { state: transcript, reload } = useLoad(load);
+  // In mock mode `?demo=calls-assist` opens the call already in its replay.
+  const [replaying, setReplaying] = useState(DEMO_CALL_ASSIST);
+  const canReplay = transcript.status === "ready" && transcript.data.turns.length > 0;
 
   // On a narrow screen the list is replaced by this view, so focus follows.
   // On a wide screen the button is not shown and focus stays in the list.
@@ -122,23 +140,47 @@ function CallDetail({ call, summary, onSummarize, wrapUps, onBack }: CallDetailP
 
   return (
     <>
-      <CallHeader call={call} onBack={onBack} backButton={backButton} />
-      <div className="scroll-area flex min-h-0 flex-1 flex-col xl:flex-row xl:overflow-hidden">
-        {!threeColumns && (
-          <div className="shrink-0 border-b border-line bg-sunken px-4 py-5 sm:px-8">
-            {summaryPanel}
+      <CallHeader
+        call={call}
+        onBack={onBack}
+        backButton={backButton}
+        compact={replaying && canReplay}
+        action={
+          // Filled with ink while the replay is on: it is the mode the call is in.
+          <Button
+            variant={replaying && canReplay ? "on" : "outline"}
+            size="sm"
+            aria-pressed={replaying && canReplay}
+            disabled={!canReplay}
+            onClick={() => {
+              setReplaying((current) => !current);
+            }}
+          >
+            <PlayIcon size={16} />
+            Replay with assist
+          </Button>
+        }
+      />
+      {replaying && transcript.status === "ready" && canReplay ? (
+        <ReplayView transcript={transcript.data} startAtEnd={DEMO_CALL_ASSIST} />
+      ) : (
+        <div className="scroll-area flex min-h-0 flex-1 flex-col xl:flex-row xl:overflow-hidden">
+          {!threeColumns && (
+            <div className="shrink-0 border-b border-line bg-sunken px-4 py-5 sm:px-8">
+              {summaryPanel}
+            </div>
+          )}
+          <div className="min-w-0 flex-1 xl:scroll-area">
+            <TranscriptPanel transcript={transcript} onRetry={reload} />
           </div>
-        )}
-        <div className="min-w-0 flex-1 xl:scroll-area">
-          <TranscriptPanel transcript={transcript} onRetry={reload} />
+          {threeColumns && (
+            // The copilot's side rail, on the sunken tone.
+            <aside className="scroll-area w-100 shrink-0 border-l border-line bg-sunken p-6">
+              {summaryPanel}
+            </aside>
+          )}
         </div>
-        {threeColumns && (
-          // The copilot's side rail, on the sunken tone.
-          <aside className="scroll-area w-100 shrink-0 border-l border-line bg-sunken p-6">
-            {summaryPanel}
-          </aside>
-        )}
-      </div>
+      )}
     </>
   );
 }
@@ -152,7 +194,8 @@ export function NothingSelected() {
       <p className="mt-2 max-w-sm text-ink-2">
         Each transcript can be summarized: what the call was about, the customer&apos;s mood and the
         next step. It can also be wrapped up: a record of the call, drafted for you to check and
-        save.
+        save. And it can be replayed turn by turn, with call assist following it as it would a
+        live call.
       </p>
     </div>
   );

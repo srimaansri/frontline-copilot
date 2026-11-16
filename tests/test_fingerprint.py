@@ -2,7 +2,12 @@
 
 from pathlib import Path
 
-from eval.fingerprint import behaviour_fingerprint, changed_files, file_digest
+from eval.fingerprint import (
+    ANSWER_PATH_MODULES,
+    behaviour_fingerprint,
+    changed_files,
+    file_digest,
+)
 
 
 def make_repo(root: Path) -> None:
@@ -69,6 +74,49 @@ def test_a_change_of_setting_or_of_a_question_changes_it(tmp_path: Path) -> None
         "config/settings.yaml",
         "src/copilot/router.py",
     ]
+
+
+def test_a_module_off_the_answering_path_is_not_part_of_it(tmp_path: Path) -> None:
+    make_repo(tmp_path)
+    before = behaviour_fingerprint(tmp_path)
+
+    (tmp_path / "src" / "copilot" / "compliance.py").write_text("Z = 3\n", encoding="utf-8")
+
+    assert behaviour_fingerprint(tmp_path) == before
+
+
+def test_a_run_saved_when_more_files_counted_is_not_stale_for_the_ones_dropped() -> None:
+    saved = {"src/copilot/agent.py": "1", "src/copilot/compliance.py": "9"}
+    current = {"src/copilot/agent.py": "1"}
+
+    assert changed_files(saved, current) == []
+    assert changed_files(saved, {"src/copilot/agent.py": "2"}) == ["src/copilot/agent.py"]
+    assert changed_files(saved, {**current, "src/copilot/router.py": "1"}) == [
+        "src/copilot/router.py"
+    ]
+
+
+def test_every_module_the_agent_imports_is_on_the_list() -> None:
+    """A new module on the answering path must be added to the fingerprint by hand."""
+    import ast
+
+    seen: set[str] = set()
+    queue = ["agent"]
+    while queue:
+        name = queue.pop()
+        if name in seen:
+            continue
+        seen.add(name)
+        tree = ast.parse(Path(f"src/copilot/{name}.py").read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if (
+                isinstance(node, ast.ImportFrom)
+                and node.module
+                and node.module.startswith("copilot.")
+            ):
+                queue.append(node.module.split(".", 1)[1])
+
+    assert seen <= set(ANSWER_PATH_MODULES), sorted(seen - set(ANSWER_PATH_MODULES))
 
 
 def test_line_endings_do_not_change_a_text_file_s_digest(tmp_path: Path) -> None:

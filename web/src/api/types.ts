@@ -102,6 +102,15 @@ export interface HandOffTicket {
   recorded: boolean;
 }
 
+/** The model work one answer took, as the copilot counted it. */
+export interface Usage {
+  model_calls: number;
+  input_tokens: number;
+  output_tokens: number;
+  /** Calls whose reply carried no token count. When not zero, the totals are a lower bound. */
+  calls_without_counts: number;
+}
+
 export interface AskResponse {
   /** Markdown. May contain citation markers such as [1] or [1, 2]. */
   answer: string;
@@ -113,6 +122,8 @@ export interface AskResponse {
   guardrail_flags: string[];
   /** A hand-off waiting for the agent to approve it. Absent or null when there is none. */
   handoff_draft?: HandOffDraft | null;
+  /** Absent in a recording made before it was counted. */
+  usage?: Usage;
   seconds: number;
   trace_id: string | null;
   steps: Step[];
@@ -200,6 +211,67 @@ export interface SavedWrapUp extends WrapUpFields {
   recorded: boolean;
 }
 
+/** The help article call assist has on show. */
+export interface AssistArticle {
+  title: string;
+  url: string;
+  /** The heading of the passage, when it has one. */
+  heading: string | null;
+  /** The part of the article that matters now, as plain text. Steps keep their lines. */
+  passage: string;
+  score: number | null;
+  /** The turn, counted from 0, at which this article came up. */
+  since_turn: number;
+}
+
+/** What the agent could say next, written from the article on show. */
+export interface AssistNextStep {
+  text: string;
+  since_turn: number;
+  /** Kinds of figure in it ("money", "phone", ...) that are in neither the article nor the call. */
+  unsupported: string[];
+}
+
+/** Something the compliance rules found, at the turn it happened. */
+export interface AssistReminder {
+  /** "account_before_identity", "card_read_back", "unauthorized_promise" or "full_ssn_requested". */
+  rule: string;
+  title: string;
+  detail: string;
+  turn: number;
+}
+
+/** The customer asked for a change to their account. Nothing is drafted or sent. */
+export interface AssistHandOff {
+  category: string;
+  /** Who would pick it up, such as "the billing team". */
+  team: string;
+  turn: number;
+}
+
+/** What "changed" can name: what is new at exactly this turn. */
+export type AssistChange = "article" | "next_step" | "identity" | "reminder" | "hand_off";
+
+/** Everything the assist panel shows once a call has reached one turn. Turns count from 0. */
+export interface AssistState {
+  transcript_id: string;
+  turn: number;
+  turns_total: number;
+  article: AssistArticle | null;
+  next_step: AssistNextStep | null;
+  /** Why an article has no next step, when something went wrong or the step was withheld. */
+  step_problem: string | null;
+  /** The turn at which the customer first answered an identity question. Null: not yet. */
+  identity_checked_at: number | null;
+  reminders: AssistReminder[];
+  hand_off: AssistHandOff | null;
+  changed: AssistChange[];
+  /** What following the call this far costs, when it is followed turn by turn. */
+  cost: { searches: number; model_calls: number };
+  /** How long the server took to work this turn out. */
+  seconds: number;
+}
+
 export interface FeedbackRequest {
   trace_id: string;
   helpful: boolean;
@@ -239,6 +311,11 @@ export interface Api {
     request: WrapUpFields,
     signal?: AbortSignal,
   ): Promise<SavedWrapUp>;
+  /**
+   * What call assist shows once a call has reached `turn`, counted from 0. The
+   * server holds no session: the page asks again as the replay moves on.
+   */
+  assistCall(transcriptId: string, turn: number, signal?: AbortSignal): Promise<AssistState>;
   /** Write the hand-off the agent approved. This is the only call that opens a ticket. */
   openHandOff(request: HandOffRequest, signal?: AbortSignal): Promise<HandOffTicket>;
   sendFeedback(request: FeedbackRequest, signal?: AbortSignal): Promise<FeedbackResponse>;

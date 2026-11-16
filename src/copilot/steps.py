@@ -172,7 +172,10 @@ def describe_steps(answer: CopilotAnswer) -> list[Step]:
     for tool in answer.tools_used:
         title, detail = TOOL_STEPS.get(tool, (f"Used {tool}", ""))
         status: Status = "ok"
-        if tool in failed_tools:
+        if tool == "unknown_tool":
+            title = "Asked for a tool that does not exist"
+            detail, status = "The copilot was told so, and nothing was run.", "notice"
+        elif tool in failed_tools:
             detail, status = "The lookup failed, and the copilot said so.", "warning"
         elif tool == "search_kb":
             cited = len(answer.citations)
@@ -201,6 +204,15 @@ def describe_steps(answer: CopilotAnswer) -> list[Step]:
             )
         )
 
+    if "tool_calls_skipped" in names:
+        steps.append(
+            Step(
+                stage="tool",
+                title="Some lookups were not run",
+                detail="The copilot asked for more lookups at once than it is allowed.",
+                status="notice",
+            )
+        )
     if "tool_limit_reached" in names:
         steps.append(
             Step(
@@ -244,6 +256,15 @@ def describe_steps(answer: CopilotAnswer) -> list[Step]:
                 title="Citations checked",
                 detail="Every citation points to a retrieved source.",
                 status="ok",
+            )
+        )
+    if "rewrite_failed" in names:
+        steps.append(
+            Step(
+                stage="output_check",
+                title="A plainer rewrite could not be made",
+                detail="The rewrite failed, so the first draft was kept.",
+                status="notice",
             )
         )
     if "rewrite_changed_facts" in names:

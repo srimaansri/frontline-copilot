@@ -426,7 +426,8 @@ def test_an_unknown_tool_name_is_a_tool_error(redactor: Redactor) -> None:
     answer = make_copilot(redactor, model).run("What can you do?")
 
     assert "There is no tool called 'delete_account'" in model.calls[1][-1].content
-    assert answer.guardrail_flags == ["tool_error:delete_account"]
+    # Outside what the model is told, a made-up name is replaced by a fixed word.
+    assert answer.guardrail_flags == ["tool_error:unknown_tool"]
 
 
 def test_the_model_can_open_a_hand_off_itself(redactor: Redactor) -> None:
