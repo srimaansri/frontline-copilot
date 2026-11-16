@@ -135,6 +135,9 @@ class Settings(BaseSettings):
     # False makes a hand-off a dry run: the ticket and the script are produced, and
     # nothing is written to the escalations table. Evaluation runs use it.
     record_escalations: bool = True
+    # False makes saving an after-call wrap-up a dry run: the wrap-up is checked and
+    # redacted as usual, and nothing is written to the wrap-ups table.
+    record_wrapups: bool = True
 
     @field_validator("query_type", mode="before")
     @classmethod

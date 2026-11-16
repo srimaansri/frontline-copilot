@@ -22,6 +22,7 @@ import type {
   CallListItem,
   CallSummary,
   CallTranscript,
+  CallWrapUp,
   Meta,
   StageEvent,
 } from "./types";
@@ -38,6 +39,8 @@ interface Recording {
   calls: CallListItem[];
   transcripts: Record<string, CallTranscript>;
   summaries: Record<string, CallSummary>;
+  /** The wrap-up the live copilot drafted for each recorded call. Absent from older recordings. */
+  wrapups?: Record<string, CallWrapUp>;
 }
 
 // The file is JSON, so its literal types are wider than the API's unions.
@@ -126,6 +129,8 @@ export const mockMeta: Meta = META;
 export const mockCalls: CallListItem[] = RECORDING.calls;
 export const mockSummaries: Record<string, CallSummary> = RECORDING.summaries;
 export const mockTranscripts: Record<string, CallTranscript> = RECORDING.transcripts;
+/** Empty until a recording is made with a version of the recorder that drafts wrap-ups. */
+export const mockWrapUps: Record<string, CallWrapUp> = RECORDING.wrapups ?? {};
 
 // --- The demo API ---------------------------------------------------------------------------
 
@@ -248,6 +253,33 @@ export const mockApi: Api = {
       throw notRecorded(id);
     }
     return summary;
+  },
+
+  async draftWrapUp(transcriptId, signal) {
+    await wait(1600, signal);
+    const id = normalizeId(transcriptId);
+    const wrapUp = mockWrapUps[id];
+    if (!wrapUp) {
+      // No draft is made up here: a call the live copilot was not asked about has none.
+      const recordedIds = Object.keys(mockWrapUps);
+      throw new ApiError(
+        recordedIds.length === 0
+          ? "The demo has no recorded wrap-up yet. In the live app, Cue drafts one from the call."
+          : `The demo has no recorded wrap-up for call ${id}. It has one for these calls: ${recordedIds.join(", ")}.`,
+        404,
+      );
+    }
+    return wrapUp;
+  },
+
+  async saveWrapUp(_transcriptId, _request, signal) {
+    await wait(600, signal);
+    // The demo reaches no server, so it cannot save anything, and it does not pretend to.
+    throw new ApiError(
+      "The demo does not save wrap-ups. In the live app this saves the record you checked " +
+        "and shows it as saved.",
+      503,
+    );
   },
 
   async openHandOff(_request, signal) {

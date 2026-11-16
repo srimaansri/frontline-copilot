@@ -8,6 +8,26 @@ from pydantic import BaseModel, ConfigDict, Field
 
 Urgency = Literal["low", "normal", "high"]
 Sentiment = Literal["positive", "neutral", "negative"]
+# How a call ended. The same three values the transcript generator records as
+# ``resolution``; a test keeps the two lists equal.
+Disposition = Literal["resolved", "escalated", "unresolved"]
+# What a call was about. The transcript generator's categories; a test keeps the
+# two lists equal.
+CallCategory = Literal[
+    "billing",
+    "troubleshooting",
+    "device_setup",
+    "plan_change",
+    "add_line",
+    "international",
+    "lost_stolen",
+    "cancel_port",
+    "accessibility",
+    "scam",
+]
+# Who has to take the next step after a call: the customer, the agent who took
+# the call, or another team.
+FollowUpOwner = Literal["customer", "agent", "team"]
 
 
 class KBHit(BaseModel):
@@ -64,6 +84,57 @@ class CallSummary(BaseModel):
     sentiment: Sentiment
     next_step: str
     related_articles: list[Citation] = Field(default_factory=list)
+
+
+class FollowUp(BaseModel):
+    """What is left to do after a call, and who has to do it."""
+
+    model_config = ConfigDict(frozen=True)
+
+    owner: FollowUpOwner
+    action: str = Field(min_length=1)
+
+
+class CallWrapUp(BaseModel):
+    """The after-call record of one redacted transcript.
+
+    From ``wrap_up_call`` it is the copilot's draft: the disposition and the
+    category are worked out from the conversation alone. Nothing is stored until
+    the agent has checked it and ``save_wrap_up`` is called with what they approved.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    transcript_id: str
+    disposition: Disposition
+    category: CallCategory
+    notes: list[str] = Field(min_length=1, max_length=6)
+    # What the agent told the customer would happen after the call.
+    promises: list[str] = Field(default_factory=list, max_length=6)
+    # None when nothing is left to do.
+    follow_up: FollowUp | None = None
+    sentiment: Sentiment
+    related_articles: list[Citation] = Field(default_factory=list)
+
+
+class SavedWrapUp(BaseModel):
+    """A wrap-up as it was stored: every text field is the redacted one.
+
+    ``recorded`` is false when the row could not be written, or when writing is
+    turned off. The agent is told, and what they typed is still on their screen.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    wrapup_id: str
+    transcript_id: str
+    disposition: Disposition
+    category: CallCategory
+    notes: list[str]
+    promises: list[str]
+    follow_up: FollowUp | None
+    sentiment: Sentiment
+    recorded: bool
 
 
 class EscalationTicket(BaseModel):

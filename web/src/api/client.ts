@@ -5,6 +5,7 @@ import type {
   CallListItem,
   CallSummary,
   CallTranscript,
+  CallWrapUp,
   ErrorBody,
   FeedbackRequest,
   FeedbackResponse,
@@ -12,7 +13,9 @@ import type {
   HandOffTicket,
   Health,
   Meta,
+  SavedWrapUp,
   StageEvent,
+  WrapUpFields,
 } from "./types";
 
 /** True when the build answers from fixtures. Set with `VITE_USE_MOCK=1`. */
@@ -183,6 +186,16 @@ const httpApi: Api = {
       method: "POST",
       signal,
     }),
+  draftWrapUp: (transcriptId, signal) =>
+    request<CallWrapUp>(`/calls/${encodeURIComponent(transcriptId)}/wrapup`, {
+      method: "POST",
+      signal,
+    }),
+  saveWrapUp: (transcriptId, body: WrapUpFields, signal) =>
+    request<SavedWrapUp>(
+      `/calls/${encodeURIComponent(transcriptId)}/wrapup/save`,
+      post(body, signal),
+    ),
   openHandOff: (body: HandOffRequest, signal) =>
     request<HandOffTicket>("/handoffs", post(body, signal)),
   sendFeedback: (body: FeedbackRequest, signal) =>
@@ -200,6 +213,9 @@ function mockApi(): Api {
     getCall: async (transcriptId, signal) => (await load()).getCall(transcriptId, signal),
     summarizeCall: async (transcriptId, signal) =>
       (await load()).summarizeCall(transcriptId, signal),
+    draftWrapUp: async (transcriptId, signal) => (await load()).draftWrapUp(transcriptId, signal),
+    saveWrapUp: async (transcriptId, body, signal) =>
+      (await load()).saveWrapUp(transcriptId, body, signal),
     openHandOff: async (body, signal) => (await load()).openHandOff(body, signal),
     sendFeedback: async (body, signal) => (await load()).sendFeedback(body, signal),
   };

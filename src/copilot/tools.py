@@ -4,6 +4,11 @@ The agent, the MCP server and the tests all call these methods; the wrappers
 that expose them to a model live with the agent. Every method takes text that
 has already been redacted, and every SQL statement is parameterized: values
 that come from a model are bound as parameters and never placed in SQL text.
+
+The after-call wrap-up (``wrap_up_call`` and ``save_wrap_up``) lives here too,
+because it shares the transcript lookup and the output check with the summary.
+It is not one of the four tools a model can call: the Calls view asks for a
+draft, and only the agent's approval saves one.
 """
 
 from __future__ import annotations
@@ -22,18 +27,22 @@ from pydantic import ValidationError
 from copilot.config import Settings
 from copilot.guardrails import redact_answer
 from copilot.llm import ChatModel, build_chat_model, message_text
-from copilot.prompts import SUMMARY_PROMPT
+from copilot.prompts import SUMMARY_PROMPT, WRAP_UP_PROMPT, build_wrap_up_message
 from copilot.redaction import Redactor, get_redactor
 from copilot.retriever import Retriever
 from copilot.schemas import (
     CallSummary,
+    CallWrapUp,
     Citation,
     EscalationTicket,
+    FollowUp,
     HandOffDraft,
     KBHit,
     Plan,
+    SavedWrapUp,
     Urgency,
 )
+from copilot.text import to_plain_punctuation
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +61,11 @@ PLAN_COLUMNS: tuple[str, ...] = (
 )
 MAX_PLAN_ROWS = 20
 MAX_REASON_CHARS = 500
+# One note, one promise or the next step of a wrap-up is at most this long. A draft
+# is cut to it, so that whatever the copilot drafts can be saved as it is.
+MAX_WRAP_UP_CHARS = 300
+# What a model writes when it means "nothing is left to do" but does not send null.
+_NO_FOLLOW_UP = frozenset({"", "none", "null", "n/a", "nothing"})
 
 # Team that picks up each kind of hand-off. Anything else goes to "other".
 ESCALATION_TEAMS: dict[str, str] = {
@@ -153,8 +167,47 @@ def new_ticket_id() -> str:
     return f"ESC-{uuid.uuid4().hex[:8].upper()}"
 
 
+def new_wrapup_id() -> str:
+    """A short, unguessable reference for a saved wrap-up."""
+    return f"WRP-{uuid.uuid4().hex[:8].upper()}"
+
+
+def valid_transcript_id(transcript_id: str) -> str:
+    """The id in its stored form, such as T0007.
+
+    Raises:
+        ToolError: If it is not the letter T and four digits. Nothing is looked up.
+    """
+    transcript_id = transcript_id.strip().upper()
+    if not TRANSCRIPT_ID_RE.fullmatch(transcript_id):
+        raise ToolError(
+            f"{transcript_id[:20]!r} is not a valid transcript id. "
+            "An id is the letter T and four digits, such as T0007."
+        )
+    return transcript_id
+
+
+def spoken_turns(turns_json: str) -> str:
+    """The turns of a stored transcript as lines of ``speaker: text``."""
+    return "\n".join(f"{turn['speaker']}: {turn['text']}" for turn in json.loads(turns_json))
+
+
+def _label(value: object) -> str:
+    """A label a model wrote, in the form the schemas use: "Plan change" -> "plan_change"."""
+    return str(value or "").strip().lower().replace(" ", "_").replace("-", "_")
+
+
+def _strings(value: object) -> list[str]:
+    """A list of strings from a model's reply, which may send one string or nothing instead."""
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, list):
+        return [str(item) for item in value if item is not None]
+    return []
+
+
 class Tools:
-    """The four tools, bound to one configuration."""
+    """The copilot's tools and the after-call wrap-up, bound to one configuration."""
 
     def __init__(
         self,
@@ -165,6 +218,7 @@ class Tools:
         llm: ChatModel | None = None,
         redactor: Redactor | None = None,
         ticket_id: Callable[[], str] = new_ticket_id,
+        wrapup_id: Callable[[], str] = new_wrapup_id,
         now: Callable[[], datetime] = lambda: datetime.now(UTC),
     ) -> None:
         """Dependencies that are left out are built from ``settings`` on first use."""
@@ -174,6 +228,7 @@ class Tools:
         self._llm = llm
         self._redactor = redactor
         self._ticket_id = ticket_id
+        self._wrapup_id = wrapup_id
         self._now = now
 
     # --- dependencies, built on first use ------------------------------------------------
@@ -265,12 +320,7 @@ class Tools:
 
     def summarize_call(self, transcript_id: str) -> CallSummary:
         """Summarize one transcript. Reads the redacted transcript table only."""
-        transcript_id = transcript_id.strip().upper()
-        if not TRANSCRIPT_ID_RE.fullmatch(transcript_id):
-            raise ToolError(
-                f"{transcript_id[:20]!r} is not a valid transcript id. "
-                "An id is the letter T and four digits, such as T0007."
-            )
+        transcript_id = valid_transcript_id(transcript_id)
         table = self.settings.table("silver", "transcripts_redacted")
         rows = self.sql(
             "SELECT transcript_id, category, resolution, to_json(turns) AS turns_json "  # noqa: S608
@@ -280,8 +330,7 @@ class Tools:
         if not rows:
             raise ToolError(f"No transcript was found with the id {transcript_id}")
         row = rows[0]
-        turns = json.loads(row["turns_json"])
-        conversation = "\n".join(f"{turn['speaker']}: {turn['text']}" for turn in turns)
+        conversation = spoken_turns(row["turns_json"])
         reply = self.llm.invoke(
             [
                 ("system", SUMMARY_PROMPT),
@@ -295,10 +344,7 @@ class Tools:
         fields = parse_json_object(message_text(reply))
 
         def checked(value: object) -> str:
-            # The transcript is redacted, but the model may still write out something
-            # that looks like personal data. Whatever is not in the transcript is replaced,
-            # so this path gets the same output check as an answer from the agent.
-            return redact_answer(str(value or "").strip(), self.redactor, [conversation]).text
+            return self._checked(value, conversation)
 
         try:
             summary = CallSummary(
@@ -311,6 +357,173 @@ class Tools:
         except ValidationError as error:
             raise ToolError("The model's summary did not have the expected fields") from error
         return summary.model_copy(update={"related_articles": self._related(summary.intent)})
+
+    def _checked(self, value: object, conversation: str) -> str:
+        """The output check for text written about one transcript.
+
+        The transcript is redacted, but a model, or an agent editing a draft, may
+        still write out something that looks like personal data. Whatever is not
+        in the transcript is replaced, so this text gets the same check as an
+        answer from the agent.
+        """
+        return redact_answer(str(value or "").strip(), self.redactor, [conversation]).text
+
+    def _wrap_up_line(self, value: object, conversation: str) -> str:
+        """One line of a wrap-up as it is shown and stored.
+
+        It is brought to one line of plain punctuation first: a model writes
+        "3 to 5 days" with a non-breaking hyphen, which a later search for the
+        text would miss. Then it is cut to length and given the output check.
+        A placeholder can make a line longer, so it is cut once more.
+        """
+        line = " ".join(to_plain_punctuation(str(value or "")).split())
+        return self._checked(line[:MAX_WRAP_UP_CHARS], conversation)[:MAX_WRAP_UP_CHARS]
+
+    def _redacted_conversation(self, transcript_id: str) -> str:
+        """The turns of one redacted transcript, and nothing else about the call.
+
+        The call's recorded category and outcome are not read. A wrap-up has to
+        work them out, so they must not be anywhere near its prompt.
+        """
+        table = self.settings.table("silver", "transcripts_redacted")
+        rows = self.sql(
+            f"SELECT to_json(turns) AS turns_json FROM {table} "  # noqa: S608
+            "WHERE transcript_id = :transcript_id LIMIT 1",
+            {"transcript_id": ("STRING", transcript_id)},
+        )
+        if not rows:
+            raise ToolError(f"No transcript was found with the id {transcript_id}")
+        return spoken_turns(rows[0]["turns_json"])
+
+    def wrap_up_call(self, transcript_id: str, *, with_articles: bool = True) -> CallWrapUp:
+        """Draft the after-call record of one transcript, for the agent to check.
+
+        The model is given the redacted turns and nothing else: how the call
+        ended and what it was about are worked out from the conversation, not
+        read from the table. Every text field passes the output check
+        ``summarize_call`` applies. Nothing is stored; ``save_wrap_up`` does that
+        once the agent has approved the draft.
+
+        Args:
+            transcript_id: The call, such as T0007.
+            with_articles: False skips the search for related help articles. The
+                accuracy measurement uses it, because it scores two labels only.
+        """
+        transcript_id = valid_transcript_id(transcript_id)
+        conversation = self._redacted_conversation(transcript_id)
+        reply = self.llm.invoke(
+            [
+                ("system", WRAP_UP_PROMPT),
+                ("user", build_wrap_up_message(transcript_id, conversation)),
+            ]
+        )
+        fields = parse_json_object(message_text(reply))
+
+        def checked(values: object) -> list[str]:
+            lines = (self._wrap_up_line(text, conversation) for text in _strings(values))
+            return [line for line in lines if line]
+
+        follow_up = fields.get("follow_up")
+        if isinstance(follow_up, dict):
+            action = self._wrap_up_line(follow_up.get("action"), conversation)
+            # An owner with nothing to do is no follow-up.
+            follow_up = {"owner": _label(follow_up.get("owner")), "action": action}
+            follow_up = follow_up if action else None
+        elif _label(follow_up) in _NO_FOLLOW_UP:
+            follow_up = None
+        try:
+            wrap_up = CallWrapUp.model_validate(
+                {
+                    "transcript_id": transcript_id,
+                    "disposition": _label(fields.get("disposition")),
+                    "category": _label(fields.get("category")),
+                    "notes": checked(fields.get("notes")),
+                    "promises": checked(fields.get("promises")),
+                    "follow_up": follow_up,
+                    "sentiment": _label(fields.get("sentiment")),
+                }
+            )
+        except ValidationError as error:
+            raise ToolError("The model's wrap-up did not have the expected fields") from error
+        if not with_articles:
+            return wrap_up
+        # The first note says what the customer wanted, which is what an article is about.
+        return wrap_up.model_copy(update={"related_articles": self._related(wrap_up.notes[0])})
+
+    def save_wrap_up(self, wrap_up: CallWrapUp) -> SavedWrapUp:
+        """Store the wrap-up the agent approved, and return it as it was stored.
+
+        The agent may have typed over the draft, so every text field is checked
+        again here, against the same redacted transcript, before it is stored or
+        returned: the same check the draft passed, so a draft saved untouched is
+        stored as it was shown. If the row cannot be written, the wrap-up is
+        still returned, with ``recorded`` false, and the agent is told.
+
+        With ``record_wrapups`` off, everything but the write happens and
+        ``recorded`` is false.
+
+        Raises:
+            ToolError: If the id is malformed, the call does not exist, or no note
+                is left once blank ones are dropped.
+        """
+        transcript_id = valid_transcript_id(wrap_up.transcript_id)
+        conversation = self._redacted_conversation(transcript_id)
+
+        def stored(text: str) -> str:
+            return self._wrap_up_line(text, conversation)
+
+        notes = [stored(note) for note in wrap_up.notes if note.strip()]
+        promises = [stored(promise) for promise in wrap_up.promises if promise.strip()]
+        if not notes:
+            raise ToolError("A wrap-up needs at least one note.")
+        follow_up = None
+        if wrap_up.follow_up is not None and wrap_up.follow_up.action.strip():
+            follow_up = FollowUp(
+                owner=wrap_up.follow_up.owner, action=stored(wrap_up.follow_up.action)
+            )
+        wrapup_id = self._wrapup_id()
+        table = self.settings.table("ops", "call_wrapups")
+        recorded = False
+        if self.settings.record_wrapups:
+            try:
+                # The two lists travel as one JSON string and are read back into arrays
+                # by the warehouse, because a statement parameter cannot be an array.
+                # Every value is a bound parameter; the table name comes from settings.
+                self.sql(
+                    f"INSERT INTO {table} "  # noqa: S608
+                    "(wrapup_id, saved_at, transcript_id, disposition, category, notes, "
+                    "promises, follow_up_owner, follow_up, sentiment) "
+                    "SELECT :wrapup_id, :saved_at, :transcript_id, :disposition, :category, "
+                    "lists.notes, lists.promises, :follow_up_owner, :follow_up, :sentiment "
+                    "FROM (SELECT from_json(:lists, "
+                    "'notes ARRAY<STRING>, promises ARRAY<STRING>') AS lists) AS parsed",
+                    {
+                        "wrapup_id": ("STRING", wrapup_id),
+                        "saved_at": ("TIMESTAMP", self._now().strftime("%Y-%m-%d %H:%M:%S")),
+                        "transcript_id": ("STRING", transcript_id),
+                        "disposition": ("STRING", wrap_up.disposition),
+                        "category": ("STRING", wrap_up.category),
+                        "lists": ("STRING", json.dumps({"notes": notes, "promises": promises})),
+                        "follow_up_owner": ("STRING", follow_up.owner if follow_up else None),
+                        "follow_up": ("STRING", follow_up.action if follow_up else None),
+                        "sentiment": ("STRING", wrap_up.sentiment),
+                    },
+                )
+                recorded = True
+            except Exception as error:
+                # Only the kind of error is logged; its message can quote the statement.
+                logger.warning("A wrap-up could not be written (%s)", type(error).__name__)
+        return SavedWrapUp(
+            wrapup_id=wrapup_id,
+            transcript_id=transcript_id,
+            disposition=wrap_up.disposition,
+            category=wrap_up.category,
+            notes=notes,
+            promises=promises,
+            follow_up=follow_up,
+            sentiment=wrap_up.sentiment,
+            recorded=recorded,
+        )
 
     def _related(self, intent: str) -> list[Citation]:
         """Up to three help articles about what the customer wanted, one per article."""

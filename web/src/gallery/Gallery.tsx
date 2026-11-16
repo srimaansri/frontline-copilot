@@ -24,6 +24,7 @@ import {
   SearchSection,
   SummarySection,
   TranscriptSection,
+  WrapUpSection,
 } from "./sections/calls";
 import {
   ButtonsSection,
@@ -61,6 +62,7 @@ const SECTIONS: readonly { id: string; title: string; render: () => ReactElement
   { id: "search", title: "Search field", render: SearchSection },
   { id: "transcript", title: "Transcript", render: TranscriptSection },
   { id: "summary", title: "Summary card", render: SummarySection },
+  { id: "wrap-up", title: "Wrap-up", render: WrapUpSection },
   { id: "calls-states", title: "Calls states", render: CallsStatesSection },
   { id: "icons", title: "Icons", render: IconsSection },
 ];

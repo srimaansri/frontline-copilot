@@ -1,26 +1,42 @@
 """The four tools, with a fake SQL runner, a fake retriever and a fake model. No network."""
 
 import json
+import re
 import types
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, get_args
 
 import pytest
 
 from copilot.config import Settings
-from copilot.prompts import SUMMARY_PROMPT
+from copilot.prompts import (
+    PROMPT_VERSION,
+    SUMMARY_PROMPT,
+    WRAP_UP_PROMPT,
+    WRAP_UP_PROMPT_VERSION,
+)
 from copilot.redaction import Redactor
 from copilot.retriever import Retriever
-from copilot.schemas import KBHit
+from copilot.schemas import (
+    CallCategory,
+    CallWrapUp,
+    Disposition,
+    FollowUp,
+    FollowUpOwner,
+    KBHit,
+)
 from copilot.tools import (
     MAX_REASON_CHARS,
+    MAX_WRAP_UP_CHARS,
     ToolError,
     Tools,
     clean_plan_name,
     new_ticket_id,
+    new_wrapup_id,
     parse_json_object,
     sdk_sql_runner,
 )
+from data_gen.transcript_templates import CATEGORY_WEIGHTS, Resolution
 
 FIXED_NOW = datetime(2026, 11, 14, 17, 30, 5, tzinfo=UTC)
 PLUS_10 = {
@@ -329,6 +345,415 @@ def test_summary_text_gets_the_same_output_check_as_an_answer(redactor: Redactor
     assert "1-800-555-0199" in summary.summary_bullets[0]
     assert "480-555-0132" not in summary.summary_bullets[1]
     assert "<PHONE_NUMBER_1>" in summary.summary_bullets[1]
+
+
+# --- wrap_up_call ---------------------------------------------------------------------------
+
+GOOD_WRAP_UP = {
+    "disposition": "resolved",
+    "category": "troubleshooting",
+    "notes": ["The phone showed no service.", "The agent refreshed the SIM and it worked."],
+    "promises": [],
+    "follow_up": None,
+    "sentiment": "positive",
+}
+# A call whose turns name neither its recorded category nor its recorded outcome.
+LATE_FEE_TURNS = [
+    {"speaker": "customer", "text": "Hi, this is <PERSON_1>. There's a late fee I don't owe."},
+    {"speaker": "agent", "text": "I can't remove it myself, so I'm sending it to be reviewed."},
+    {"speaker": "agent", "text": "They'll call you at <PHONE_NUMBER_1> in 3 to 5 business days."},
+]
+
+
+def late_fee_row() -> dict[str, Any]:
+    """What the table holds for the call. The wrap-up must use the turns only."""
+    return {
+        "transcript_id": "T0003",
+        "category": "billing",
+        "resolution": "escalated",
+        "turns_json": json.dumps(LATE_FEE_TURNS),
+    }
+
+
+def wrap_up_tools(reply: dict[str, Any] | str, **parts: Any) -> Tools:
+    parts.setdefault("sql", FakeSql([transcript_row()]))
+    parts.setdefault("retriever", FakeRetriever())
+    text = reply if isinstance(reply, str) else json.dumps(reply)
+    return make_tools(llm=FakeLlm(text), **parts)
+
+
+def test_a_wrap_up_is_drafted_from_the_redacted_turns_with_its_own_prompt() -> None:
+    sql = FakeSql([transcript_row()])
+    retriever = FakeRetriever([hit("no-service", "No service"), hit("sim", "SIM")])
+    reply = "```json\n" + json.dumps(GOOD_WRAP_UP) + "\n```"
+    tools = wrap_up_tools(reply, sql=sql, retriever=retriever)
+
+    wrap_up = tools.wrap_up_call(" t0002 ")
+
+    statement, parameters = sql.calls[0]
+    assert "frontline.silver.transcripts_redacted" in statement
+    assert "bronze" not in statement
+    assert parameters == {"transcript_id": ("STRING", "T0002")}
+    assert len(sql.calls) == 1
+    assert tools.llm.messages[0] == ("system", WRAP_UP_PROMPT)  # type: ignore[attr-defined]
+    assert "<PERSON_1>" in tools.llm.messages[1][1]  # type: ignore[attr-defined]
+    assert wrap_up.transcript_id == "T0002"
+    assert wrap_up.disposition == "resolved"
+    assert wrap_up.category == "troubleshooting"
+    assert wrap_up.notes == GOOD_WRAP_UP["notes"]
+    assert wrap_up.promises == []
+    assert wrap_up.follow_up is None
+    assert wrap_up.sentiment == "positive"
+    # The articles are looked up from what the customer wanted: the first note.
+    assert retriever.calls[0]["question"] == "The phone showed no service."
+    assert [(c.number, c.title) for c in wrap_up.related_articles] == [
+        (1, "No service"),
+        (2, "SIM"),
+    ]
+
+
+def test_the_wrap_up_prompt_is_never_given_the_recorded_category_or_outcome() -> None:
+    """The model must work both out. If it were told them, its accuracy would mean nothing."""
+    sql = FakeSql([late_fee_row()])
+    tools = wrap_up_tools(
+        {**GOOD_WRAP_UP, "disposition": "escalated", "category": "billing"}, sql=sql
+    )
+
+    tools.wrap_up_call("T0003")
+
+    # The lookup does not even read the two columns.
+    statement = sql.calls[0][0]
+    assert "category" not in statement
+    assert "resolution" not in statement
+    system, user = tools.llm.messages  # type: ignore[attr-defined]
+    assert user == (
+        "user",
+        '<transcript id="T0003">\n'
+        + "\n".join(f"{turn['speaker']}: {turn['text']}" for turn in LATE_FEE_TURNS)
+        + "\n</transcript>",
+    )
+    # The recorded labels of this call appear nowhere in what the model is sent for it.
+    assert "billing" not in user[1]
+    assert "escalated" not in user[1]
+    assert "topic=" not in user[1]
+    assert "recorded_outcome" not in user[1]
+    # The system prompt is the same for every call: it lists every choice, so it tells
+    # the model nothing about this one.
+    assert system == ("system", WRAP_UP_PROMPT)
+    assert "T0003" not in WRAP_UP_PROMPT
+
+
+def test_the_wrap_up_prompt_offers_exactly_the_choices_of_the_schema() -> None:
+    for choice in (*get_args(Disposition), *get_args(CallCategory), *get_args(FollowUpOwner)):
+        assert f'"{choice}"' in WRAP_UP_PROMPT
+    assert WRAP_UP_PROMPT_VERSION
+    assert WRAP_UP_PROMPT_VERSION != PROMPT_VERSION
+
+
+def test_the_wrap_up_choices_are_the_generators_own_labels() -> None:
+    """The measurement compares a draft with the generator's labels, so the lists must agree."""
+    assert set(get_args(Disposition)) == set(get_args(Resolution))
+    assert set(get_args(CallCategory)) == set(CATEGORY_WEIGHTS)
+
+
+def test_a_wrap_up_keeps_promises_and_the_follow_up_with_its_owner() -> None:
+    written = {
+        "disposition": "Escalated",
+        "category": "Billing",
+        "notes": ["The customer disputed a late fee.", "  ", "The agent sent it for review."],
+        "promises": ["The billing team will call back in 3 to 5 business days."],
+        "follow_up": {"owner": "Team", "action": "Review the late fee."},
+        "sentiment": "Neutral",
+    }
+    tools = wrap_up_tools(written, sql=FakeSql([late_fee_row()]))
+
+    wrap_up = tools.wrap_up_call("T0003", with_articles=False)
+
+    assert wrap_up.disposition == "escalated"
+    assert wrap_up.category == "billing"
+    assert wrap_up.notes == ["The customer disputed a late fee.", "The agent sent it for review."]
+    assert wrap_up.promises == ["The billing team will call back in 3 to 5 business days."]
+    assert wrap_up.follow_up == FollowUp(owner="team", action="Review the late fee.")
+    assert wrap_up.sentiment == "neutral"
+    assert wrap_up.related_articles == []
+    assert tools.retriever.calls == []  # type: ignore[attr-defined]
+
+
+@pytest.mark.parametrize(
+    "follow_up",
+    [None, "none", "None", "", {"owner": "customer", "action": "  "}, {"owner": "agent"}],
+)
+def test_a_wrap_up_with_nothing_left_to_do_has_no_follow_up(follow_up: Any) -> None:
+    tools = wrap_up_tools({**GOOD_WRAP_UP, "follow_up": follow_up})
+
+    assert tools.wrap_up_call("T0002", with_articles=False).follow_up is None
+
+
+def test_a_wrap_up_with_one_note_as_a_string_and_no_promises_key_is_read() -> None:
+    written = {key: value for key, value in GOOD_WRAP_UP.items() if key != "promises"}
+    tools = wrap_up_tools({**written, "notes": "The agent refreshed the SIM."})
+
+    wrap_up = tools.wrap_up_call("T0002", with_articles=False)
+
+    assert wrap_up.notes == ["The agent refreshed the SIM."]
+    assert wrap_up.promises == []
+
+
+@pytest.mark.parametrize(
+    "reply",
+    [
+        "I cannot do this.",
+        "[1, 2]",
+        json.dumps({**GOOD_WRAP_UP, "disposition": "transferred"}),
+        json.dumps({**GOOD_WRAP_UP, "category": "roaming"}),
+        json.dumps({**GOOD_WRAP_UP, "notes": []}),
+        json.dumps({**GOOD_WRAP_UP, "notes": ["a"] * 7}),
+        json.dumps({**GOOD_WRAP_UP, "sentiment": "furious"}),
+        json.dumps({**GOOD_WRAP_UP, "follow_up": {"owner": "manager", "action": "Call back."}}),
+        json.dumps({**GOOD_WRAP_UP, "follow_up": "Call the customer back."}),
+        json.dumps({key: value for key, value in GOOD_WRAP_UP.items() if key != "disposition"}),
+    ],
+)
+def test_a_wrap_up_fails_cleanly_on_a_bad_model_reply(reply: str) -> None:
+    tools = wrap_up_tools(reply)
+
+    with pytest.raises(ToolError):
+        tools.wrap_up_call("T0002")
+
+
+@pytest.mark.parametrize("bad_id", ["T12", "0007", "T0007; DROP TABLE x", ""])
+def test_a_wrap_up_rejects_a_malformed_id_before_any_lookup(bad_id: str) -> None:
+    sql = FakeSql()
+    tools = wrap_up_tools(GOOD_WRAP_UP, sql=sql)
+
+    with pytest.raises(ToolError, match="not a valid transcript id"):
+        tools.wrap_up_call(bad_id)
+    assert sql.calls == []
+
+
+def test_a_wrap_up_of_an_unknown_call_says_so() -> None:
+    tools = wrap_up_tools(GOOD_WRAP_UP, sql=FakeSql([]))
+
+    with pytest.raises(ToolError, match="No transcript was found with the id T9999"):
+        tools.wrap_up_call("T9999")
+
+
+def test_every_text_field_of_a_wrap_up_gets_the_output_check(redactor: Redactor) -> None:
+    turns = [
+        {"speaker": "agent", "text": "You can also call us on 1-800-555-0199."},
+        {"speaker": "customer", "text": "Thanks, my number is <PHONE_NUMBER_1>."},
+    ]
+    written = {
+        **GOOD_WRAP_UP,
+        "notes": [
+            "The agent gave the support line, 1-800-555-0199.",
+            "The customer can be reached on 480-555-0132.",
+        ],
+        "promises": ["A call back on 480-555-0132 tomorrow."],
+        "follow_up": {"owner": "agent", "action": "Call the customer back on 480-555-0132."},
+    }
+    row = {**transcript_row(), "turns_json": json.dumps(turns)}
+    tools = wrap_up_tools(written, sql=FakeSql([row]), redactor=redactor)
+
+    wrap_up = tools.wrap_up_call("T0002", with_articles=False)
+
+    # The support line is in the transcript, so it stays. The other number is not.
+    assert "1-800-555-0199" in wrap_up.notes[0]
+    assert "480-555-0132" not in wrap_up.model_dump_json()
+    assert "<PHONE_NUMBER_1>" in wrap_up.notes[1]
+    assert "<PHONE_NUMBER_1>" in wrap_up.promises[0]
+    assert wrap_up.follow_up is not None
+    assert "<PHONE_NUMBER_1>" in wrap_up.follow_up.action
+
+
+def test_a_long_line_in_a_draft_is_cut_so_the_draft_can_be_saved() -> None:
+    tools = wrap_up_tools({**GOOD_WRAP_UP, "notes": ["y" * (MAX_WRAP_UP_CHARS + 50)]})
+
+    assert len(tools.wrap_up_call("T0002", with_articles=False).notes[0]) == MAX_WRAP_UP_CHARS
+
+
+def test_a_wrap_up_line_is_one_line_of_plain_punctuation() -> None:
+    """A model writes "3 to 5" with a non-breaking hyphen, which a search would then miss."""
+    # Built from code points, so this file holds no look-alike characters.
+    hyphen, dash, left, right = chr(0x2011), chr(0x2013), chr(0x201C), chr(0x201D)
+    written = {
+        **GOOD_WRAP_UP,
+        "notes": [f"Told the customer 3{hyphen}5 business days {dash} by\n  phone."],
+        "promises": [f"A call back {left}soon{right}."],
+    }
+    tools = wrap_up_tools(written)
+
+    wrap_up = tools.wrap_up_call("T0002", with_articles=False)
+
+    assert wrap_up.notes == ["Told the customer 3-5 business days - by phone."]
+    assert wrap_up.promises == ['A call back "soon".']
+
+
+def test_summarize_call_is_still_told_the_recorded_outcome() -> None:
+    """The chat tool and the MCP server use the summary. The wrap-up did not change it."""
+    llm = FakeLlm(json.dumps(GOOD_SUMMARY))
+    tools = make_tools(sql=FakeSql([transcript_row()]), llm=llm, retriever=FakeRetriever())
+
+    tools.summarize_call("T0002")
+
+    assert llm.messages[0] == ("system", SUMMARY_PROMPT)
+    assert 'topic="troubleshooting" recorded_outcome="resolved"' in llm.messages[1][1]
+
+
+# --- save_wrap_up ---------------------------------------------------------------------------
+
+
+def approved(**changes: Any) -> CallWrapUp:
+    fields: dict[str, Any] = {
+        "transcript_id": "T0003",
+        "disposition": "escalated",
+        "category": "billing",
+        "notes": ["The customer disputed a late fee.", "The agent sent it for review."],
+        "promises": ["The billing team will call back in 3 to 5 business days."],
+        "follow_up": {"owner": "team", "action": "Review the late fee."},
+        "sentiment": "neutral",
+    }
+    return CallWrapUp.model_validate({**fields, **changes})
+
+
+def save_tools(*results: Any, **parts: Any) -> tuple[Tools, FakeSql]:
+    sql = FakeSql([late_fee_row()], *results)
+    parts.setdefault("wrapup_id", lambda: "WRP-TEST0001")
+    return make_tools(sql=sql, **parts), sql
+
+
+def test_saving_a_wrap_up_writes_one_parameterized_row() -> None:
+    tools, sql = save_tools([])
+    hostile = "x'); DROP TABLE call_wrapups; --"
+
+    saved = tools.save_wrap_up(approved(notes=[hostile, "The agent sent it for review."]))
+
+    # The call is read first, from the redacted table, to check the text against it.
+    assert "frontline.silver.transcripts_redacted" in sql.calls[0][0]
+    statement, parameters = sql.calls[1]
+    assert statement.startswith("INSERT INTO frontline.ops.call_wrapups ")
+    assert "DROP" not in statement
+    assert hostile not in statement
+    assert parameters == {
+        "wrapup_id": ("STRING", "WRP-TEST0001"),
+        "saved_at": ("TIMESTAMP", "2026-11-14 17:30:05"),
+        "transcript_id": ("STRING", "T0003"),
+        "disposition": ("STRING", "escalated"),
+        "category": ("STRING", "billing"),
+        "lists": (
+            "STRING",
+            json.dumps(
+                {
+                    "notes": [hostile, "The agent sent it for review."],
+                    "promises": ["The billing team will call back in 3 to 5 business days."],
+                }
+            ),
+        ),
+        "follow_up_owner": ("STRING", "team"),
+        "follow_up": ("STRING", "Review the late fee."),
+        "sentiment": ("STRING", "neutral"),
+    }
+    # Every parameter in the statement is bound, and nothing else is.
+    assert set(re.findall(r":(\w+)", statement)) == set(parameters)
+    assert saved.wrapup_id == "WRP-TEST0001"
+    assert saved.recorded is True
+    assert saved.notes == [hostile, "The agent sent it for review."]
+
+
+def test_what_the_agent_typed_is_redacted_again_before_it_is_stored(redactor: Redactor) -> None:
+    tools, sql = save_tools([], redactor=redactor)
+
+    saved = tools.save_wrap_up(
+        approved(
+            notes=["The customer, Linda Garcia, disputed a late fee. Her number is 480-555-0132."],
+            promises=["A call back on 480-555-0132."],
+            follow_up={"owner": "agent", "action": "Email linda.garcia@example.com the outcome."},
+        )
+    )
+
+    stored = json.dumps(sql.calls[1][1])
+    for secret in ("480-555-0132", "Linda Garcia", "linda.garcia@example.com"):
+        assert secret not in stored
+        assert secret not in saved.model_dump_json()
+    assert "<PHONE_NUMBER_1>" in saved.notes[0]
+    assert saved.follow_up is not None
+    assert "<EMAIL_ADDRESS_1>" in saved.follow_up.action
+
+
+def test_a_wrap_up_with_no_follow_up_and_no_promises_stores_nulls_and_an_empty_list() -> None:
+    tools, sql = save_tools([])
+
+    saved = tools.save_wrap_up(approved(promises=["  "], follow_up=None))
+
+    parameters = sql.calls[1][1]
+    assert parameters["follow_up_owner"] == ("STRING", None)
+    assert parameters["follow_up"] == ("STRING", None)
+    assert json.loads(parameters["lists"][1])["promises"] == []
+    assert saved.promises == []
+    assert saved.follow_up is None
+
+
+def test_a_wrap_up_is_not_saved_for_a_call_that_does_not_exist() -> None:
+    sql = FakeSql([])
+    tools = make_tools(sql=sql)
+
+    with pytest.raises(ToolError, match="No transcript was found with the id T0003"):
+        tools.save_wrap_up(approved())
+    assert len(sql.calls) == 1
+    with pytest.raises(ToolError, match="not a valid transcript id"):
+        tools.save_wrap_up(approved(transcript_id="T3; DROP"))
+
+
+def test_a_wrap_up_whose_notes_are_all_blank_is_refused_and_nothing_is_written() -> None:
+    tools, sql = save_tools([])
+
+    with pytest.raises(ToolError, match="at least one note"):
+        tools.save_wrap_up(approved(notes=["  ", ""]))
+    assert len(sql.calls) == 1
+
+
+def test_a_wrap_up_is_still_returned_when_the_write_fails(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    tools, _ = save_tools(RuntimeError("INSERT ... notes = 'secret text'"))
+
+    with caplog.at_level("WARNING"):
+        saved = tools.save_wrap_up(approved())
+
+    assert saved.recorded is False
+    assert saved.wrapup_id == "WRP-TEST0001"
+    assert saved.notes == approved().notes
+    # The failure is logged by its kind only: the message can quote the statement.
+    assert "RuntimeError" in caplog.text
+    assert "secret text" not in caplog.text
+
+
+def test_a_dry_run_checks_the_wrap_up_and_writes_nothing(redactor: Redactor) -> None:
+    settings = Settings(_env_file=None, record_wrapups=False)  # type: ignore[call-arg]
+    tools, sql = save_tools([], settings=settings, redactor=redactor)
+
+    saved = tools.save_wrap_up(approved(notes=["Call 480-555-0132."]))
+
+    assert len(sql.calls) == 1
+    assert "INSERT" not in sql.calls[0][0]
+    assert saved.recorded is False
+    assert saved.notes == ["Call <PHONE_NUMBER_1>."]
+
+
+def test_a_saved_line_is_cut_to_a_fixed_length() -> None:
+    tools, _ = save_tools([])
+
+    saved = tools.save_wrap_up(approved(notes=["y" * (MAX_WRAP_UP_CHARS + 200)]))
+
+    assert len(saved.notes[0]) == MAX_WRAP_UP_CHARS
+
+
+def test_wrap_up_ids_are_short_and_differ() -> None:
+    first, second = new_wrapup_id(), new_wrapup_id()
+
+    assert first != second
+    assert first.startswith("WRP-")
+    assert len(first) == 12
 
 
 # --- escalate_to_human ----------------------------------------------------------------------

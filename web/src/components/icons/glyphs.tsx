@@ -59,6 +59,17 @@ export function CallSummaryIcon(props: IconProps) {
   );
 }
 
+/** Wrap-up: the record of a call on a clipboard, ticked off. */
+export function WrapUpIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M9 4.5H5V21h14V4.5h-4" />
+      <path d="M9 3h6v3.5H9z" />
+      <path d="M8.5 13.5l2.5 2.5 4.5-4.5" />
+    </Icon>
+  );
+}
+
 /** Hand-off: an arrow passing to a person. */
 export function HandoffIcon(props: IconProps) {
   return (

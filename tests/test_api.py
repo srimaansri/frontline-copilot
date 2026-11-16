@@ -13,15 +13,36 @@ from api.main import Runtime, create_app, start_tracing
 from copilot.config import Settings
 from copilot.schemas import (
     CallSummary,
+    CallWrapUp,
     Citation,
     CopilotAnswer,
     EscalationTicket,
+    FollowUp,
     HandOffDraft,
+    SavedWrapUp,
 )
 from copilot.tools import ToolError
 
 PHONE = "480-555-0132"
 TURNS = [{"speaker": "customer", "text": "Hi, this is <PERSON_1>."}]
+DRAFT = CallWrapUp(
+    transcript_id="T0001",
+    disposition="escalated",
+    category="billing",
+    notes=["The customer disputed a late fee.", "The agent sent it for review."],
+    promises=["The billing team will call back in 3 to 5 business days."],
+    follow_up=FollowUp(owner="team", action="Review the late fee."),
+    sentiment="neutral",
+    related_articles=[Citation(number=1, title="Late payment fee", url="https://x.example/fee")],
+)
+APPROVED: dict[str, Any] = {
+    "disposition": "escalated",
+    "category": "billing",
+    "notes": ["The customer disputed a late fee.", f"Call back on {PHONE}."],
+    "promises": [],
+    "follow_up": {"owner": "team", "action": "Review the late fee."},
+    "sentiment": "neutral",
+}
 
 
 class FakeRedactor:
@@ -39,6 +60,9 @@ class FakeTools:
     def __init__(self) -> None:
         self.statements: list[str] = []
         self.tickets: list[tuple[str, str, str]] = []
+        self.drafted: list[str] = []
+        self.saved: list[CallWrapUp] = []
+        self.wrap_up_failure: Exception | None = None
 
     def sql(self, statement: str, parameters: Any) -> list[dict[str, Any]]:
         self.statements.append(statement)
@@ -62,6 +86,24 @@ class FakeTools:
             agent_script="I'm passing you to the billing team. Your reference is ESC-TEST0001.",
             recorded=True,
         )
+
+    def wrap_up_call(self, transcript_id: str) -> CallWrapUp:
+        self.drafted.append(transcript_id)
+        if isinstance(self.wrap_up_failure, Exception):
+            raise self.wrap_up_failure
+        if transcript_id != "T0001":
+            raise ToolError(f"No transcript was found with the id {transcript_id}")
+        return DRAFT
+
+    def save_wrap_up(self, wrap_up: CallWrapUp) -> SavedWrapUp:
+        self.saved.append(wrap_up)
+        if isinstance(self.wrap_up_failure, Exception):
+            raise self.wrap_up_failure
+        if wrap_up.transcript_id != "T0001":
+            raise ToolError(f"No transcript was found with the id {wrap_up.transcript_id}")
+        fields = wrap_up.model_dump(exclude={"related_articles"})
+        fields["notes"] = [note.replace(PHONE, "<PHONE_NUMBER_1>") for note in wrap_up.notes]
+        return SavedWrapUp(**fields, wrapup_id="WRP-TEST0001", recorded=True)
 
     def summarize_call(self, transcript_id: str) -> CallSummary:
         if transcript_id == "T12":
@@ -397,6 +439,216 @@ def test_a_call_summary_is_returned_in_full() -> None:
     assert body["sentiment"] == "positive"
     assert body["summary_bullets"] == ["The customer disputed a late fee."]
     assert body["related_articles"] == []
+
+
+# --- the after-call wrap-up ----------------------------------------------------------------------
+
+
+class RecordedSpan:
+    """Stands in for an MLflow span and keeps what was put on it."""
+
+    def __init__(self, name: str) -> None:
+        self.name = name
+        self.inputs: Any = None
+        self.outputs: Any = None
+
+    def __enter__(self) -> "RecordedSpan":
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        return None
+
+    def set_inputs(self, inputs: Any) -> None:
+        self.inputs = inputs
+
+    def set_outputs(self, outputs: Any) -> None:
+        self.outputs = outputs
+
+
+def record_spans(
+    monkeypatch: pytest.MonkeyPatch,
+) -> tuple[list[RecordedSpan], list[dict[str, str]]]:
+    """Replace the MLflow calls the API makes with ones that keep what they were given."""
+    spans: list[RecordedSpan] = []
+    seen: list[dict[str, str]] = []
+
+    def start_span(name: str, span_type: str) -> RecordedSpan:
+        spans.append(RecordedSpan(name))
+        return spans[-1]
+
+    monkeypatch.setattr(api_module.mlflow, "start_span", start_span)
+    monkeypatch.setattr(api_module.mlflow, "update_current_trace", lambda tags: seen.append(tags))
+    return spans, seen
+
+
+def test_a_wrap_up_is_drafted_and_nothing_is_saved() -> None:
+    client, copilot = client_for()
+
+    response = client.post("/api/calls/t0001/wrapup")
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body == DRAFT.model_dump()
+    assert body["follow_up"] == {"owner": "team", "action": "Review the late fee."}
+    assert copilot.tools.drafted == ["T0001"]
+    assert copilot.tools.saved == []
+
+
+def test_a_bad_or_unknown_call_cannot_be_wrapped_up_or_saved() -> None:
+    client, copilot = client_for()
+
+    assert client.post("/api/calls/T12/wrapup").status_code == 400
+    assert client.post("/api/calls/T12/wrapup/save", json=APPROVED).status_code == 400
+    # A malformed id never reaches the tool.
+    assert copilot.tools.drafted == []
+    assert copilot.tools.saved == []
+    missing = client.post("/api/calls/T9999/wrapup")
+    assert missing.status_code == 404
+    assert missing.json() == {"detail": "No transcript was found with the id T9999"}
+    assert client.post("/api/calls/T9999/wrapup/save", json=APPROVED).status_code == 404
+
+
+def test_saving_the_approved_wrap_up_returns_it_as_it_was_stored() -> None:
+    client, copilot = client_for()
+
+    response = client.post("/api/calls/T0001/wrapup/save", json=APPROVED)
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["wrapup_id"] == "WRP-TEST0001"
+    assert body["recorded"] is True
+    assert body["transcript_id"] == "T0001"
+    assert body["notes"] == ["The customer disputed a late fee.", "Call back on <PHONE_NUMBER_1>."]
+    # The tool gets what the agent approved, for the call named in the address.
+    given = copilot.tools.saved[0]
+    assert given.transcript_id == "T0001"
+    assert given.disposition == "escalated"
+    assert given.notes[1] == f"Call back on {PHONE}."
+    assert given.follow_up == FollowUp(owner="team", action="Review the late fee.")
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"disposition": "transferred"},
+        {"category": "roaming"},
+        {"sentiment": "furious"},
+        {"notes": []},
+        {"notes": ["a"] * 7},
+        {"notes": ["x" * 301]},
+        {"promises": ["a"] * 7},
+        {"promises": ["x" * 301]},
+        {"follow_up": {"owner": "manager", "action": "Call back."}},
+        {"follow_up": {"owner": "agent", "action": ""}},
+        {"follow_up": {"owner": "agent", "action": "x" * 301}},
+        {"notes": "one string, not a list"},
+    ],
+)
+def test_a_wrap_up_that_is_not_well_formed_is_refused_and_nothing_is_saved(
+    change: dict[str, Any],
+) -> None:
+    client, copilot = client_for()
+
+    response = client.post("/api/calls/T0001/wrapup/save", json={**APPROVED, **change})
+
+    assert response.status_code == 422
+    assert copilot.tools.saved == []
+
+
+def test_a_wrap_up_needs_its_choices_and_may_leave_out_what_is_empty() -> None:
+    client, copilot = client_for()
+    least = {key: APPROVED[key] for key in ("disposition", "category", "notes", "sentiment")}
+
+    assert client.post("/api/calls/T0001/wrapup/save", json=least).status_code == 200
+    assert copilot.tools.saved[0].promises == []
+    assert copilot.tools.saved[0].follow_up is None
+    for missing in least:
+        body = {key: value for key, value in least.items() if key != missing}
+        assert client.post("/api/calls/T0001/wrapup/save", json=body).status_code == 422
+
+
+def test_a_drafted_wrap_up_is_traced_with_its_prompt_version(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    spans, tags = record_spans(monkeypatch)
+    client, _ = client_for(tracing=True)
+
+    body = client.post("/api/calls/t0001/wrapup").json()
+
+    assert [span.name for span in spans] == ["wrap_up_call"]
+    assert spans[0].inputs == {"transcript_id": "T0001"}
+    assert spans[0].outputs == body
+    assert tags == [{"source": "web", "view": "calls", "wrap_up_prompt_version": "w1"}]
+
+
+def test_what_the_agent_typed_never_reaches_the_trace_before_it_is_redacted(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    spans, tags = record_spans(monkeypatch)
+    client, _ = client_for(tracing=True)
+    typed = {
+        **APPROVED,
+        "promises": [f"A call back on {PHONE}."],
+        "follow_up": {"owner": "agent", "action": f"Ring {PHONE}."},
+    }
+
+    response = client.post("/api/calls/T0001/wrapup/save", json=typed)
+
+    assert response.status_code == 200
+    assert [span.name for span in spans] == ["save_wrap_up"]
+    # The inputs are the call and the choices. None of them can hold free text.
+    assert spans[0].inputs == {
+        "transcript_id": "T0001",
+        "disposition": "escalated",
+        "category": "billing",
+        "sentiment": "neutral",
+        "follow_up_owner": "agent",
+        "notes": 2,
+        "promises": 1,
+    }
+    assert PHONE not in json.dumps(spans[0].inputs)
+    assert PHONE not in json.dumps(tags)
+    # The output is what the tool returned, which is the stored, redacted wrap-up.
+    assert spans[0].outputs == response.json()
+
+
+def test_a_malformed_id_is_refused_before_a_trace_is_started(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    spans, _ = record_spans(monkeypatch)
+    client, _ = client_for(tracing=True)
+    typed = f"call for {PHONE}"
+
+    assert client.post(f"/api/calls/{typed}/wrapup").status_code == 400
+    assert client.post(f"/api/calls/{typed}/wrapup/save", json=APPROVED).status_code == 400
+    assert spans == []
+
+
+@pytest.mark.parametrize(
+    ("path", "detail"),
+    [
+        ("/api/calls/T0001/wrapup", "The wrap-up could not be drafted just now. Please try again."),
+        (
+            "/api/calls/T0001/wrapup/save",
+            "The wrap-up could not be saved just now. Please try again.",
+        ),
+    ],
+)
+def test_a_wrap_up_failure_does_not_leak_its_reason(
+    path: str, detail: str, caplog: pytest.LogCaptureFixture
+) -> None:
+    client, copilot = client_for()
+    copilot.tools.wrap_up_failure = RuntimeError(f"model failed on the note about {PHONE}")
+
+    with caplog.at_level("DEBUG"):
+        response = client.post(path, json=APPROVED)
+
+    assert response.status_code == 502
+    assert response.json() == {"detail": detail}
+    logged = "\n".join(record.getMessage() + (record.exc_text or "") for record in caplog.records)
+    assert "RuntimeError at test_api.py:" in logged
+    assert PHONE not in logged
+    assert "model failed" not in logged
 
 
 # --- feedback ----------------------------------------------------------------------------------

@@ -5,8 +5,10 @@ On Databricks Apps the command comes from app.yaml at the repository root.
 
 This is a thin layer. Every endpoint calls the same ``copilot.agent`` and
 ``copilot.tools`` code that the evaluation and the MCP server call. The Calls
-view's summary calls the summary tool directly, not through the agent graph;
-the tool applies the output check for personal data itself. The built web interface in
+view's summary and its after-call wrap-up call their tools directly, not through
+the agent graph; each tool applies the output check for personal data itself. A
+wrap-up is drafted by one request and stored by another, which the agent sends
+once they have checked it. The built web interface in
 ``web/dist`` is served at ``/``, and the API lives under ``/api``.
 """
 
@@ -20,7 +22,7 @@ import time
 import traceback
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 import mlflow
 from dotenv import load_dotenv
@@ -33,16 +35,22 @@ from pydantic import BaseModel, Field
 from copilot.agent import Copilot
 from copilot.config import Settings, load_settings
 from copilot.guardrails import redact_question
-from copilot.prompts import PROMPT_VERSION
+from copilot.prompts import PROMPT_VERSION, WRAP_UP_PROMPT_VERSION
 from copilot.schemas import (
+    CallCategory,
     CallSummary,
+    CallWrapUp,
     Citation,
     CopilotAnswer,
+    Disposition,
     EscalationTicket,
+    FollowUpOwner,
     HandOffDraft,
+    SavedWrapUp,
+    Sentiment,
 )
 from copilot.steps import Step, describe_steps
-from copilot.tools import ToolError
+from copilot.tools import MAX_WRAP_UP_CHARS, ToolError, valid_transcript_id
 from copilot.transcripts import get_transcript, list_transcripts
 
 logger = logging.getLogger(__name__)
@@ -53,6 +61,8 @@ DISCLAIMER = (
     "Northline Wireless is fictional and all data is synthetic."
 )
 ASK_FAILED = "The copilot could not answer just now. Please try again."
+WRAP_UP_FAILED = "The wrap-up could not be drafted just now. Please try again."
+SAVE_FAILED = "The wrap-up could not be saved just now. Please try again."
 TOOLS: tuple[tuple[str, str], ...] = (
     ("search_kb", "Help articles"),
     ("get_plan_details", "Plan catalogue"),
@@ -112,6 +122,32 @@ class HandOffRequest(BaseModel):
     reason: str = Field(min_length=1, max_length=500)
     category: str = Field(default="other", max_length=40)
     urgency: Literal["low", "normal", "high"] = "normal"
+
+
+class FollowUpBody(BaseModel):
+    """The next step of a wrap-up and who takes it, as the agent left it."""
+
+    owner: FollowUpOwner
+    action: str = Field(min_length=1, max_length=MAX_WRAP_UP_CHARS)
+
+
+class WrapUpSaveRequest(BaseModel):
+    """An after-call wrap-up the agent has checked, perhaps changed, and approved.
+
+    The call it belongs to is named in the address. The choices are checked here
+    and every line has a longest length; the text is redacted by the tool.
+    """
+
+    disposition: Disposition
+    category: CallCategory
+    notes: list[Annotated[str, Field(max_length=MAX_WRAP_UP_CHARS)]] = Field(
+        min_length=1, max_length=6
+    )
+    promises: list[Annotated[str, Field(max_length=MAX_WRAP_UP_CHARS)]] = Field(
+        default_factory=list, max_length=6
+    )
+    follow_up: FollowUpBody | None = None
+    sentiment: Sentiment
 
 
 class FeedbackRequest(BaseModel):
@@ -316,6 +352,74 @@ def create_app(
             return result
         except ToolError as error:
             raise _tool_error(error) from error
+
+    @app.post("/api/calls/{transcript_id}/wrapup")
+    def wrap_up(transcript_id: str) -> CallWrapUp:
+        """Draft the after-call record of one call. Nothing is stored.
+
+        The id is checked before anything else, so only a well-formed id is ever
+        put on a trace. The draft that goes on the span has passed the tool's own
+        output check, like a summary.
+        """
+        tools = runtime.copilot.tools
+        try:
+            call_id = valid_transcript_id(transcript_id)
+            if not runtime.tracing:
+                return tools.wrap_up_call(call_id)
+            with mlflow.start_span(name="wrap_up_call", span_type=SpanType.TOOL) as span:
+                span.set_inputs({"transcript_id": call_id})
+                mlflow.update_current_trace(
+                    tags={
+                        "source": "web",
+                        "view": "calls",
+                        "wrap_up_prompt_version": WRAP_UP_PROMPT_VERSION,
+                    }
+                )
+                result = tools.wrap_up_call(call_id)
+                span.set_outputs(result.model_dump())
+            return result
+        except ToolError as error:
+            raise _tool_error(error) from error
+        except Exception as error:
+            _log_failure(error)
+            raise HTTPException(status_code=502, detail=WRAP_UP_FAILED) from error
+
+    @app.post("/api/calls/{transcript_id}/wrapup/save")
+    def save_wrap_up(transcript_id: str, body: WrapUpSaveRequest) -> SavedWrapUp:
+        """Store the wrap-up the agent approved. This is the only place one is written.
+
+        The notes, the promises and the next step may have been typed by the
+        agent, so they are never put on the trace as they arrived. The span's
+        inputs are the call and the choices, which cannot hold free text, and its
+        output is the wrap-up as it was stored, after the tool redacted it.
+        """
+        tools = runtime.copilot.tools
+        try:
+            call_id = valid_transcript_id(transcript_id)
+            approved = CallWrapUp(transcript_id=call_id, **body.model_dump())
+            if not runtime.tracing:
+                return tools.save_wrap_up(approved)
+            with mlflow.start_span(name="save_wrap_up", span_type=SpanType.TOOL) as span:
+                span.set_inputs(
+                    {
+                        "transcript_id": call_id,
+                        "disposition": body.disposition,
+                        "category": body.category,
+                        "sentiment": body.sentiment,
+                        "follow_up_owner": body.follow_up.owner if body.follow_up else None,
+                        "notes": len(body.notes),
+                        "promises": len(body.promises),
+                    }
+                )
+                mlflow.update_current_trace(tags={"source": "web", "view": "wrap_up"})
+                saved = tools.save_wrap_up(approved)
+                span.set_outputs(saved.model_dump())
+            return saved
+        except ToolError as error:
+            raise _tool_error(error) from error
+        except Exception as error:
+            _log_failure(error)
+            raise HTTPException(status_code=502, detail=SAVE_FAILED) from error
 
     @app.post("/api/handoffs")
     def open_hand_off(body: HandOffRequest) -> EscalationTicket:

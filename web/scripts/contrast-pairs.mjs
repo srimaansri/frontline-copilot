@@ -67,7 +67,7 @@ export const PAIRS = [
 
   // --- Status: words and shapes in the status colour --------------------------------------------
   ["ok", "paper", "body", "Call status in the call header, Saved"],
-  ["ok", "surface", "body", "Call status in the list, popover rows, Positive mood"],
+  ["ok", "surface", "body", "Call status in the list, popover rows, Positive mood, Saved on a wrap-up"],
   ["ok", "sunken", "body", "Step status on the rail"],
   ["ok", "brand-tint", "body", "Call status in the selected row"],
   ["notice", "paper", "body", "Call status in the call header; privacy icon by a question"],

@@ -16,10 +16,13 @@ import { callRowId } from "./callRowId";
 import { CallStatus } from "./CallStatus";
 import { SummaryPanel } from "./SummaryPanel";
 import { TranscriptPanel } from "./TranscriptPanel";
+import { useWrapUps } from "./useWrapUps";
+import { WrapUpPanel } from "./WrapUpPanel";
 
 const loadCalls = (signal: AbortSignal) => api.listCalls(signal);
 
 type Summaries = Record<string, Loadable<CallSummary>>;
+type WrapUps = ReturnType<typeof useWrapUps>;
 
 /** In mock mode `?demo=calls-summary` opens with one summary already asked for. */
 const FIRST_SUMMARIES: Summaries =
@@ -64,11 +67,15 @@ interface CallDetailProps {
   call: CallListItem;
   summary: Loadable<CallSummary> | undefined;
   onSummarize: (transcriptId: string) => void;
+  wrapUps: WrapUps;
   onBack: () => void;
 }
 
-/** One call: its transcript, and its summary beside it or, on smaller screens, above it. */
-function CallDetail({ call, summary, onSummarize, onBack }: CallDetailProps) {
+/**
+ * One call: its transcript, with its summary and its wrap-up beside it or, on
+ * smaller screens, above it.
+ */
+function CallDetail({ call, summary, onSummarize, wrapUps, onBack }: CallDetailProps) {
   const { transcript_id: transcriptId } = call;
   const threeColumns = useMediaQuery(EXTRA_WIDE_SCREEN);
   const backButton = useRef<HTMLButtonElement>(null);
@@ -84,13 +91,33 @@ function CallDetail({ call, summary, onSummarize, onBack }: CallDetailProps) {
     backButton.current?.focus();
   }, []);
 
+  // The copilot's two pieces of work on a call, one under the other on the sunken tone.
   const summaryPanel = (
-    <SummaryPanel
-      summary={summary}
-      onSummarize={() => {
-        onSummarize(transcriptId);
-      }}
-    />
+    <>
+      <SummaryPanel
+        summary={summary}
+        onSummarize={() => {
+          onSummarize(transcriptId);
+        }}
+      />
+      <div className="mt-6 border-t border-line pt-6">
+        <WrapUpPanel
+          state={wrapUps.wrapUps[transcriptId]}
+          onDraft={() => {
+            wrapUps.draft(transcriptId);
+          }}
+          onChange={(form) => {
+            wrapUps.change(transcriptId, form);
+          }}
+          onSave={(form) => {
+            wrapUps.save(transcriptId, form);
+          }}
+          onReopen={() => {
+            wrapUps.reopen(transcriptId);
+          }}
+        />
+      </div>
+    </>
   );
 
   return (
@@ -124,20 +151,22 @@ export function NothingSelected() {
       <p className="mt-4 display-title text-ink">Choose a call to read it</p>
       <p className="mt-2 max-w-sm text-ink-2">
         Each transcript can be summarized: what the call was about, the customer&apos;s mood and the
-        next step.
+        next step. It can also be wrapped up: a record of the call, drafted for you to check and
+        save.
       </p>
     </div>
   );
 }
 
 /**
- * The Calls view: the list of calls, the transcript of the chosen one and its
- * summary. On a narrow screen the list and the call take turns.
+ * The Calls view: the list of calls, the transcript of the chosen one, its
+ * summary and its wrap-up. On a narrow screen the list and the call take turns.
  */
 export function CallsView() {
   const { state: calls, reload } = useLoad(loadCalls);
   const [selectedId, setSelectedId] = useState<string | null>(DEMO_CALL);
   const [summaries, setSummaries] = useState<Summaries>(FIRST_SUMMARIES);
+  const wrapUps = useWrapUps();
 
   /** Ask the server for a summary and keep whatever comes back. */
   const fetchSummary = useCallback((transcriptId: string) => {
@@ -206,6 +235,7 @@ export function CallsView() {
             call={selected}
             summary={summaries[selected.transcript_id]}
             onSummarize={summarize}
+            wrapUps={wrapUps}
             onBack={back}
           />
         ) : (
