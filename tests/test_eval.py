@@ -27,6 +27,7 @@ from eval.scorers import (
     citation_valid,
     citations_ok,
     expected_source,
+    figures_supported,
     latency_ms,
     llm_judges,
     on_retrieval_rows,
@@ -326,11 +327,27 @@ def test_latency_scorer_reads_the_trace_duration() -> None:
     assert latency_ms(trace=fake_trace(duration=2345)).value == 2345.0
 
 
+def test_an_answer_the_copilot_flagged_for_a_figure_fails_figures_supported() -> None:
+    clean = fake_trace(answer={"answer": "It is $5.", "citations": [], "guardrail_flags": []})
+    flagged = fake_trace(
+        answer={
+            "answer": "It is $7.",
+            "citations": [],
+            "guardrail_flags": ["no_citation", "unsupported_claim:money"],
+        }
+    )
+
+    assert figures_supported(trace=clean).value is True
+    result = figures_supported(trace=flagged)
+    assert result.value is False
+    assert result.rationale == "unsupported_claim:money"
+
+
 def test_judges_use_the_judge_endpoint_and_leave_out_ragas_faithfulness() -> None:
     judges = llm_judges("my-judge")
     names = {judge.name for judge in judges}
 
-    assert len(DETERMINISTIC_SCORERS) == 8
+    assert len(DETERMINISTIC_SCORERS) == 9
     assert {"retrieval_groundedness", "correctness", "relevance_to_query", "safety"} <= names
     assert "expectations_guidelines" in names
     assert {"retrieval_relevance", "retrieval_sufficiency"} <= names

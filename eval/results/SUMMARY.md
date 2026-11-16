@@ -10,17 +10,18 @@ How to read it:
 - **A column at its ceiling shows no failure was found, not that none is possible.** The judge's ability to catch a wrong answer has not been tested with deliberately wrong answers.
 - **"Hand-off correct" is in-sample.** The routing rules were written with the five hand-off rows in view. The other rows are questions that should not be handed off.
 - **"No PII leak" rests on one row** that plants personal data in the question, and the scorer uses the same redactor as the output check it is testing.
+- **A run with `n/a` under the judged columns is a comparison between models**, scored by code and by the correctness judges only. The CI gate ignores those and reads the newest run that every judge scored.
 - The `m3-kb` run is a draft, kept for the record. Its questions had not been reviewed, the help articles had not been corrected, and the grading has changed since, so it is not comparable with the rows after it.
 
 ## Runs
 
-| Date | Tag | Config | Query | Prompt | Rows | Reviewed | Source retrieved | Context sufficient | Grounded | Correct | Relevant | Rules followed | Reading level ok | Hand-off correct | Right tool | No PII leak | Commit | File |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 2026-11-14 | m3-kb | A | ann | v1 | 22 | 0/22 | 22/22 (85-100%) | 22/22 (85-100%) | 22/22 (85-100%) | 16/22 (51-87%) | 22/22 (85-100%) | n/a | 22/22 (85-100%) | n/a | n/a | n/a | `04138f9` | 2026-11-14_m3-kb-A-ann.json |
-| 2026-11-14 | m3-kb-v2 | A | ann | v2 | 22 | 22/22 | 21/21 (84-100%) | 21/21 (84-100%) | 21/21 (84-100%) | 19/21 (71-98%) | 22/22 (85-100%) | 1/1 (20-100%) | 20/22 (72-98%) | n/a | n/a | n/a | `1a35afb` | 2026-11-14_m3-kb-v2-A-ann.json |
-| 2026-11-14 | m3-kb-v2 | B | ann | v2 | 22 | 22/22 | 20/21 (77-100%) | 21/21 (84-100%) | 21/21 (84-100%) | 18/21 (65-96%) | 22/22 (85-100%) | 1/1 (20-100%) | 19/22 (66-96%) | n/a | n/a | n/a | `1a35afb` | 2026-11-14_m3-kb-v2-B-ann.json |
-| 2026-11-15 | m3-kb-v2 | B | hybrid | v2 | 22 | 22/22 | 21/21 (84-100%) | 21/21 (84-100%) | 21/21 (84-100%) | 18/21 (65-96%) | 22/22 (85-100%) | 1/1 (20-100%) | 20/22 (72-98%) | n/a | n/a | n/a | `1a35afb` | 2026-11-15_m3-kb-v2-B-hybrid.json |
-| 2026-11-15 | m4-full | A | ann | v3 | 40 | 40/40 | 22/22 (85-100%) | 22/22 (85-100%) | 22/22 (85-100%) | 27/31 (71-95%) | 31/31 (88-100%) | 11/11 (74-100%) | 37/40 (80-98%) | 40/40 (91-100%) | 36/37 (86-100%) | 40/40 (91-100%) | `8624268` | 2026-11-15_m4-full-A-ann.json |
+| Date | Tag | Model | Router | Config | Query | Prompt | Rows | Reviewed | Figures in sources | Source retrieved | Context sufficient | Grounded | Correct | Relevant | Rules followed | Reading level ok | Hand-off correct | Right tool | No PII leak | Commit | File |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-11-14 | m3-kb | gpt-oss-120b | rules | A | ann | v1 | 22 | 0/22 | n/a | 22/22 (85-100%) | 22/22 (85-100%) | 22/22 (85-100%) | 16/22 (51-87%) | 22/22 (85-100%) | n/a | 22/22 (85-100%) | n/a | n/a | n/a | `04138f9` | 2026-11-14_m3-kb-A-ann.json |
+| 2026-11-14 | m3-kb-v2 | gpt-oss-120b | rules | A | ann | v2 | 22 | 22/22 | n/a | 21/21 (84-100%) | 21/21 (84-100%) | 21/21 (84-100%) | 19/21 (71-98%) | 22/22 (85-100%) | 1/1 (20-100%) | 20/22 (72-98%) | n/a | n/a | n/a | `1a35afb` | 2026-11-14_m3-kb-v2-A-ann.json |
+| 2026-11-14 | m3-kb-v2 | gpt-oss-120b | rules | B | ann | v2 | 22 | 22/22 | n/a | 20/21 (77-100%) | 21/21 (84-100%) | 21/21 (84-100%) | 18/21 (65-96%) | 22/22 (85-100%) | 1/1 (20-100%) | 19/22 (66-96%) | n/a | n/a | n/a | `1a35afb` | 2026-11-14_m3-kb-v2-B-ann.json |
+| 2026-11-15 | m3-kb-v2 | gpt-oss-120b | rules | B | hybrid | v2 | 22 | 22/22 | n/a | 21/21 (84-100%) | 21/21 (84-100%) | 21/21 (84-100%) | 18/21 (65-96%) | 22/22 (85-100%) | 1/1 (20-100%) | 20/22 (72-98%) | n/a | n/a | n/a | `1a35afb` | 2026-11-15_m3-kb-v2-B-hybrid.json |
+| 2026-11-15 | m4-full | gpt-oss-120b | rules | A | ann | v3 | 40 | 40/40 | n/a | 22/22 (85-100%) | 22/22 (85-100%) | 22/22 (85-100%) | 27/31 (71-95%) | 31/31 (88-100%) | 11/11 (74-100%) | 37/40 (80-98%) | 40/40 (91-100%) | 36/37 (86-100%) | 40/40 (91-100%) | `8624268` | 2026-11-15_m4-full-A-ann.json |
 
 ## Time to answer
 

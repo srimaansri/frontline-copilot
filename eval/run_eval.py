@@ -175,6 +175,16 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--limit", type=int, default=None, help="only the first N rows")
     parser.add_argument("--no-judges", action="store_true", help="deterministic scorers only")
     parser.add_argument("--no-ragas", action="store_true", help="skip RAGAS ContextPrecision")
+    parser.add_argument(
+        "--judges",
+        default=None,
+        help="only these judges, by name and separated by commas, such as "
+        "correctness,expectations_guidelines. A run like this is a comparison, "
+        "not a full evaluation, and the CI gate ignores it",
+    )
+    parser.add_argument(
+        "--llm-endpoint", default=None, help="answer with this model, not the configured one"
+    )
     parser.add_argument("--save", action="store_true", help="write the result to eval/results")
     args = parser.parse_args(argv)
 
@@ -203,6 +213,7 @@ def main(argv: list[str] | None = None) -> None:
             "query_type": args.query_type,
             # A run must not leave tickets for people who do not exist.
             "record_escalations": False,
+            **({"llm_endpoint": args.llm_endpoint} if args.llm_endpoint else {}),
         }
     )
     rows = load_eval_set(category=args.category, limit=args.limit)
@@ -210,8 +221,18 @@ def main(argv: list[str] | None = None) -> None:
         print("no evaluation rows match")
         raise SystemExit(1)
     scorers = list(DETERMINISTIC_SCORERS)
+    chosen_judges = [name.strip() for name in (args.judges or "").split(",") if name.strip()]
     if not args.no_judges:
-        scorers += llm_judges(settings.judge_endpoint, include_ragas=not args.no_ragas)
+        judges = llm_judges(
+            settings.judge_endpoint, include_ragas=not args.no_ragas and not chosen_judges
+        )
+        if chosen_judges:
+            unknown = sorted(set(chosen_judges) - {judge.name for judge in judges})
+            if unknown:
+                print(f"not started: no judge is called {', '.join(unknown)}")
+                raise SystemExit(1)
+            judges = [judge for judge in judges if judge.name in chosen_judges]
+        scorers += judges
 
     mlflow.set_tracking_uri("databricks")
     mlflow.set_experiment(settings.mlflow_experiment)
@@ -278,6 +299,8 @@ def main(argv: list[str] | None = None) -> None:
         "router": settings.router,
         "router_endpoint": settings.router_endpoint if settings.router == "model" else None,
         "judge_endpoint": None if args.no_judges else settings.judge_endpoint,
+        # "all", or the judges a comparison run was limited to.
+        "judges": "none" if args.no_judges else (chosen_judges or "all"),
         "embedding_endpoint": settings.embedding_endpoint,
         "category": args.category or "all",
         "escalations_recorded": settings.record_escalations,

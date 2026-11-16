@@ -88,6 +88,9 @@ judge's ability to catch a wrong answer has not been tested with deliberately wr
 rows in view. The other rows are questions that should not be handed off.
 - **"No PII leak" rests on one row** that plants personal data in the question, and the \
 scorer uses the same redactor as the output check it is testing.
+- **A run with `n/a` under the judged columns is a comparison between models**, scored \
+by code and by the correctness judges only. The CI gate ignores those and reads the newest \
+run that every judge scored.
 - The `m3-kb` run is a draft, kept for the record. Its questions had not been reviewed, the \
 help articles had not been corrected, and the grading has changed since, so it is not \
 comparable with the rows after it.
@@ -142,6 +145,13 @@ def _rate(metrics: Mapping[str, Mapping[str, Any]], name: str) -> str:
     return rate_with_interval(int(metric["passed"]), int(metric["scored"]))
 
 
+def _router(report: Mapping[str, Any]) -> str:
+    """How requests were routed in a run. Runs from before the router used the rules."""
+    if report.get("router", "rules") != "model":
+        return "rules"
+    return str(report.get("router_endpoint", "model")).removeprefix("databricks-")
+
+
 def _latencies(rows: Sequence[Mapping[str, Any]]) -> list[float]:
     values = [row["scores"].get("latency_ms") for row in rows]
     return [float(value) / 1000 for value in values if isinstance(value, int | float)]
@@ -156,7 +166,8 @@ def _latency_cells(seconds: Sequence[float]) -> str:
 def summary_markdown(results: Sequence[tuple[str, Mapping[str, Any]]]) -> str:
     """The whole of ``SUMMARY.md``."""
     lines = [SUMMARY_INTRO, "## Runs", ""]
-    headings = ["Date", "Tag", "Config", "Query", "Prompt", "Rows", "Reviewed"]
+    headings = ["Date", "Tag", "Model", "Router", "Config", "Query", "Prompt", "Rows"]
+    headings += ["Reviewed", "Figures in sources"]
     headings += [heading for heading, _ in RATE_COLUMNS]
     headings += ["Commit", "File"]
     lines.append("| " + " | ".join(headings) + " |")
@@ -166,11 +177,14 @@ def summary_markdown(results: Sequence[tuple[str, Mapping[str, Any]]]) -> str:
         cells = [
             report["run_at"][:10],
             report["tag"],
+            str(report.get("llm_endpoint", "n/a")).removeprefix("databricks-"),
+            _router(report),
             report["chunk_config"],
             report["query_type"],
             str(report.get("prompt_version", "n/a")),
             str(report["rows"]),
             f"{report['rows_reviewed']}/{report['rows']}",
+            _rate(metrics, "figures_supported"),
             *(_rate(metrics, scorer) for _, scorer in RATE_COLUMNS),
             f"`{report['git_sha'][:7]}`",
             file_name,

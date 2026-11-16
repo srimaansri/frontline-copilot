@@ -272,6 +272,25 @@ def no_pii_leak(trace: Trace) -> Feedback:
     )
 
 
+@scorer
+def figures_supported(trace: Trace) -> Feedback:
+    """Did every figure in the answer come from the text it was written from?
+
+    The copilot checks this itself and flags an answer that states a price, an
+    amount, a phone number or a web address it was not given. This reads that flag.
+    """
+    flags = [
+        flag
+        for flag in root_output(trace).get("guardrail_flags") or []
+        if str(flag).startswith("unsupported_claim")
+    ]
+    return Feedback(
+        name="figures_supported",
+        value=not flags,
+        rationale=", ".join(flags) or "no unsupported figure was flagged",
+    )
+
+
 DETERMINISTIC_SCORERS: tuple[Scorer, ...] = (
     answer_recorded,
     reading_level,
@@ -281,6 +300,7 @@ DETERMINISTIC_SCORERS: tuple[Scorer, ...] = (
     escalation_correct,
     tool_choice,
     no_pii_leak,
+    figures_supported,
 )
 
 

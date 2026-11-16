@@ -21,6 +21,8 @@ def saved_run(**changes: Any) -> dict[str, Any]:
         "chunk_config": "A",
         "query_type": "ann",
         "prompt_version": PROMPT_VERSION,
+        "llm_endpoint": "databricks-gpt-oss-120b",
+        "judge_endpoint": "databricks-judge",
         "category": "all",
         "rows": 2,
         "rows_reviewed": 2,
@@ -122,6 +124,8 @@ def test_reports_are_built_from_the_saved_runs_only(tmp_path: Path) -> None:
     assert {path.name for path in changed} == {"SUMMARY.md", "ERRORS.md"}
     summary = (tmp_path / "SUMMARY.md").read_text(encoding="utf-8")
     assert "1/2 (9-91%)" in summary
+    # The answering model and the router are named, so two runs can be told apart.
+    assert "| full | gpt-oss-120b | rules | A | ann |" in summary
     assert "redaction_" not in summary
     assert "| 2026-11-15_full-A-ann.json | All | 2 | 0.1 | 2.0 | 2.0 |" in summary
     assert "| 2026-11-15_full-A-ann.json | Requests that need a person | 1 | 0.1 | 0.1 | 0.1 |" in (
@@ -209,6 +213,18 @@ def test_the_gate_reads_the_newest_run_over_the_whole_set(tmp_path: Path) -> Non
     write_run(tmp_path, "a.json", saved_run(run_at="2026-11-14T00:00:00Z", tag="old"))
     write_run(tmp_path, "b.json", saved_run(run_at="2026-11-16T00:00:00Z", tag="new"))
     write_run(tmp_path, "c.json", saved_run(run_at="2026-11-17T00:00:00Z", tag="kb", category="kb"))
+
+    # A comparison between models, scored by some judges or by none, is not a full run.
+    write_run(
+        tmp_path,
+        "d.json",
+        saved_run(run_at="2026-11-18T00:00:00Z", tag="models", judges=["correctness"]),
+    )
+    write_run(
+        tmp_path,
+        "e.json",
+        saved_run(run_at="2026-11-19T00:00:00Z", tag="no-judges", judge_endpoint=None),
+    )
 
     latest = gate.latest_full_run(tmp_path)
 

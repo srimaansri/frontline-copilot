@@ -42,8 +42,18 @@ def sha256(path: Path) -> str:
 
 
 def latest_full_run(results_dir: Path = RESULTS_DIR) -> tuple[str, dict[str, Any]] | None:
-    """The newest saved run over every category, or None if there is none."""
-    full = [item for item in load_results(results_dir) if item[1].get("category") == "all"]
+    """The newest saved run over every category with every judge, or None if there is none.
+
+    A run limited to some judges, or to none, is a comparison between settings.
+    It cannot meet the thresholds and is not what the published figures rest on.
+    """
+    full = [
+        item
+        for item in load_results(results_dir)
+        if item[1].get("category") == "all"
+        and item[1].get("judge_endpoint")
+        and item[1].get("judges", "all") == "all"
+    ]
     return full[-1] if full else None
 
 
