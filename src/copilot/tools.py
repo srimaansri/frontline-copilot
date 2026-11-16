@@ -42,6 +42,7 @@ from copilot.schemas import (
     SavedWrapUp,
     Urgency,
 )
+from copilot.text import to_plain_punctuation
 
 logger = logging.getLogger(__name__)
 
@@ -367,6 +368,17 @@ class Tools:
         """
         return redact_answer(str(value or "").strip(), self.redactor, [conversation]).text
 
+    def _wrap_up_line(self, value: object, conversation: str) -> str:
+        """One line of a wrap-up as it is shown and stored.
+
+        It is brought to one line of plain punctuation first: a model writes
+        "3 to 5 days" with a non-breaking hyphen, which a later search for the
+        text would miss. Then it is cut to length and given the output check.
+        A placeholder can make a line longer, so it is cut once more.
+        """
+        line = " ".join(to_plain_punctuation(str(value or "")).split())
+        return self._checked(line[:MAX_WRAP_UP_CHARS], conversation)[:MAX_WRAP_UP_CHARS]
+
     def _redacted_conversation(self, transcript_id: str) -> str:
         """The turns of one redacted transcript, and nothing else about the call.
 
@@ -408,12 +420,12 @@ class Tools:
         fields = parse_json_object(message_text(reply))
 
         def checked(values: object) -> list[str]:
-            texts = (self._checked(text, conversation) for text in _strings(values))
-            return [text[:MAX_WRAP_UP_CHARS] for text in texts if text]
+            lines = (self._wrap_up_line(text, conversation) for text in _strings(values))
+            return [line for line in lines if line]
 
         follow_up = fields.get("follow_up")
         if isinstance(follow_up, dict):
-            action = self._checked(follow_up.get("action"), conversation)[:MAX_WRAP_UP_CHARS]
+            action = self._wrap_up_line(follow_up.get("action"), conversation)
             # An owner with nothing to do is no follow-up.
             follow_up = {"owner": _label(follow_up.get("owner")), "action": action}
             follow_up = follow_up if action else None
@@ -458,7 +470,7 @@ class Tools:
         conversation = self._redacted_conversation(transcript_id)
 
         def stored(text: str) -> str:
-            return self._checked(text.strip()[:MAX_WRAP_UP_CHARS], conversation)
+            return self._wrap_up_line(text, conversation)
 
         notes = [stored(note) for note in wrap_up.notes if note.strip()]
         promises = [stored(promise) for promise in wrap_up.promises if promise.strip()]

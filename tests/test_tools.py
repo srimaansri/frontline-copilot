@@ -572,6 +572,23 @@ def test_a_long_line_in_a_draft_is_cut_so_the_draft_can_be_saved() -> None:
     assert len(tools.wrap_up_call("T0002", with_articles=False).notes[0]) == MAX_WRAP_UP_CHARS
 
 
+def test_a_wrap_up_line_is_one_line_of_plain_punctuation() -> None:
+    """A model writes "3 to 5" with a non-breaking hyphen, which a search would then miss."""
+    # Built from code points, so this file holds no look-alike characters.
+    hyphen, dash, left, right = chr(0x2011), chr(0x2013), chr(0x201C), chr(0x201D)
+    written = {
+        **GOOD_WRAP_UP,
+        "notes": [f"Told the customer 3{hyphen}5 business days {dash} by\n  phone."],
+        "promises": [f"A call back {left}soon{right}."],
+    }
+    tools = wrap_up_tools(written)
+
+    wrap_up = tools.wrap_up_call("T0002", with_articles=False)
+
+    assert wrap_up.notes == ["Told the customer 3-5 business days - by phone."]
+    assert wrap_up.promises == ['A call back "soon".']
+
+
 def test_summarize_call_is_still_told_the_recorded_outcome() -> None:
     """The chat tool and the MCP server use the summary. The wrap-up did not change it."""
     llm = FakeLlm(json.dumps(GOOD_SUMMARY))
