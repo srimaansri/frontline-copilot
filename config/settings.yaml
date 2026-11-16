@@ -12,6 +12,8 @@ judge_endpoint: databricks-meta-llama-3-3-70b-instruct
 embedding_endpoint: databricks-gte-large-en
 llm_temperature: 0.1
 llm_max_tokens: 700
+llm_timeout_seconds: 60
+llm_max_retries: 2
 
 # Retrieval. `chunk_config` and `query_type` start at the experiment baseline
 # (PLAN.md §9.4) and are updated once real eval runs pick a winner.

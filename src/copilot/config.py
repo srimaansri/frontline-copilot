@@ -91,6 +91,10 @@ class Settings(BaseSettings):
     embedding_endpoint: str = "databricks-gte-large-en"
     llm_temperature: float = Field(default=0.1, ge=0.0, le=2.0)
     llm_max_tokens: int = Field(default=700, gt=0)
+    # One model call may take this long, and is tried again this many times, before
+    # the request fails. Without them a stalled endpoint holds a request open.
+    llm_timeout_seconds: float = Field(default=60.0, gt=0.0)
+    llm_max_retries: int = Field(default=2, ge=0)
 
     # Retrieval
     vs_endpoint: str = "frontline-vs"
@@ -116,6 +120,9 @@ class Settings(BaseSettings):
     # Behaviour
     reading_grade_target: float = Field(default=8.0, gt=0.0)
     max_tool_iterations: int = Field(default=4, ge=1)
+    # False makes a hand-off a dry run: the ticket and the script are produced, and
+    # nothing is written to the escalations table. Evaluation runs use it.
+    record_escalations: bool = True
 
     @field_validator("query_type", mode="before")
     @classmethod

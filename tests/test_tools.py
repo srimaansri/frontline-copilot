@@ -9,6 +9,7 @@ import pytest
 
 from copilot.config import Settings
 from copilot.prompts import SUMMARY_PROMPT
+from copilot.redaction import Redactor
 from copilot.retriever import Retriever
 from copilot.schemas import KBHit
 from copilot.tools import (
@@ -93,11 +94,18 @@ class FakeRedactor:
     """Replaces one known phone number, which is all these tests need."""
 
     def redact(self, text: str) -> Any:
-        return types.SimpleNamespace(text=text.replace("480-555-0132", "<PHONE_NUMBER_1>"))
+        return types.SimpleNamespace(
+            text=text.replace("480-555-0132", "<PHONE_NUMBER_1>"), entities=()
+        )
+
+
+@pytest.fixture(scope="module")
+def redactor() -> Redactor:
+    return Redactor("en_core_web_sm")
 
 
 def make_tools(**parts: Any) -> Tools:
-    settings = Settings(_env_file=None)  # type: ignore[call-arg]
+    settings = parts.pop("settings", None) or Settings(_env_file=None)  # type: ignore[call-arg]
     parts.setdefault("redactor", FakeRedactor())
     parts.setdefault("ticket_id", lambda: "ESC-TEST0001")
     parts.setdefault("now", lambda: FIXED_NOW)
@@ -295,6 +303,34 @@ def test_parse_json_object_ignores_text_around_the_object() -> None:
         parse_json_object("}{")
 
 
+def test_summary_text_gets_the_same_output_check_as_an_answer(redactor: Redactor) -> None:
+    turns = [
+        {"speaker": "agent", "text": "You can also call us on 1-800-555-0199."},
+        {"speaker": "customer", "text": "Thanks, my number is <PHONE_NUMBER_1>."},
+    ]
+    row = {**transcript_row(), "turns_json": json.dumps(turns)}
+    written = {
+        **GOOD_SUMMARY,
+        "summary_bullets": [
+            "The agent gave the support line, 1-800-555-0199.",
+            "The customer can be reached on 480-555-0132.",
+        ],
+    }
+    tools = make_tools(
+        sql=FakeSql([row]),
+        llm=FakeLlm(json.dumps(written)),
+        retriever=FakeRetriever(),
+        redactor=redactor,
+    )
+
+    summary = tools.summarize_call("T0002")
+
+    # The support line is in the transcript, so it stays. The other number is not.
+    assert "1-800-555-0199" in summary.summary_bullets[0]
+    assert "480-555-0132" not in summary.summary_bullets[1]
+    assert "<PHONE_NUMBER_1>" in summary.summary_bullets[1]
+
+
 # --- escalate_to_human ----------------------------------------------------------------------
 
 
@@ -333,6 +369,29 @@ def test_escalation_still_returns_a_ticket_when_the_write_fails() -> None:
     assert ticket.category == "plan_change"
     assert "by hand" in ticket.agent_script
     assert "ESC-TEST0001" in ticket.agent_script
+
+
+def test_a_dry_run_hand_off_writes_nothing_and_reads_like_a_real_one() -> None:
+    sql = FakeSql([])
+    settings = Settings(_env_file=None, record_escalations=False)  # type: ignore[call-arg]
+    tools = make_tools(sql=sql, settings=settings)
+
+    ticket = tools.escalate_to_human("Refund the late fee", "billing")
+
+    assert sql.calls == []
+    assert ticket.recorded is False
+    assert "passing you to the billing team" in ticket.agent_script
+    assert "ESC-TEST0001" in ticket.agent_script
+
+
+def test_a_failed_write_is_logged_by_kind_only(caplog: pytest.LogCaptureFixture) -> None:
+    tools = make_tools(sql=FakeSql(RuntimeError("INSERT ... reason = 'secret text'")))
+
+    with caplog.at_level("WARNING"):
+        tools.escalate_to_human("Change the plan", "plan change")
+
+    assert "RuntimeError" in caplog.text
+    assert "secret text" not in caplog.text
 
 
 def test_escalation_normalises_the_category_and_checks_urgency() -> None:

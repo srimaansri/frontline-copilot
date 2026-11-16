@@ -34,6 +34,8 @@ def build_chat_model(settings: Settings) -> ChatModel:
         endpoint=settings.llm_endpoint,
         temperature=settings.llm_temperature,
         max_tokens=settings.llm_max_tokens,
+        timeout=settings.llm_timeout_seconds,
+        max_retries=settings.llm_max_retries,
     )
     return model
 

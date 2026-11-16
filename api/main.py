@@ -4,8 +4,9 @@ Run locally:  uvicorn api.main:app --port 8000
 On Databricks Apps the command comes from app.yaml at the repository root.
 
 This is a thin layer. Every endpoint calls the same ``copilot.agent`` and
-``copilot.tools`` code that the evaluation and the MCP server call, so the
-interface shows exactly what was evaluated. The built web interface in
+``copilot.tools`` code that the evaluation and the MCP server call. The Calls
+view's summary calls the summary tool directly, not through the agent graph;
+the tool applies the output check for personal data itself. The built web interface in
 ``web/dist`` is served at ``/``, and the API lives under ``/api``.
 """
 
@@ -20,7 +21,7 @@ import mlflow
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
-from mlflow.entities import AssessmentSource, AssessmentSourceType
+from mlflow.entities import AssessmentSource, AssessmentSourceType, SpanType
 from pydantic import BaseModel, Field
 
 from copilot.agent import Copilot
@@ -208,9 +209,14 @@ def create_app(
             ) from error
         seconds = time.perf_counter() - started
         trace_id = mlflow.get_last_active_trace_id(thread_local=True) if tracing_now else None
+        fields = answer.model_dump()
+        # The copilot reports the question as it processed it. One that does not is asked
+        # here, so the interface never shows the question as it was typed.
+        processed = fields.pop("question_as_processed", "")
         return AskResponse(
-            **answer.model_dump(),
-            question_as_processed=redact_question(body.question, copilot_now.redactor).text,
+            **fields,
+            question_as_processed=processed
+            or redact_question(body.question, copilot_now.redactor).text,
             seconds=round(seconds, 2),
             trace_id=trace_id,
             steps=describe_steps(answer),
@@ -232,8 +238,19 @@ def create_app(
 
     @app.post("/api/calls/{transcript_id}/summary")
     def summary(transcript_id: str) -> CallSummary:
+        tools = runtime.copilot.tools
         try:
-            return runtime.copilot.tools.summarize_call(transcript_id)
+            if not runtime.tracing:
+                return tools.summarize_call(transcript_id)
+            # Traced like an answer, so a summary made from the Calls view can be found
+            # and rated. A transcript id is not personal data, and the summary has
+            # passed the tool's own output check.
+            with mlflow.start_span(name="summarize_call", span_type=SpanType.TOOL) as span:
+                span.set_inputs({"transcript_id": transcript_id.strip().upper()[:20]})
+                mlflow.update_current_trace(tags={"source": "web", "view": "calls"})
+                result = tools.summarize_call(transcript_id)
+                span.set_outputs(result.model_dump())
+            return result
         except ToolError as error:
             raise _tool_error(error) from error
 

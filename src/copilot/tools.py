@@ -9,6 +9,7 @@ that come from a model are bound as parameters and never placed in SQL text.
 from __future__ import annotations
 
 import json
+import logging
 import re
 import time
 import uuid
@@ -19,11 +20,14 @@ from typing import Any, Protocol, get_args
 from pydantic import ValidationError
 
 from copilot.config import Settings
+from copilot.guardrails import redact_answer
 from copilot.llm import ChatModel, build_chat_model, message_text
 from copilot.prompts import SUMMARY_PROMPT
 from copilot.redaction import Redactor, get_redactor
 from copilot.retriever import Retriever
 from copilot.schemas import CallSummary, Citation, EscalationTicket, KBHit, Plan, Urgency
+
+logger = logging.getLogger(__name__)
 
 TRANSCRIPT_ID_RE = re.compile(r"T\d{4}")
 PLAN_COLUMNS: tuple[str, ...] = (
@@ -281,13 +285,20 @@ class Tools:
             ]
         )
         fields = parse_json_object(message_text(reply))
+
+        def checked(value: object) -> str:
+            # The transcript is redacted, but the model may still write out something
+            # that looks like personal data. Whatever is not in the transcript is replaced,
+            # so this path gets the same output check as an answer from the agent.
+            return redact_answer(str(value or "").strip(), self.redactor, [conversation]).text
+
         try:
             summary = CallSummary(
                 transcript_id=transcript_id,
-                summary_bullets=fields.get("summary_bullets") or [],
-                intent=str(fields.get("intent") or "").strip(),
+                summary_bullets=[checked(bullet) for bullet in fields.get("summary_bullets") or []],
+                intent=checked(fields.get("intent")),
                 sentiment=fields.get("sentiment"),
-                next_step=str(fields.get("next_step") or "").strip(),
+                next_step=checked(fields.get("next_step")),
             )
         except ValidationError as error:
             raise ToolError("The model's summary did not have the expected fields") from error
@@ -314,6 +325,10 @@ class Tools:
         is stored or returned. If the ticket cannot be written, a ticket is
         still returned with ``recorded`` false, so the agent is never left
         without a next step.
+
+        With ``record_escalations`` off (an evaluation run), nothing is written
+        and ``recorded`` is false, but the script is the one a written ticket
+        gets, so the answer that is evaluated is the answer an agent would see.
         """
         if urgency not in get_args(Urgency):
             raise ToolError("urgency must be low, normal or high")
@@ -323,25 +338,29 @@ class Tools:
         safe_reason = self.redactor.redact(reason.strip()[:MAX_REASON_CHARS]).text
         ticket_id = self._ticket_id()
         table = self.settings.table("ops", "escalations")
-        recorded = True
-        try:
-            self.sql(
-                f"INSERT INTO {table} "  # noqa: S608
-                "(ticket_id, created_at, category, urgency, reason, status) "
-                "VALUES (:ticket_id, :created_at, :category, :urgency, :reason, 'open')",
-                {
-                    "ticket_id": ("STRING", ticket_id),
-                    "created_at": ("TIMESTAMP", self._now().strftime("%Y-%m-%d %H:%M:%S")),
-                    "category": ("STRING", category),
-                    "urgency": ("STRING", urgency),
-                    "reason": ("STRING", safe_reason),
-                },
-            )
-        except Exception:
-            # A failed write must not lose the hand-off: the agent still gets a script.
-            recorded = False
+        dry_run = not self.settings.record_escalations
+        recorded = False
+        if not dry_run:
+            try:
+                self.sql(
+                    f"INSERT INTO {table} "  # noqa: S608
+                    "(ticket_id, created_at, category, urgency, reason, status) "
+                    "VALUES (:ticket_id, :created_at, :category, :urgency, :reason, 'open')",
+                    {
+                        "ticket_id": ("STRING", ticket_id),
+                        "created_at": ("TIMESTAMP", self._now().strftime("%Y-%m-%d %H:%M:%S")),
+                        "category": ("STRING", category),
+                        "urgency": ("STRING", urgency),
+                        "reason": ("STRING", safe_reason),
+                    },
+                )
+                recorded = True
+            except Exception as error:
+                # A failed write must not lose the hand-off: the agent still gets a script.
+                # Only the kind of error is logged; its message can quote the statement.
+                logger.warning("A hand-off ticket could not be written (%s)", type(error).__name__)
         team = ESCALATION_TEAMS[category]
-        if recorded:
+        if recorded or dry_run:
             script = (
                 f"I can't do this myself, so I'm passing you to {team}. "
                 f"Your reference is {ticket_id}. They will take it from here."

@@ -258,7 +258,12 @@ def main(argv: list[str] | None = None) -> None:
     # Puts DATABRICKS_HOST and DATABRICKS_CONFIG_PROFILE where the SDK and MLflow look.
     load_dotenv()
     settings = load_settings().model_copy(
-        update={"chunk_config": args.config, "query_type": args.query_type}
+        update={
+            "chunk_config": args.config,
+            "query_type": args.query_type,
+            # A run must not leave tickets for people who do not exist.
+            "record_escalations": False,
+        }
     )
     rows = load_eval_set(category=args.category, limit=args.limit)
     if not rows:
@@ -333,6 +338,7 @@ def main(argv: list[str] | None = None) -> None:
         "judge_endpoint": None if args.no_judges else settings.judge_endpoint,
         "embedding_endpoint": settings.embedding_endpoint,
         "category": args.category or "all",
+        "escalations_recorded": settings.record_escalations,
         "rows": len(rows),
         "rows_scored": len(per_row),
         "rows_without_answer": unanswered,

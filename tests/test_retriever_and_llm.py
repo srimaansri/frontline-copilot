@@ -203,4 +203,11 @@ def test_chat_model_is_built_from_settings(monkeypatch: pytest.MonkeyPatch) -> N
     model = build_chat_model(_settings(llm_endpoint="my-endpoint", llm_max_tokens=321))
 
     assert isinstance(model, FakeChatDatabricks)
-    assert created == {"endpoint": "my-endpoint", "temperature": 0.1, "max_tokens": 321}
+    assert created == {
+        "endpoint": "my-endpoint",
+        "temperature": 0.1,
+        "max_tokens": 321,
+        # A stalled endpoint must not hold a request open for ever.
+        "timeout": 60.0,
+        "max_retries": 2,
+    }
