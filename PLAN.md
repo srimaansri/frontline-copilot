@@ -537,6 +537,10 @@ Dated entries: what I asked Claude Code to do, what it produced, what I changed 
 | M6 | Docs + polish | Sun+ | README with real results + demo video; model/data cards; RESPONSIBLE_AI; BUILD_LOG; eval.yml gate |
 | S-AWS | Stretch: AWS Bedrock provider | after M6 | `LLM_PROVIDER=databricks\|bedrock` switch in `config.py` / `llm.py`; an open-weight chat model served by Bedrock; Bedrock Guardrails as an extra output check alongside `check_output`; one eval comparison table, Databricks vs Bedrock, with quality scores, latency p50/p95 and cost per query, all from real runs |
 | S | Stretch | later | Agent as UC-registered model + serving endpoint; Asset Bundle; reranker. (The React front end was built: §8.1.) |
+| M7 | Fix and prove | second phase, stage 1 | See §16.2 |
+| M8 | Evaluation that can fail, and a measured router | stage 2 | See §16.3 |
+| M9 | Live progress, approval, and after-call work | stage 3 | See §16.4 |
+| M10 | Call assist and compliance review | stage 4 | See §16.5 |
 
 **S-AWS notes.** Verify Bedrock model IDs, the Converse API tool-calling support of the chosen model, and the Guardrails API against current AWS docs before starting. Cost per query is computed from logged token counts and the published per-token prices on the run date, with the price source cited. Retrieval stays on Databricks AI Search for both providers so the comparison isolates the model. AWS credentials come from the standard AWS credential chain, never from the repo.
 
@@ -581,3 +585,57 @@ If time runs short, cut in this order: S → S-AWS → MCP Docker HTTP mode → 
 5. (20s) MLflow: one trace (retriever span, tool calls), then the three-run eval comparison.
 6. (10s) Claude Code calling the MCP server tools.
 7. (10s) Redaction metrics + what I'd do in production.
+
+---
+
+## 16. Second phase: from a question box to a measured call-assist system
+
+Added on 2026-11-15, after five independent reviews of the M0 to M6 build (architecture, a cold read as a hiring engineer, evaluation and reliability, product, and current practice in the docs). They agreed: the hygiene is sound, the problem solved is too easy, the evaluation is at its ceiling and so cannot show that any design choice matters, and the public demo is scripted.
+
+### 16.1 What the project is now for
+Help a support agent during and after a live call, on redacted text only. Every stated fact is checked against its source, every write is approved by a person, and each part has a measured error rate on a set with room to fail.
+
+Rules for this phase, on top of CLAUDE.md:
+- A number is reported with its count and an interval, and a figure that rests on a handful of rows says so in the table it appears in.
+- A rule or prompt that is tuned on a set makes that set in-sample. The first result on a held-out set is kept, as the redaction evaluation already does.
+- New transcripts are appended with new ids and a new seed. `--seed 42` is never regenerated, because the published redaction and evaluation numbers rest on T0001 to T0200.
+- A capability is claimed only when an evaluation row or a test measures it.
+
+Not built, and why: a multi-agent split (four tools in one domain, so it adds latency and nothing measurable); a reranker or graph retrieval (the expected article is already ranked first on every row, so a gain could not be measured before M8); long-term memory; the S-AWS stretch (a paid service, and breadth where depth is missing); a public page that calls the live agent (Databricks Apps cannot be made public, so it would need a proxy that holds a credential).
+
+### 16.2 M7. Fix and prove
+Done when:
+- **Input guard.** A question that only mentions rules, instructions or a system message is answered, not refused. A how-to question about one customer ("this customer forgot their PIN, how do they reset it?") is answered, not handed off. A request to act on one customer that names them with a pronoun ("waive the late fee for her") is handed off. Each case is a test. The cases were in view when the rules were changed, so they are in-sample; M8 measures the router on a held-out set.
+- **History.** Earlier turns are redacted with one placeholder map, so a placeholder means one thing across a conversation. Earlier user turns are checked for an override attempt. Citation markers are removed from earlier answers, because source numbers restart with each answer. The amount of history sent to the model is capped.
+- **Call summary endpoint.** It runs inside a trace span and its text passes the output check for personal data, like every other answer.
+- **Evaluation runs write no tickets.** A run opens hand-offs in dry-run mode and its result file says so.
+- **Failure handling.** Model calls have a timeout and a bounded number of retries. An exception that is caught is logged by type, never with the question text.
+- **Results a reader can check.** Every rate in a result file and in `SUMMARY.md` has a 95% Wilson interval. `eval/results/ERRORS.md` lists every failed row of every saved run. CI fails when the latest saved full run is below the §9.5 thresholds, or was made with a different evaluation set or prompt version from the ones in the repository.
+- **Claims match the evidence.** The README and the cards no longer say personal data "never" reaches the model; figures that rest on one planted row or on in-sample rows are labelled where they appear.
+- **The public demo shows real output.** Its answers are recorded from the live agent by a script, each stamped with the date and the git SHA, and the page says they are recordings. No answer in it is hand-written.
+
+Files: `src/copilot/{guardrails,agent,tools,llm,config}.py`, `config/settings.yaml`, `api/main.py`, `eval/{run_eval,stats,errors,gate,record_demo}.py`, `.github/workflows/ci.yml`, `web/src/api/` (the recorded answers and the code that replays them), `README.md`, `docs/`, and tests for each.
+
+### 16.3 M8. Evaluation that can fail, and a measured router
+Done when:
+- The evaluation set has about 300 rows, stratified: paraphrases, questions no article answers, questions that carry personal data, questions that need an article and the catalogue together, multi-turn follow-ups, and instructions planted in a retrieved article or a transcript. Deterministic scorers run on every row and the judges on a sample, to stay inside the daily quota.
+- The judge is checked against hand labels (the owner's, not a model's) on its existing verdicts and on about 20 deliberately wrong answers. Agreement and the confusion matrix are reported.
+- A routing set of at least 100 utterances is written after the rules are frozen and without reading them. Rules alone, a small open-weight model with structured output alone, and both together are scored on it: missed hand-offs, false hand-offs, missed override attempts.
+- A deterministic claim check runs on every answer: each number, price, duration, phone number and web address must appear in a cited source or a tool result, and a rewrite that changes that set is rejected. Its catch rate and false-alarm rate come from a mutation test on saved answers.
+- The copilot abstains when retrieval is weak. The threshold is tuned on a development split and reported as a risk-coverage curve.
+- Latency is reported as p50 and p95 by route, with tokens and model calls per answer.
+
+### 16.4 M9. Live progress, approval, and after-call work
+Done when:
+- The API streams the agent's real stages to the page as they happen (LangGraph `astream` over server-sent events). The timed list of stage names in the interface is removed.
+- A hand-off ticket is drafted, shown to the agent, and written only after they approve it (LangGraph `interrupt` with a checkpointer). Check first whether the free tier's managed Postgres can hold the checkpoints; fall back to SQLite in the app.
+- A follow-up question keeps its context, and an ambiguous request gets one clarifying question. Both are evaluation rows.
+- After-call wrap-up: disposition, notes, promises made and who owns the follow-up, edited and approved by the agent and saved to `ops.call_wrapups`. The summary prompt no longer receives the call's recorded category and outcome. A pipeline step writes `gold.call_insights` for all 200 calls, and disposition accuracy is measured against the generator's own labels.
+
+### 16.5 M10. Call assist and compliance review
+Done when:
+- Call assist by replay: a redacted call plays turn by turn, and a side panel shows the matching article, a next step and reminders without being asked. Retrieval runs on a rolling window of turns with no model call; the model is called only when the top article changes.
+- Compliance review: new labelled transcripts (ids from T0201, a new seed) in which a rule is broken, such as verification skipped or a card number read back. Rules and SQL catch what they can and a judge handles the rest. Precision and recall are reported per rule.
+- A monitoring report built from traces and feedback, and fault-injection tests for a timeout, a rate limit and a malformed tool call.
+
+Things to verify against the docs before use: the LangGraph streaming and interrupt APIs at the pinned version, whether MLflow production monitoring and the AI Search reranker work on Free Edition, and Lakebase on Free Edition.
