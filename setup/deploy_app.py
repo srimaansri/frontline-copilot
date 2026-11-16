@@ -90,6 +90,10 @@ def app_resources(client: WorkspaceClient, settings: Settings) -> list[apps.AppR
         ),
         table("gold", "plans", "SELECT"),
         table("silver", "transcripts_redacted", "SELECT"),
+        # What the rule check found in each call, for the calls list. It holds rule
+        # names and turn numbers and no text from a call. The pipeline writes it, so
+        # the job has to have run once before this resource can be granted.
+        table("gold", "call_insights", "SELECT"),
         table("gold", "kb_chunks_index", "SELECT"),
         table("ops", "escalations", "MODIFY"),
         # The app only ever inserts a wrap-up. A table resource is either SELECT or
