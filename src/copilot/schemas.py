@@ -94,3 +94,6 @@ class CopilotAnswer(BaseModel):
     tools_used: list[str] = Field(default_factory=list)
     escalated: bool = False
     guardrail_flags: list[str] = Field(default_factory=list)
+    # The question as the copilot processed it: redacted, with placeholder numbers that
+    # agree with the rest of the conversation.
+    question_as_processed: str = ""

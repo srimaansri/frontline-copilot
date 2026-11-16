@@ -156,3 +156,15 @@ def test_the_hand_off_step_carries_the_ticket_reference_from_the_answer() -> Non
     assert all(step.reference is None for step in describe_steps(without_one))
     # Only a hand-off step may carry a reference, whatever the answer text says.
     assert all(step.reference is None for step in describe_steps(searched))
+
+
+def test_a_dropped_earlier_message_is_reported() -> None:
+    steps = describe_steps(answer(guardrail_flags=["history_turn_dropped"]))
+
+    assert titles(steps) == [
+        "No personal details found",
+        "Request allowed",
+        "An earlier message was left out",
+        "No personal details in the answer",
+    ]
+    assert steps[2].status == "notice"

@@ -11,12 +11,12 @@ citations are validated, and personal data is removed from it.
 from __future__ import annotations
 
 import re
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Literal
 
 from copilot.readability import reading_grade
-from copilot.redaction import Redactor
+from copilot.redaction import PlaceholderMap, Redactor
 from copilot.text import to_plain_punctuation
 
 FLAG_PII_IN_QUESTION = "pii_in_question"
@@ -57,6 +57,73 @@ def redact_question(question: str, redactor: Redactor) -> RedactedInput:
         f"{FLAG_PII_IN_QUESTION}:{entity_type}" for entity_type in sorted(result.entity_counts)
     )
     return RedactedInput(result.text, flags)
+
+
+FLAG_HISTORY_DROPPED = "history_turn_dropped"
+# How much of a conversation the model is given: the last six exchanges.
+MAX_HISTORY_TURNS = 12
+MAX_HISTORY_TURN_CHARS = 2000
+
+
+@dataclass(frozen=True)
+class SafeConversation:
+    """A question and the turns before it, ready to be traced and sent to the model."""
+
+    question: str
+    # (role, text) pairs, oldest first. The role is "user" or "assistant".
+    history: tuple[tuple[str, str], ...]
+    flags: tuple[str, ...]
+
+
+def redact_conversation(
+    question: str, history: Sequence[Mapping[str, str]], redactor: Redactor
+) -> SafeConversation:
+    """Redact a question together with the conversation it continues.
+
+    The earlier turns come from the caller, so they are treated like the
+    question itself, not like something the copilot said:
+
+    - One placeholder map is used for the whole conversation, so ``<PERSON_1>``
+      means the same person in every turn. Redacting each turn alone would give
+      two different people the same placeholder.
+    - A turn that tries to override the instructions is left out, with the reply
+      that followed it. The check on the question alone would miss it.
+    - Citation markers are removed from earlier answers. Source numbers start
+      again at 1 with every answer, so an old ``[1]`` would point at a new source.
+    - Only the last ``MAX_HISTORY_TURNS`` turns are kept, each cut to
+      ``MAX_HISTORY_TURN_CHARS`` after it is redacted. Cutting first could split
+      a phone number and leave half of it undetected.
+
+    Like ``redact_question``, this must run before anything is traced.
+    """
+    placeholders = PlaceholderMap()
+    kept: list[tuple[str, str]] = []
+    dropped = False
+    skip_reply = False
+    for turn in list(history)[-MAX_HISTORY_TURNS:]:
+        role = "assistant" if turn.get("role") == "assistant" else "user"
+        text = redactor.redact(turn.get("content", ""), placeholders=placeholders).text
+        if role == "assistant":
+            if skip_reply:
+                skip_reply = False
+                continue
+            text = _CITATION_RE.sub("", _DECORATED_CITATION_RE.sub("", text))
+            text = re.sub(r"[ \t]+([.,;:!?])", r"\1", text)
+        skip_reply = False
+        if is_override_attempt(text):
+            dropped = True
+            skip_reply = role == "user"
+            continue
+        text = text.strip()[:MAX_HISTORY_TURN_CHARS]
+        if text:
+            kept.append((role, text))
+    result = redactor.redact(question, placeholders=placeholders)
+    flags = [
+        f"{FLAG_PII_IN_QUESTION}:{entity_type}" for entity_type in sorted(result.entity_counts)
+    ]
+    if dropped:
+        flags.append(FLAG_HISTORY_DROPPED)
+    return SafeConversation(result.text, tuple(kept), tuple(flags))
 
 
 # --- input: what is the agent asking for? -------------------------------------------------

@@ -138,6 +138,17 @@ def describe_steps(answer: CopilotAnswer) -> list[Step]:
             )
         )
 
+    if "history_turn_dropped" in names:
+        steps.append(
+            Step(
+                stage="input_check",
+                title="An earlier message was left out",
+                detail="It tried to change the copilot's instructions, so it was not "
+                "passed on with this question.",
+                status="notice",
+            )
+        )
+
     failed_tools = {flag.split(":", 1)[1] for flag in flags if flag.startswith("tool_error:")}
     for tool in answer.tools_used:
         title, detail = TOOL_STEPS.get(tool, (f"Used {tool}", ""))

@@ -24,6 +24,7 @@ a trace is decided here.
 from __future__ import annotations
 
 import json
+import logging
 from collections.abc import Mapping, Sequence
 from functools import lru_cache
 from typing import Annotated, Any, Literal, TypedDict
@@ -41,7 +42,7 @@ from copilot.guardrails import (
     REFUSAL_ANSWER,
     check_input,
     check_output,
-    redact_question,
+    redact_conversation,
 )
 from copilot.llm import ChatModel, build_chat_model, message_text
 from copilot.prompts import (
@@ -54,6 +55,8 @@ from copilot.redaction import Redactor, get_redactor
 from copilot.retriever import Retriever
 from copilot.schemas import Citation, CopilotAnswer, KBHit, Urgency
 from copilot.tools import ESCALATION_TEAMS, ToolError, Tools
+
+logger = logging.getLogger(__name__)
 
 FLAG_NO_CONTEXT = "no_context"
 FLAG_TOOL_ERROR = "tool_error"
@@ -282,13 +285,9 @@ class Copilot:
         Returns:
             The answer, its citations, the tools used and any guardrail flags.
         """
-        redactor = self._get_redactor()
-        redacted = redact_question(question, redactor)
-        safe_history = [
-            (turn["role"], redactor.redact(turn["content"]).text) for turn in history or []
-        ]
+        safe = redact_conversation(question, history or [], self._get_redactor())
         # Nothing above this line is traced. Only redacted text goes below it.
-        return self._answer(redacted.text, safe_history, list(redacted.flags), trace_tags or {})
+        return self._answer(safe.question, list(safe.history), list(safe.flags), trace_tags or {})
 
     def _answer(
         self,
@@ -346,6 +345,7 @@ class Copilot:
                 tools_used=final["tools_used"],
                 escalated=final["escalated"],
                 guardrail_flags=final["flags"],
+                question_as_processed=question,
             )
             root.set_outputs(answer.model_dump())
         return answer
@@ -466,9 +466,11 @@ class Copilot:
                 except ToolError as error:
                     text, did_escalate = f"Tool error: {error}", False
                     flags.append(f"{FLAG_TOOL_ERROR}:{name}")
-                except Exception:
+                except Exception as error:
                     # A tool that cannot be reached must not end the answer: the model is
-                    # told, and tells the agent, that the lookup failed.
+                    # told, and tells the agent, that the lookup failed. Only the kind of
+                    # error is logged, because its message can quote the question.
+                    logger.warning("Tool %s failed (%s)", name, type(error).__name__)
                     text, did_escalate = "Tool error: the lookup could not be completed.", False
                     flags.append(f"{FLAG_TOOL_ERROR}:{name}")
                 span.set_outputs(text)
