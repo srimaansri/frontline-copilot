@@ -3,7 +3,7 @@
 The browser front end for Frontline Copilot. In the interface the copilot has a name, Cue. It is a single page with two views:
 
 - **Ask**: a conversation with the copilot. Each answer shows its sources and the route of steps the copilot took to produce it.
-- **Calls**: the redacted call transcripts, with a summary on request.
+- **Calls**: the redacted call transcripts, with a summary on request, and an after-call wrap-up that the copilot drafts and the agent checks and saves.
 
 It talks to the Python API under `/api`. The API contract is typed in `src/api/types.ts`. The look is described in [`DESIGN.md`](DESIGN.md).
 
@@ -55,6 +55,7 @@ What the demo shows:
 - a failed request: send exactly `/error` to see the error message and its retry button;
 - a request that never answers: send exactly `/pending`;
 - the Calls list (200 rows). The calls named in `eval/record_demo.py` have a transcript and a summary. Any other call shows the error state, which names the calls that are recorded.
+- a wrap-up draft for a recorded call, if the recording has one under `wrapups`. A recording made before the recorder drafted wrap-ups has none, and "Wrap up" then says so. Pressing "Save wrap-up" in the demo says that the demo does not save wrap-ups, which is true.
 
 A normal build does not include the recording.
 
@@ -73,7 +74,7 @@ Then open `http://localhost:5173/gallery.html`. It draws every component in ever
 - `?theme=light` or `?theme=dark` pins the theme, whatever is stored or set in the system, and writes nothing to storage.
 - `?section=<id>` shows one section. For example `http://localhost:5173/gallery.html?theme=dark&section=route`.
 
-The section ids: `tokens`, `buttons`, `view-switcher`, `theme-toggle`, `tags`, `status`, `citation`, `redaction`, `signal-bars`, `composer`, `question`, `answer`, `answer-footer`, `sources`, `route`, `examples`, `running`, `call-rows`, `filters`, `search`, `transcript`, `summary`, `calls-states`, `icons`.
+The section ids: `tokens`, `buttons`, `view-switcher`, `theme-toggle`, `tags`, `status`, `citation`, `redaction`, `signal-bars`, `composer`, `question`, `answer`, `answer-footer`, `sources`, `route`, `examples`, `running`, `call-rows`, `filters`, `search`, `transcript`, `summary`, `wrap-up`, `calls-states`, `icons`.
 
 A hover, a focus ring or a press is shown in a still picture by writing `data-force="hover"`, `"focus"` or `"pressed"` on the element. Every such style in the app answers to that attribute as well as to the real state.
 

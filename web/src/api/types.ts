@@ -161,6 +161,45 @@ export interface CallSummary {
   related_articles: Citation[];
 }
 
+/** Who takes the next step after a call: the customer, the agent who took it, or another team. */
+export type FollowUpOwner = "customer" | "agent" | "team";
+
+export interface FollowUp {
+  owner: FollowUpOwner;
+  /** What the next step is, in one sentence. */
+  action: string;
+}
+
+/** What the agent can change in a wrap-up, and what is saved. */
+export interface WrapUpFields {
+  /** How the call ended. The copilot works it out from the conversation. */
+  disposition: Resolution;
+  /** What the call was about: one of the ten call categories, such as "billing". */
+  category: string;
+  /** What happened, one short line each. */
+  notes: string[];
+  /** What the agent told the customer would happen after the call. May be empty. */
+  promises: string[];
+  /** Null when nothing is left to do. */
+  follow_up: FollowUp | null;
+  sentiment: Sentiment;
+}
+
+/** The after-call record the copilot drafted. Nothing is saved until the agent saves it. */
+export interface CallWrapUp extends WrapUpFields {
+  transcript_id: string;
+  related_articles: Citation[];
+}
+
+/** A wrap-up as it was stored, with personal details replaced in every line. */
+export interface SavedWrapUp extends WrapUpFields {
+  /** The reference of the saved record, such as "WRP-4F2A91C7". */
+  wrapup_id: string;
+  transcript_id: string;
+  /** False when the record could not be written. */
+  recorded: boolean;
+}
+
 export interface FeedbackRequest {
   trace_id: string;
   helpful: boolean;
@@ -192,6 +231,14 @@ export interface Api {
   listCalls(signal?: AbortSignal): Promise<CallListItem[]>;
   getCall(transcriptId: string, signal?: AbortSignal): Promise<CallTranscript>;
   summarizeCall(transcriptId: string, signal?: AbortSignal): Promise<CallSummary>;
+  /** Draft the after-call record of a call. It stores nothing. */
+  draftWrapUp(transcriptId: string, signal?: AbortSignal): Promise<CallWrapUp>;
+  /** Store the wrap-up the agent approved. This is the only call that saves one. */
+  saveWrapUp(
+    transcriptId: string,
+    request: WrapUpFields,
+    signal?: AbortSignal,
+  ): Promise<SavedWrapUp>;
   /** Write the hand-off the agent approved. This is the only call that opens a ticket. */
   openHandOff(request: HandOffRequest, signal?: AbortSignal): Promise<HandOffTicket>;
   sendFeedback(request: FeedbackRequest, signal?: AbortSignal): Promise<FeedbackResponse>;

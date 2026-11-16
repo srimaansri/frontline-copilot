@@ -1,16 +1,26 @@
 /**
- * What the gallery's specimens are made of. Everything comes from the demo's
- * recordings of the live copilot, so the gallery and the demo never drift apart.
+ * What the gallery's specimens are made of. Answers, calls and summaries come
+ * from the demo's recordings of the live copilot, so the gallery and the demo
+ * never drift apart. The few specimens written here by hand say so.
  */
 
-import { mockAnswer, mockCalls, mockMeta, mockSummaries, mockTranscripts } from "@/api/mock";
+import {
+  mockAnswer,
+  mockCalls,
+  mockMeta,
+  mockSummaries,
+  mockTranscripts,
+  mockWrapUps,
+} from "@/api/mock";
 import type {
   CallListItem,
   CallSummary,
   CallTranscript,
+  CallWrapUp,
   Citation,
   HandOffDraft,
   HandOffTicket,
+  SavedWrapUp,
   Sentiment,
   Step,
 } from "@/api/types";
@@ -140,6 +150,47 @@ const SUMMARY: CallSummary = required(mockSummaries.T0001, "summary T0001");
 export function summaryWith(sentiment: Sentiment): CallSummary {
   return { ...SUMMARY, sentiment };
 }
+
+/**
+ * A wrap-up in the shape the API sends, for the call about a late fee. It was
+ * written for the gallery, as the hand-off draft above was, and is used only
+ * until the recording holds the live copilot's own draft of T0001.
+ */
+const WRAP_UP_SPECIMEN: CallWrapUp = {
+  transcript_id: "T0001",
+  disposition: "escalated",
+  category: "billing",
+  notes: [
+    "The customer disputed a late fee and said the bill was paid on time.",
+    "The agent could not remove the fee and sent it to the billing team to review.",
+    "The customer was given a reference number.",
+  ],
+  promises: [
+    "The billing team will review the fee in 3 to 5 business days.",
+    "They will call <PHONE_NUMBER_1> if they need anything.",
+  ],
+  follow_up: { owner: "team", action: "The billing team reviews the late fee." },
+  sentiment: "neutral",
+  related_articles: [],
+};
+
+/** True when the wrap-up specimens show a recording and not the specimen above. */
+export const WRAP_UP_IS_RECORDED = mockWrapUps.T0001 !== undefined;
+
+export const WRAP_UP: CallWrapUp = mockWrapUps.T0001 ?? WRAP_UP_SPECIMEN;
+
+/** The same wrap-up once the agent has saved it. */
+export const SAVED_WRAP_UP: SavedWrapUp = {
+  wrapup_id: "WRP-4F2A91C7",
+  transcript_id: WRAP_UP.transcript_id,
+  disposition: WRAP_UP.disposition,
+  category: WRAP_UP.category,
+  notes: WRAP_UP.notes,
+  promises: WRAP_UP.promises,
+  follow_up: WRAP_UP.follow_up,
+  sentiment: WRAP_UP.sentiment,
+  recorded: true,
+};
 
 /** One call of each kind of ending, for the list rows. */
 export const CALL_ROWS: CallListItem[] = [

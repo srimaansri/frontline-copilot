@@ -1,6 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 
-import type { CallSummary, Sentiment } from "@/api/types";
+import type { CallSummary, Citation, Sentiment } from "@/api/types";
 import {
   ArticlesIcon,
   CallSummaryIcon,
@@ -32,7 +32,8 @@ const MOODS: Record<Sentiment, Mood> = {
   negative: { label: "Negative", tone: "text-warn", icon: MoodNegativeIcon },
 };
 
-function Field({ term, children }: { term: string; children: ReactNode }) {
+/** One labelled part of a summary or of a saved wrap-up. Goes inside a `<dl>`. */
+export function Field({ term, children }: { term: string; children: ReactNode }) {
   return (
     <div>
       <dt className="mb-1 cue">{term}</dt>
@@ -41,9 +42,43 @@ function Field({ term, children }: { term: string; children: ReactNode }) {
   );
 }
 
-function SummaryCard({ summary }: { summary: CallSummary }) {
-  const mood = MOODS[summary.sentiment];
+/** The customer's mood at the end of a call: a face, its word, and the colour that repeats it. */
+export function MoodLabel({ sentiment }: { sentiment: Sentiment }) {
+  const mood = MOODS[sentiment];
   const MoodIcon = mood.icon;
+  return (
+    <span className={cn("inline-flex items-center gap-2 font-bold", mood.tone)}>
+      <MoodIcon size={24} />
+      {mood.label}
+    </span>
+  );
+}
+
+/** Help articles about what the call was about, each opening in a new tab. */
+export function RelatedArticles({ articles }: { articles: Citation[] }) {
+  return (
+    <ul>
+      {articles.map((article) => (
+        <li key={article.number} className="border-t border-line first:border-t-0">
+          <a
+            href={article.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="link grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 py-2"
+          >
+            <ArticlesIcon />
+            <span>
+              {article.title}
+              <span className="sr-only"> (opens in a new tab)</span>
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function SummaryCard({ summary }: { summary: CallSummary }) {
   return (
     <Sim className="animate-rise" bodyClassName="px-5 pt-5 pb-6 sm:px-6">
       <Byline />
@@ -54,10 +89,7 @@ function SummaryCard({ summary }: { summary: CallSummary }) {
           </span>
         </Field>
         <Field term="Mood">
-          <span className={cn("inline-flex items-center gap-2 font-bold", mood.tone)}>
-            <MoodIcon size={24} />
-            {mood.label}
-          </span>
+          <MoodLabel sentiment={summary.sentiment} />
         </Field>
         <Field term="What happened">
           <ol className="grid gap-2">
@@ -78,24 +110,7 @@ function SummaryCard({ summary }: { summary: CallSummary }) {
         </Field>
         {summary.related_articles.length > 0 && (
           <Field term="Related articles">
-            <ul>
-              {summary.related_articles.map((article) => (
-                <li key={article.number} className="border-t border-line first:border-t-0">
-                  <a
-                    href={article.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="link grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 py-2"
-                  >
-                    <ArticlesIcon />
-                    <span>
-                      {article.title}
-                      <span className="sr-only"> (opens in a new tab)</span>
-                    </span>
-                  </a>
-                </li>
-              ))}
-            </ul>
+            <RelatedArticles articles={summary.related_articles} />
           </Field>
         )}
       </dl>

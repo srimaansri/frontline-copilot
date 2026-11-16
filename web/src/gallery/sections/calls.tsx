@@ -10,6 +10,9 @@ import {
 import { CallHeader, NothingSelected } from "@/features/calls/CallsView";
 import { SummaryPanel } from "@/features/calls/SummaryPanel";
 import { TranscriptPanel } from "@/features/calls/TranscriptPanel";
+import type { WrapUpState } from "@/features/calls/useWrapUps";
+import { formFrom } from "@/features/calls/wrapUpForm";
+import { WrapUpPanel } from "@/features/calls/WrapUpPanel";
 
 import {
   CALL_COUNTS,
@@ -17,8 +20,11 @@ import {
   ERROR_MESSAGE,
   FIRST_CALL,
   noop,
+  SAVED_WRAP_UP,
   summaryWith,
   TRANSCRIPT,
+  WRAP_UP,
+  WRAP_UP_IS_RECORDED,
 } from "../fixtures";
 import { Force, GallerySection, Row } from "../kit";
 
@@ -224,6 +230,119 @@ export function SummarySection() {
           summary={{ status: "error", message: ERROR_MESSAGE }}
           onSummarize={noop}
         />
+      </Row>
+    </GallerySection>
+  );
+}
+
+const WRAP_UP_FORM = formFrom(WRAP_UP);
+
+/** A draft the agent is working on, with whatever the specimen changes. */
+function draftState(changes: Partial<Extract<WrapUpState, { status: "draft" }>> = {}): WrapUpState {
+  return {
+    status: "draft",
+    draft: WRAP_UP,
+    start: WRAP_UP_FORM,
+    startedFrom: "copilot",
+    form: WRAP_UP_FORM,
+    saving: false,
+    problem: null,
+    ...changes,
+  };
+}
+
+function WrapUpSpecimen({ state }: { state: WrapUpState | undefined }) {
+  return (
+    <WrapUpPanel state={state} onDraft={noop} onChange={noop} onSave={noop} onReopen={noop} />
+  );
+}
+
+export function WrapUpSection() {
+  const source = WRAP_UP_IS_RECORDED
+    ? "The draft is the live copilot's, from the recording."
+    : "The draft shown was written for the gallery: the recording has no wrap-up yet.";
+  return (
+    <GallerySection
+      id="wrap-up"
+      title="Wrap-up"
+      note={`After-call work: the copilot drafts the record, the agent checks and saves it. The form keeps soft-square corners, because it is the agent's to act on. Each part says whose words are in it. ${source}`}
+    >
+      <Row label="before it is asked for" on="sunken" className="max-w-100">
+        <WrapUpSpecimen state={undefined} />
+      </Row>
+      <Row label="button: hover" on="sunken" className="max-w-100">
+        <Force state="hover" target="button">
+          <WrapUpSpecimen state={undefined} />
+        </Force>
+      </Row>
+      <Row label="drafting" on="sunken" className="max-w-100">
+        <WrapUpSpecimen state={{ status: "loading" }} />
+      </Row>
+      <Row label="the copilot's draft, not saved" on="sunken" className="max-w-100">
+        <WrapUpSpecimen state={draftState()} />
+      </Row>
+      <Row label="notes focused" on="sunken" className="max-w-100">
+        <Force state="focus" target=".field" nth={2}>
+          <WrapUpSpecimen state={draftState()} />
+        </Force>
+      </Row>
+      <Row label="changed by the agent" on="sunken" className="max-w-100">
+        <WrapUpSpecimen
+          state={draftState({
+            form: {
+              ...WRAP_UP_FORM,
+              disposition: "unresolved",
+              notes: `${WRAP_UP_FORM.notes}\nThe customer asked for a call back after 5 pm.`,
+              owner: "agent",
+              action: "Call the customer back after 5 pm.",
+            },
+          })}
+        />
+      </Row>
+      <Row label="nothing left to do, nothing promised" on="sunken" className="max-w-100">
+        <WrapUpSpecimen
+          state={draftState({
+            form: { ...WRAP_UP_FORM, disposition: "resolved", promises: "", owner: "none", action: "" },
+          })}
+        />
+      </Row>
+      <Row label="cannot be saved yet" on="sunken" className="max-w-100">
+        <WrapUpSpecimen state={draftState({ form: { ...WRAP_UP_FORM, notes: "" } })} />
+      </Row>
+      <Row label="saving" on="sunken" className="max-w-100">
+        <WrapUpSpecimen state={draftState({ saving: true })} />
+      </Row>
+      <Row label="the save failed" on="sunken" className="max-w-100">
+        <WrapUpSpecimen
+          state={draftState({
+            problem:
+              "The wrap-up could not be saved. Your changes are still here. Please try again.",
+          })}
+        />
+      </Row>
+      <Row label="saved" on="sunken" className="max-w-100">
+        <WrapUpSpecimen state={{ status: "saved", draft: WRAP_UP, saved: SAVED_WRAP_UP }} />
+      </Row>
+      <Row label="saved, nothing left to do" on="sunken" className="max-w-100">
+        <WrapUpSpecimen
+          state={{
+            status: "saved",
+            draft: WRAP_UP,
+            saved: {
+              ...SAVED_WRAP_UP,
+              disposition: "resolved",
+              promises: [],
+              follow_up: null,
+              sentiment: "positive",
+            },
+          }}
+        />
+      </Row>
+      <Row label="changing a saved wrap-up" on="sunken" className="max-w-100">
+        <WrapUpSpecimen state={draftState({ startedFrom: "saved" })} />
+      </Row>
+      <Row label="the draft could not be made" on="sunken" className="max-w-100">
+        <WrapUpSpecimen state={{ status: "error", message: ERROR_MESSAGE }} />
       </Row>
     </GallerySection>
   );
