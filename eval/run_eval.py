@@ -25,6 +25,7 @@ from importlib.metadata import version
 from pathlib import Path
 from typing import Any
 
+from eval.fingerprint import behaviour_fingerprint
 from eval.redaction_eval import _git, _sha256
 from eval.report import as_pass
 from eval.report import write as write_reports
@@ -309,6 +310,9 @@ def main(argv: list[str] | None = None) -> None:
         "rows_without_answer": unanswered,
         "rows_reviewed": sum(1 for row in rows if row.get("reviewed")),
         "eval_set_sha256": _sha256(EVAL_SET),
+        # What decided the copilot's behaviour in this run: the agent's code, its
+        # settings and the evaluation set. The CI gate compares it with the repository.
+        "behaviour": behaviour_fingerprint(),
         "mlflow_run_id": run.info.run_id,
         "versions": {name: version(name) for name in ("mlflow", "ragas", "databricks-sdk")},
         "metrics": metrics,
