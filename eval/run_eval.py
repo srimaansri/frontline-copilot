@@ -275,6 +275,8 @@ def main(argv: list[str] | None = None) -> None:
         "top_k": settings.top_k,
         "prompt_version": PROMPT_VERSION,
         "llm_endpoint": settings.llm_endpoint,
+        "router": settings.router,
+        "router_endpoint": settings.router_endpoint if settings.router == "model" else None,
         "judge_endpoint": None if args.no_judges else settings.judge_endpoint,
         "embedding_endpoint": settings.embedding_endpoint,
         "category": args.category or "all",

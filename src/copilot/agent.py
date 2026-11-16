@@ -38,13 +38,16 @@ from mlflow.entities import SpanType
 from copilot.config import Settings, get_settings
 from copilot.guardrails import (
     CANNOT_DO,
+    FLAG_ACCOUNT_ACTION,
+    FLAG_INJECTION,
     FLAG_NO_CITATION,
+    FLAG_ROUTER_FALLBACK,
     REFUSAL_ANSWER,
     check_input,
     check_output,
     redact_conversation,
 )
-from copilot.llm import ChatModel, build_chat_model, message_text
+from copilot.llm import ChatModel, build_chat_model, build_router_model, message_text
 from copilot.prompts import (
     AGENT_SYSTEM_PROMPT,
     FINAL_ANSWER_NOTE,
@@ -53,6 +56,7 @@ from copilot.prompts import (
 )
 from copilot.redaction import Redactor, get_redactor
 from copilot.retriever import Retriever
+from copilot.router import ROUTER_PROMPT_VERSION, route_with_model
 from copilot.schemas import Citation, CopilotAnswer, KBHit, Urgency
 from copilot.tools import ESCALATION_TEAMS, ToolError, Tools
 
@@ -226,6 +230,7 @@ class Copilot:
         chat_model: ChatModel | None = None,
         redactor: Redactor | None = None,
         tools: Tools | None = None,
+        router_model: ChatModel | None = None,
     ) -> None:
         """Build a copilot. Parts that are not passed in are created on first use."""
         self.settings = settings or get_settings()
@@ -233,6 +238,7 @@ class Copilot:
         self._chat_model = chat_model
         self._redactor = redactor
         self._tools = tools
+        self._router_model = router_model
         self._graph: Any = None
 
     # --- parts, built on first use ---------------------------------------------------------
@@ -241,6 +247,11 @@ class Copilot:
         if self._redactor is None:
             self._redactor = get_redactor(product_names=tuple(self.settings.product_names))
         return self._redactor
+
+    def _get_router_model(self) -> ChatModel:
+        if self._router_model is None:
+            self._router_model = build_router_model(self.settings)
+        return self._router_model
 
     def _get_model(self) -> ChatModel:
         if self._chat_model is None:
@@ -329,6 +340,11 @@ class Copilot:
                     "chunk_config": settings.chunk_config,
                     "query_type": settings.query_type,
                     "llm_endpoint": settings.llm_endpoint,
+                    "router": settings.router,
+                    "router_endpoint": settings.router_endpoint
+                    if settings.router == "model"
+                    else "none",
+                    "router_prompt_version": ROUTER_PROMPT_VERSION,
                 }
             )
             final: CopilotState = self._graph.invoke(
@@ -380,12 +396,60 @@ class Copilot:
         return graph.compile()
 
     def _input_guard(self, state: CopilotState) -> dict[str, Any]:
-        check = check_input(state["question"])
-        return {
-            "route": check.route,
-            "category": check.category,
-            "flags": [*state["flags"], *check.flags],
-        }
+        """Decide where the request goes: a hand-off, a refusal, or the model that answers.
+
+        The rules always run first. A clear account request they recognise is
+        handed off at once, with no model call. With ``router = "model"``,
+        everything else is given to a small model that reads the routing policy:
+        on the held-out routing set the rules alone missed most hand-off
+        requests and override attempts that were phrased in ways nobody had
+        written a rule for. The rules' own refusals are not used in that mode,
+        because they refused questions that only quoted an override attempt.
+        If the router cannot be reached or read, the rules decide.
+        """
+        question = state["question"]
+        check = check_input(question)
+        if self.settings.router == "rules" or check.route == "escalate":
+            return {
+                "route": check.route,
+                "category": check.category,
+                "flags": [*state["flags"], *check.flags],
+            }
+        with mlflow.start_span(name="route_request", span_type=SpanType.CHAT_MODEL) as span:
+            span.set_inputs({"question": question, "endpoint": self.settings.router_endpoint})
+            try:
+                decision = route_with_model(question, self._get_router_model())
+            except Exception as error:
+                # Only the kind of error is logged, because its message can quote the question.
+                logger.warning("The router failed (%s); the rules decided", type(error).__name__)
+                decision = None
+            readable = decision is not None and decision.parsed
+            span.set_outputs(
+                {
+                    "route": decision.route if decision else None,
+                    "category": decision.category if decision else None,
+                    "used": readable,
+                }
+            )
+        if decision is None or not decision.parsed:
+            return {
+                "route": check.route,
+                "category": check.category,
+                "flags": [*state["flags"], *check.flags, FLAG_ROUTER_FALLBACK],
+            }
+        if decision.route == "hand_off":
+            return {
+                "route": "escalate",
+                "category": decision.category or "other",
+                "flags": [*state["flags"], FLAG_ACCOUNT_ACTION],
+            }
+        if decision.route == "refuse":
+            return {
+                "route": "refuse",
+                "category": "other",
+                "flags": [*state["flags"], FLAG_INJECTION],
+            }
+        return {"route": "agent", "category": "other", "flags": list(state["flags"])}
 
     def _escalate(self, state: CopilotState) -> dict[str, Any]:
         """Open a hand-off without asking the model. The request itself is the reason."""

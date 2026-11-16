@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 
 from copilot.config import Settings
-from copilot.llm import build_chat_model, message_text
+from copilot.llm import build_chat_model, build_router_model, message_text
 from copilot.prompts import build_user_message, format_context
 from copilot.retriever import RETURN_COLUMNS, Retriever, hit_to_document, sdk_index_query
 from copilot.schemas import KBHit
@@ -187,6 +187,44 @@ def test_message_text_keeps_the_answer_and_drops_reasoning(content: Any, expecte
 
 def test_message_text_accepts_a_bare_string() -> None:
     assert message_text("Just text") == "Just text"
+
+
+def test_message_text_reads_blocks_that_arrive_as_one_string() -> None:
+    """A reasoning-only preview model is returned as a string holding a JSON list of blocks."""
+    serialized = (
+        '[{"type": "reasoning", "summary": [{"type": "summary_text", "text": "Thinking."}]}, '
+        '{"type": "text", "text": "The fee is $5."}]'
+    )
+
+    assert message_text(types.SimpleNamespace(content=serialized)) == "The fee is $5."
+    # An answer that only looks a little like one is left alone.
+    assert message_text("[1] is the source.") == "[1] is the source."
+    assert message_text('[{"type": broken') == '[{"type": broken'
+
+
+def test_the_router_model_gets_a_short_timeout_and_one_retry(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    created: dict[str, Any] = {}
+
+    class FakeChatDatabricks:
+        def __init__(self, **kwargs: Any) -> None:
+            created.update(kwargs)
+
+    fake_module = types.ModuleType("databricks_langchain")
+    fake_module.ChatDatabricks = FakeChatDatabricks  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "databricks_langchain", fake_module)
+
+    build_router_model(_settings(router_endpoint="small-model", router_timeout_seconds=5))
+
+    assert created == {
+        "endpoint": "small-model",
+        "temperature": 0.0,
+        "max_tokens": 600,
+        # Routing must not hold an answer up: the rules decide if this model is slow.
+        "timeout": 5.0,
+        "max_retries": 1,
+    }
 
 
 def test_chat_model_is_built_from_settings(monkeypatch: pytest.MonkeyPatch) -> None:

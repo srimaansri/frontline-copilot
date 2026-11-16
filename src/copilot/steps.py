@@ -124,7 +124,7 @@ def describe_steps(answer: CopilotAnswer) -> list[Step]:
                 stage="input_check",
                 title="Override attempt blocked",
                 detail="The request tried to change the copilot's instructions. "
-                "No model was called.",
+                "It was not passed to the model that answers.",
                 status="blocked",
             )
         )
@@ -147,6 +147,16 @@ def describe_steps(answer: CopilotAnswer) -> list[Step]:
             )
         )
 
+    if "router_unavailable" in names:
+        steps.append(
+            Step(
+                stage="input_check",
+                title="Checked by the rules only",
+                detail="The model that routes requests did not answer in time, so the plain "
+                "rules decided.",
+                status="notice",
+            )
+        )
     if "history_turn_dropped" in names:
         steps.append(
             Step(

@@ -77,6 +77,9 @@ def app_resources(client: WorkspaceClient, settings: Settings) -> list[apps.AppR
         ),
         endpoint("chat-model", settings.llm_endpoint),
         endpoint("embedding-model", settings.embedding_endpoint),
+        # The small model that routes a request. Without it the copilot still
+        # answers: the router fails and the plain rules decide.
+        endpoint("router-model", settings.router_endpoint),
         apps.AppResource(
             name="mlflow-experiment",
             experiment=apps.AppResourceExperiment(

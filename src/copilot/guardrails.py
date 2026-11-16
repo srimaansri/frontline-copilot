@@ -27,6 +27,8 @@ FLAG_ACCOUNT_ACTION = "account_action_requested"
 FLAG_INJECTION = "injection_suspected"
 FLAG_SIMPLIFIED = "answer_simplified"
 FLAG_PII_IN_ANSWER = "pii_removed_from_answer"
+# The model router could not be reached or read, so the rules decided.
+FLAG_ROUTER_FALLBACK = "router_unavailable"
 # A figure in the answer that is in none of the text the copilot was given.
 FLAG_UNSUPPORTED_CLAIM = "unsupported_claim"
 # A plainer rewrite was thrown away because it changed, dropped or added a figure.

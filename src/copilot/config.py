@@ -120,6 +120,15 @@ class Settings(BaseSettings):
     # Behaviour
     reading_grade_target: float = Field(default=8.0, gt=0.0)
     max_tool_iterations: int = Field(default=4, ge=1)
+    # How a request is routed before the main model sees it. "rules" uses the plain
+    # rules alone, at no cost. "model" keeps the rules for a clear account request,
+    # gives everything else to a small model that reads the routing policy, and
+    # falls back to the rules if that model cannot be reached or read. The default
+    # is the one that scored best on the held-out routing set (eval/routing_eval.py).
+    router: Literal["rules", "model"] = "model"
+    router_endpoint: str = "databricks-llama-4-maverick"
+    # A router that has not answered by now is given up on, and the rules decide.
+    router_timeout_seconds: float = Field(default=8.0, gt=0.0)
     # False makes a hand-off a dry run: the ticket and the script are produced, and
     # nothing is written to the escalations table. Evaluation runs use it.
     record_escalations: bool = True

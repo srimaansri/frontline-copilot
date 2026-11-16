@@ -306,7 +306,10 @@ def main(argv: list[str] | None = None) -> None:
         name = "rules"
         predictions = _predict_with_rules(chosen)
     elif args.router == "agent":
-        name = "agent"
+        # The copilot routes with whatever its settings say, so the result is named for it.
+        from copilot.config import load_settings
+
+        name = "agent" if load_settings().router == "rules" else "agent-model-router"
         predictions = _predict_with_agent(chosen)
     else:
         name = args.endpoint.removeprefix("databricks-")

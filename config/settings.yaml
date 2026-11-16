@@ -15,6 +15,15 @@ llm_max_tokens: 700
 llm_timeout_seconds: 60
 llm_max_retries: 2
 
+# How a request is routed before the main model sees it: "rules", or "model"
+# (the rules for a clear account request, a small model for everything else,
+# the rules again if that model fails). The endpoint is the one that scored best
+# on the held-out routing set: 133 of 133 clear messages, median 0.8 s a call
+# (eval/results/routing_2026-11-16_llama-4-maverick.json).
+router: model
+router_endpoint: databricks-llama-4-maverick
+router_timeout_seconds: 8
+
 # Retrieval. `chunk_config` and `query_type` start at the experiment baseline
 # (PLAN.md §9.4) and are updated once real eval runs pick a winner.
 vs_endpoint: frontline-vs
