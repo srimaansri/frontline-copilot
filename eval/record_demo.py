@@ -60,7 +60,7 @@ WARM_UP_QUESTIONS: tuple[str, ...] = (
     "How do I set up voicemail?",
     "How much is the Plus 10 plan?",
 )
-# Calls whose transcript and summary are recorded for the Calls view.
+# Calls whose transcript, summary and wrap-up draft are recorded for the Calls view.
 CALL_IDS: tuple[str, ...] = ("T0001", "T0002", "T0007", "T0020")
 # One call of each ending is added to these from the list, so each kind can be opened.
 RESOLUTIONS: tuple[str, ...] = ("resolved", "escalated", "unresolved")
@@ -159,11 +159,20 @@ def record(
         wanted = wanted[:1]
     transcripts: dict[str, Any] = {}
     summaries: dict[str, Any] = {}
+    wrapups: dict[str, Any] = {}
     for call_id in wanted:
         transcripts[call_id] = _checked(client.get(f"/api/calls/{call_id}"), f"call {call_id}")
         summaries[call_id] = _checked(
             client.post(f"/api/calls/{call_id}/summary"), f"summary of {call_id}"
         )
+        # The wrap-up the copilot drafts for the call. Drafting stores nothing. A call
+        # whose draft fails is left without one, and the demo says it has none: one
+        # unusable reply must not lose a recording that is otherwise complete.
+        drafted = client.post(f"/api/calls/{call_id}/wrapup")
+        if drafted.status_code == 200:
+            wrapups[call_id] = drafted.json()
+        else:
+            print(f"  no wrap-up for {call_id} (HTTP {drafted.status_code})", flush=True)
         print(f"  call {call_id}", flush=True)
     return {
         "meta": meta,
@@ -171,6 +180,7 @@ def record(
         "calls": calls,
         "transcripts": transcripts,
         "summaries": summaries,
+        "wrapups": wrapups,
     }
 
 
@@ -197,7 +207,9 @@ def main(argv: list[str] | None = None) -> None:
     load_dotenv()
     # A recording must not leave tickets for people who do not exist, and its traces
     # would be of no use to a visitor.
-    settings = load_settings().model_copy(update={"record_escalations": False})
+    settings = load_settings().model_copy(
+        update={"record_escalations": False, "record_wrapups": False}
+    )
     mlflow.tracing.disable()
     client = TestClient(create_app(Copilot(settings), tracing=False, static_dir=None))
 

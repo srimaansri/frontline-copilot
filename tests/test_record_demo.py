@@ -25,10 +25,17 @@ class FakeResponse:
 class FakeClient:
     """Answers the five endpoints the recorder calls, and notes what was asked."""
 
-    def __init__(self, fail_on: str | None = None, error_on: str | None = None) -> None:
+    def __init__(
+        self,
+        fail_on: str | None = None,
+        error_on: str | None = None,
+        no_wrap_up_for: str | None = None,
+    ) -> None:
         self.asked: list[str] = []
+        self.posted: list[str] = []
         self.fail_on = fail_on
         self.error_on = error_on
+        self.no_wrap_up_for = no_wrap_up_for
 
     def get(self, url: str) -> FakeResponse:
         if url == "/api/meta":
@@ -53,7 +60,13 @@ class FakeClient:
             if json["question"] == self.error_on:
                 return FakeResponse(None, text=sse(("stage", {**stage, "at": 0.0}), ("error", {})))
             return FakeResponse(None, text=sse(("stage", {**stage, "at": 0.0}), ("answer", answer)))
-        return FakeResponse({"transcript_id": url.split("/")[3], "intent": "x"})
+        self.posted.append(url)
+        call_id = url.split("/")[3]
+        if url.endswith("/wrapup"):
+            if call_id == self.no_wrap_up_for:
+                return FakeResponse({"detail": "The model's wrap-up could not be read"}, 400)
+            return FakeResponse({"transcript_id": call_id, "disposition": "resolved"})
+        return FakeResponse({"transcript_id": call_id, "intent": "x"})
 
 
 def test_questions_are_compared_by_letters_and_digits_only() -> None:
@@ -92,6 +105,23 @@ def test_a_recording_holds_what_the_application_returned() -> None:
     assert list(recording["transcripts"]) == ["T0001", "T0002", "T0003"]
     assert list(recording["summaries"]) == ["T0001", "T0002", "T0003"]
     assert set(CALL_IDS) >= {"T0001", "T0002"}
+    # Each recorded call also has the wrap-up the copilot drafted for it.
+    assert recording["wrapups"]["T0003"] == {"transcript_id": "T0003", "disposition": "resolved"}
+    assert list(recording["wrapups"]) == ["T0001", "T0002", "T0003"]
+    # A draft is asked for and nothing else: the recorder never saves a wrap-up.
+    assert not [url for url in client.posted if url.endswith("/save")]
+
+
+def test_a_wrap_up_that_cannot_be_drafted_is_left_out_and_the_recording_goes_on(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    client = FakeClient(no_wrap_up_for="T0002")
+
+    recording = record(client, [])
+
+    assert list(recording["wrapups"]) == ["T0001", "T0003"]
+    assert list(recording["summaries"]) == ["T0001", "T0002", "T0003"]
+    assert "no wrap-up for T0002 (HTTP 400)" in capsys.readouterr().out
 
 
 def test_a_trial_run_records_a_few_questions_and_one_call() -> None:
