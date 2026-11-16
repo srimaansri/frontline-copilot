@@ -217,6 +217,13 @@ def test_the_gate_reads_the_newest_run_over_the_whole_set(tmp_path: Path) -> Non
     write_run(tmp_path, "b.json", saved_run(run_at="2026-11-16T00:00:00Z", tag="new"))
     write_run(tmp_path, "c.json", saved_run(run_at="2026-11-17T00:00:00Z", tag="kb", category="kb"))
 
+    # A run of another set, or of a sample of this one, is not what the gate rests on.
+    write_run(
+        tmp_path,
+        "f.json",
+        saved_run(run_at="2026-11-20T00:00:00Z", tag="extended", eval_set="eval/other.jsonl"),
+    )
+    write_run(tmp_path, "g.json", saved_run(run_at="2026-11-21T00:00:00Z", sample=40))
     # A comparison between models, scored by some judges or by none, is not a full run.
     write_run(
         tmp_path,
