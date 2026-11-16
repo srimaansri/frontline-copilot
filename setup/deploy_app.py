@@ -92,6 +92,10 @@ def app_resources(client: WorkspaceClient, settings: Settings) -> list[apps.AppR
         table("silver", "transcripts_redacted", "SELECT"),
         table("gold", "kb_chunks_index", "SELECT"),
         table("ops", "escalations", "MODIFY"),
+        # The app only ever inserts a wrap-up. A table resource is either SELECT or
+        # MODIFY, so MODIFY is the least that allows an insert. As an app resource it
+        # also lets the app read the table, which holds redacted text only.
+        table("ops", "call_wrapups", "MODIFY"),
     ]
 
 
