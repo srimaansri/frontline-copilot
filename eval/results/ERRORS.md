@@ -173,3 +173,20 @@ Every row that failed a check, in every saved run. "Kind" is what the failed che
 | E043 | Call summaries | citation_valid | citation |  |
 | E031 | Call summaries | citation_valid, reading_level_ok | citation; reading level |  |
 | E038 | Trick questions | expectations_guidelines | answer, by the judge |  |
+
+## 2026-11-16_m8-full-A-ann.json
+
+10 of 40 rows failed at least one check. Commit `a881459`, prompt v3.
+
+| Row | Questions | Failed check | Kind | Read by hand |
+|---|---|---|---|---|
+| E003 | Help articles | retrieval_groundedness | answer, by the judge |  |
+| E041 | Help articles | reading_level_ok | reading level |  |
+| E013 | Help articles | correctness | answer, by the judge |  |
+| E014 | Help articles | correctness | answer, by the judge |  |
+| E015 | Help articles | correctness | answer, by the judge |  |
+| E021 | Help articles | reading_level_ok | reading level |  |
+| E025 | Plan lookups | correctness, reading_level_ok, tool_choice | answer, by the judge; reading level; tool choice |  |
+| E043 | Call summaries | correctness, reading_level_ok | answer, by the judge; reading level |  |
+| E031 | Call summaries | correctness | answer, by the judge |  |
+| E044 | Call summaries | expectations_guidelines | answer, by the judge |  |
