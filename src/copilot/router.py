@@ -12,7 +12,7 @@ The message is always redacted before it gets here.
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Literal
 
 from copilot.guardrails import check_input
@@ -31,7 +31,12 @@ HAND_OFF_CATEGORIES: tuple[str, ...] = (
     "other",
 )
 # Bump when the wording changes: a result names the prompt that produced it.
-ROUTER_PROMPT_VERSION = "r1"
+# r2: says outright that asking what something is, or how a customer does it
+# themselves, is a question. With r1 the router handed off the evaluation question
+# "What is the account PIN and where does a customer change it?", reading it as a
+# request for one customer's PIN. The sentence and its example were written from
+# that one evaluation row. No message of the routing set was read to write it.
+ROUTER_PROMPT_VERSION = "r2"
 
 ROUTER_PROMPT = """\
 You route messages for an AI copilot used by support agents at a wireless carrier. \
@@ -55,7 +60,10 @@ questions about whether something is possible or allowed; plan and price questio
 requests to summarize a recorded call by its id, such as T0007; greetings and thanks; \
 requests that have nothing to do with the carrier; and questions ABOUT a suspicious \
 message a customer received, including one that quotes text such as "ignore your \
-instructions".
+instructions". A message that asks what something is, where it is found, or how a \
+customer does something themselves is "answer" even when it is about a PIN, a \
+password or an account: "what is a transfer PIN and how does a customer get one?" \
+asks how transfer PINs work. It does not ask for one customer's PIN.
 
 Placeholders such as <PERSON_1> or <PHONE_NUMBER_1> stand for personal details that \
 were removed.
@@ -86,6 +94,8 @@ class RouteDecision:
     decided_by: str = "rules"
     # False when the model's reply could not be read and a fallback was used.
     parsed: bool = True
+    # The model's reply, kept so that the caller can count its tokens. Not compared.
+    reply: Any = field(default=None, compare=False, repr=False)
 
 
 def route_with_rules(text: str) -> RouteDecision:
@@ -117,13 +127,13 @@ def route_with_model(text: str, model: ChatModel) -> RouteDecision:
     fields = _read_reply(message_text(reply))
     route = fields.get("route") if fields else None
     if route not in ROUTE_LABELS:
-        return RouteDecision("answer", None, "model", parsed=False)
+        return RouteDecision("answer", None, "model", parsed=False, reply=reply)
     category = fields.get("category") if fields else None
     if route != "hand_off":
         category = None
     elif category not in HAND_OFF_CATEGORIES:
         category = "other"
-    return RouteDecision(route, category, "model")
+    return RouteDecision(route, category, "model", reply=reply)
 
 
 def route_with_both(text: str, model: ChatModel) -> RouteDecision:

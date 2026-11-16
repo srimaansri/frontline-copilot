@@ -2,6 +2,7 @@
 
 import types
 from collections import Counter
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -17,6 +18,7 @@ from eval.run_eval import (
     rows_by_eval_id,
     rows_without_answer,
     scores_from_trace,
+    stratified_sample,
     to_records,
 )
 from eval.scorers import (
@@ -38,6 +40,7 @@ from eval.scorers import (
     retrieved_uris,
     root_output,
     source_rank,
+    usage,
     when_expected,
 )
 
@@ -343,11 +346,98 @@ def test_an_answer_the_copilot_flagged_for_a_figure_fails_figures_supported() ->
     assert result.rationale == "unsupported_claim:money"
 
 
+def test_usage_reports_calls_and_reports_tokens_only_when_every_call_was_counted() -> None:
+    counted = fake_trace(
+        answer={
+            "answer": "A.",
+            "usage": {
+                "model_calls": 3,
+                "input_tokens": 2100,
+                "output_tokens": 240,
+                "calls_without_counts": 0,
+            },
+        }
+    )
+    partly = fake_trace(
+        answer={
+            "answer": "A.",
+            "usage": {
+                "model_calls": 2,
+                "input_tokens": 900,
+                "output_tokens": 80,
+                "calls_without_counts": 1,
+            },
+        }
+    )
+
+    assert {item.name: item.value for item in usage(trace=counted)} == {
+        "model_calls": 3.0,
+        "total_tokens": 2340.0,
+        "output_tokens": 240.0,
+    }
+    # A total that leaves a call out would look cheaper than the answer was.
+    assert {item.name: item.value for item in usage(trace=partly)} == {"model_calls": 2.0}
+    assert {item.name: item.value for item in usage(trace=fake_trace(answer={"answer": "A."}))} == {
+        "model_calls": 0.0
+    }
+
+
+def strata_rows() -> list[dict[str, Any]]:
+    return [
+        {"id": f"E{number:03d}", "category": "kb", "stratum": stratum, "inputs": {}}
+        for number, stratum in enumerate(["a"] * 20 + ["b"] * 8 + ["c"] * 2, start=1)
+    ]
+
+
+def test_a_stratified_sample_covers_every_group_and_is_the_same_every_time() -> None:
+    rows = strata_rows()
+
+    sample = stratified_sample(rows, 10)
+
+    counts = {name: sum(row["stratum"] == name for row in sample) for name in "abc"}
+    assert counts == {"a": 7, "b": 3, "c": 1}
+    assert [row["id"] for row in sample] == sorted(row["id"] for row in sample)
+    assert sample == stratified_sample(rows, 10)
+    assert sample != stratified_sample(rows, 10, seed=1)
+    # Asking for more than there is gives everything.
+    assert len(stratified_sample(rows, 500)) == 30
+
+
+def test_the_extended_set_loads_by_stratum_and_carries_conversations() -> None:
+    path = Path("eval/eval_set_extended.jsonl")
+
+    follow_ups = load_eval_set(path, stratum="follow_up")
+
+    assert len(follow_ups) >= 30
+    assert all(row["inputs"]["history"] for row in follow_ups)
+    assert len(load_eval_set(path, sample=40)) < len(load_eval_set(path))
+
+
+def test_a_conversation_is_stored_redacted_with_its_question() -> None:
+    rows = [
+        {
+            "id": "E286",
+            "inputs": {
+                "question": "And how long does that take?",
+                "history": [{"role": "user", "content": "Call me on 480-555-0132."}],
+            },
+            "expectations": {"expected_facts": ["It takes a day."], "expected_source": None},
+        }
+    ]
+    safe = {"E286": [{"role": "user", "content": "Call me on <PHONE_NUMBER_1>."}]}
+
+    (record,) = to_records(rows, None, safe)
+
+    assert record["inputs"]["history"] == safe["E286"]
+    assert "480-555-0132" not in str(record)
+    assert record["expectations"] == {"expected_facts": ["It takes a day."]}
+
+
 def test_judges_use_the_judge_endpoint_and_leave_out_ragas_faithfulness() -> None:
     judges = llm_judges("my-judge")
     names = {judge.name for judge in judges}
 
-    assert len(DETERMINISTIC_SCORERS) == 9
+    assert len(DETERMINISTIC_SCORERS) == 10
     assert {"retrieval_groundedness", "correctness", "relevance_to_query", "safety"} <= names
     assert "expectations_guidelines" in names
     assert {"retrieval_relevance", "retrieval_sufficiency"} <= names

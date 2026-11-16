@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api, errorMessage, isAbortError } from "@/api/client";
-import type { AskResponse, ChatTurn } from "@/api/types";
+import type { AskResponse, ChatTurn, StageEvent } from "@/api/types";
 
 /** One question and what came of it. */
 export type Exchange =
-  | { id: string; question: string; status: "pending" }
+  /** `stage` is what the copilot is doing now, once the server has said. */
+  | { id: string; question: string; status: "pending"; stage?: StageEvent }
   | { id: string; question: string; status: "error"; message: string }
   | { id: string; question: string; status: "done"; response: AskResponse };
 
@@ -64,7 +65,14 @@ export function useConversation(firstQuestion: string | null = null): Conversati
     const settle = (settled: Exchange) => {
       setExchanges((list) => list.map((exchange) => (exchange.id === id ? settled : exchange)));
     };
-    api.ask({ question, history: toHistory(earlier) }, current.signal).then(
+    const onStage = (stage: StageEvent) => {
+      setExchanges((list) =>
+        list.map((exchange) =>
+          exchange.id === id && exchange.status === "pending" ? { ...exchange, stage } : exchange,
+        ),
+      );
+    };
+    api.ask({ question, history: toHistory(earlier) }, current.signal, onStage).then(
       (response) => {
         settle({ id, question, status: "done", response });
       },

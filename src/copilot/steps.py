@@ -186,6 +186,10 @@ def describe_steps(answer: CopilotAnswer) -> list[Step]:
         if tool == "escalate_to_human":
             found_reference = TICKET_REFERENCE_RE.search(answer.answer)
             reference = found_reference.group(0) if found_reference else None
+            if answer.handoff_draft is not None and tool not in failed_tools:
+                title = "Drafted a hand-off"
+                detail = "Nothing is written until you approve it."
+                status = "notice"
         steps.append(
             Step(
                 stage="tool",

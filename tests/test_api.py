@@ -11,7 +11,13 @@ from fastapi.testclient import TestClient
 import api.main as api_module
 from api.main import Runtime, create_app, start_tracing
 from copilot.config import Settings
-from copilot.schemas import CallSummary, Citation, CopilotAnswer
+from copilot.schemas import (
+    CallSummary,
+    Citation,
+    CopilotAnswer,
+    EscalationTicket,
+    HandOffDraft,
+)
 from copilot.tools import ToolError
 
 PHONE = "480-555-0132"
@@ -32,6 +38,7 @@ class FakeRedactor:
 class FakeTools:
     def __init__(self) -> None:
         self.statements: list[str] = []
+        self.tickets: list[tuple[str, str, str]] = []
 
     def sql(self, statement: str, parameters: Any) -> list[dict[str, Any]]:
         self.statements.append(statement)
@@ -40,6 +47,21 @@ class FakeTools:
         if parameters["transcript_id"][1] == "T0001":
             return [{"turns_json": json.dumps(TURNS)}]
         return []
+
+    def escalate_to_human(
+        self, reason: str, category: str = "other", urgency: str = "normal"
+    ) -> EscalationTicket:
+        self.tickets.append((reason, category, urgency))
+        if urgency not in {"low", "normal", "high"}:
+            raise ToolError("urgency must be low, normal or high")
+        return EscalationTicket(
+            ticket_id="ESC-TEST0001",
+            category=category,
+            urgency=urgency,  # type: ignore[arg-type]
+            reason=reason.replace(PHONE, "<PHONE_NUMBER_1>"),
+            agent_script="I'm passing you to the billing team. Your reference is ESC-TEST0001.",
+            recorded=True,
+        )
 
     def summarize_call(self, transcript_id: str) -> CallSummary:
         if transcript_id == "T12":
@@ -63,8 +85,18 @@ class FakeCopilot:
         self.answer = answer
         self.calls: list[tuple[str, list[dict[str, str]], dict[str, str]]] = []
 
-    def run(self, question: str, history: Any = None, *, trace_tags: Any = None) -> CopilotAnswer:
+    def run(
+        self,
+        question: str,
+        history: Any = None,
+        *,
+        trace_tags: Any = None,
+        on_stage: Any = None,
+    ) -> CopilotAnswer:
         self.calls.append((question, list(history or []), dict(trace_tags or {})))
+        if on_stage is not None:
+            on_stage({"stage": "redaction", "label": "Removing personal details", "tool": None})
+            on_stage({"stage": "tool", "label": "Searching the help articles", "tool": "search_kb"})
         if isinstance(self.answer, Exception):
             raise self.answer
         return self.answer
@@ -114,6 +146,70 @@ def test_meta_describes_what_is_running() -> None:
     assert "synthetic" in meta["disclaimer"]
 
 
+# --- a hand-off the agent approved ----------------------------------------------------------
+
+
+def test_an_answer_carries_the_hand_off_draft_for_the_agent_to_approve() -> None:
+    draft = HandOffDraft(category="billing", reason="Refund the late fee", team="the billing team")
+    drafted = CopilotAnswer(
+        answer="This needs the billing team. I have drafted the hand-off.",
+        tools_used=["escalate_to_human"],
+        escalated=True,
+        guardrail_flags=["account_action_requested"],
+        handoff_draft=draft,
+    )
+    client, copilot = client_for(drafted)
+
+    body = client.post("/api/ask", json={"question": "Refund it.", "history": []}).json()
+
+    assert body["handoff_draft"] == {
+        "category": "billing",
+        "urgency": "normal",
+        "reason": "Refund the late fee",
+        "team": "the billing team",
+    }
+    assert [step["title"] for step in body["steps"] if step["tool"]] == ["Drafted a hand-off"]
+    # Asking wrote nothing.
+    assert copilot.tools.tickets == []
+    plain = client.post("/api/ask", json={"question": "Late fee?", "history": []})
+    assert "handoff_draft" in plain.json()
+
+
+def test_approving_a_hand_off_writes_it_and_returns_the_reference_and_the_script() -> None:
+    client, copilot = client_for()
+
+    response = client.post(
+        "/api/handoffs",
+        json={"reason": f"Refund the late fee. Number {PHONE}.", "category": "billing"},
+    )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["ticket_id"] == "ESC-TEST0001"
+    assert body["recorded"] is True
+    assert "ESC-TEST0001" in body["agent_script"]
+    assert PHONE not in body["reason"]
+    assert copilot.tools.tickets == [(f"Refund the late fee. Number {PHONE}.", "billing", "normal")]
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        {"reason": "", "category": "billing"},
+        {"reason": "x" * 501},
+        {"reason": "Refund it", "urgency": "soon"},
+        {"category": "billing"},
+    ],
+)
+def test_a_hand_off_that_is_not_well_formed_is_refused_and_nothing_is_written(
+    body: dict[str, str],
+) -> None:
+    client, copilot = client_for()
+
+    assert client.post("/api/handoffs", json=body).status_code == 422
+    assert copilot.tools.tickets == []
+
+
 # --- asking ------------------------------------------------------------------------------------
 
 
@@ -140,6 +236,92 @@ def test_ask_returns_the_answer_with_its_steps_and_the_redacted_question() -> No
     assert body["steps"][0]["title"] == "Personal details removed"
     # The copilot gets the question as typed and redacts it itself.
     assert copilot.calls == [(f"Late fee for {PHONE}?", history, {"source": "web"})]
+
+
+def events_in(text: str) -> list[tuple[str, Any]]:
+    """Read a body of server-sent events as (event name, data) pairs."""
+    events = []
+    for block in text.strip().split("\n\n"):
+        lines = dict(line.split(": ", 1) for line in block.splitlines())
+        events.append((lines["event"], json.loads(lines["data"])))
+    return events
+
+
+def test_the_stream_reports_each_stage_and_then_the_same_answer_as_ask() -> None:
+    client, copilot = client_for()
+    request = {"question": f"Late fee for {PHONE}?", "history": []}
+
+    response = client.post("/api/ask/stream", json=request)
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/event-stream")
+    events = events_in(response.text)
+    assert [name for name, _ in events] == ["stage", "stage", "answer"]
+    first = events[0][1]
+    assert (first["stage"], first["label"], first["tool"]) == (
+        "redaction",
+        "Removing personal details",
+        None,
+    )
+    # Each stage says how many seconds into the request it started.
+    assert 0 <= first["at"] <= events[1][1]["at"]
+    assert events[1][1]["tool"] == "search_kb"
+    streamed = events[2][1]
+    plain = client.post("/api/ask", json=request).json()
+    assert {**streamed, "seconds": 0} == {**plain, "seconds": 0}
+    assert streamed["question_as_processed"] == "Late fee for <PHONE_NUMBER_1>?"
+    # Nothing in the stream but the answer itself repeats what was typed.
+    assert PHONE not in json.dumps([data for name, data in events if name == "stage"])
+    assert copilot.calls[0] == (f"Late fee for {PHONE}?", [], {"source": "web"})
+
+
+def test_a_failure_while_streaming_is_one_error_event_with_no_detail_of_the_cause() -> None:
+    client, _ = client_for(RuntimeError(f"model failed on a question about {PHONE}"))
+
+    response = client.post("/api/ask/stream", json={"question": "Late fee?", "history": []})
+
+    assert response.status_code == 200
+    events = events_in(response.text)
+    assert events[-1] == (
+        "error",
+        {"detail": "The copilot could not answer just now. Please try again."},
+    )
+    assert PHONE not in response.text
+
+
+def test_the_stream_reports_the_trace_id_from_the_thread_that_answered(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        api_module.mlflow, "get_last_active_trace_id", lambda thread_local=False: "tr-9"
+    )
+    client, _ = client_for(tracing=True)
+
+    response = client.post("/api/ask/stream", json={"question": "Late fee?", "history": []})
+
+    assert events_in(response.text)[-1][1]["trace_id"] == "tr-9"
+
+
+@pytest.mark.parametrize("path", ["/api/ask", "/api/ask/stream"])
+def test_a_failure_is_logged_by_its_kind_and_place_and_nothing_else(
+    path: str, caplog: pytest.LogCaptureFixture
+) -> None:
+    """An error's message can quote the question. Neither it nor a traceback is logged."""
+    secret = f"model failed on a question from the customer at {PHONE}"
+    client, _ = client_for(RuntimeError(secret))
+
+    with caplog.at_level("DEBUG"):
+        client.post(path, json={"question": f"Late fee for {PHONE}?", "history": []})
+
+    logged = "\n".join(
+        record.getMessage() + (record.exc_text or "") + str(record.exc_info or "")
+        for record in caplog.records
+    )
+    assert "RuntimeError at test_api.py:" in logged
+    assert PHONE not in logged
+    assert "model failed" not in logged
+    assert "Traceback" not in logged
+    assert all(record.exc_info is None for record in caplog.records)
 
 
 def test_ask_reports_the_trace_id_when_tracing_is_on(monkeypatch: pytest.MonkeyPatch) -> None:

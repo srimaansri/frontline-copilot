@@ -44,12 +44,14 @@ def saved_run(**changes: Any) -> dict[str, Any]:
                     "retrieval_relevance": "no",
                     "reading_level_ok": True,
                     "latency_ms": 2000.0,
+                    "model_calls": 3.0,
+                    "total_tokens": 2340.0,
                 },
             },
             {
                 "id": "E030",
                 "category": "escalation",
-                "scores": {"escalation_correct": True, "latency_ms": 100.0},
+                "scores": {"escalation_correct": True, "latency_ms": 100.0, "model_calls": 0.0},
             },
         ],
     }
@@ -127,7 +129,8 @@ def test_reports_are_built_from_the_saved_runs_only(tmp_path: Path) -> None:
     # The answering model and the router are named, so two runs can be told apart.
     assert "| full | gpt-oss-120b | rules | A | ann |" in summary
     assert "redaction_" not in summary
-    assert "| 2026-11-15_full-A-ann.json | All | 2 | 0.1 | 2.0 | 2.0 |" in summary
+    assert "| 2026-11-15_full-A-ann.json | All | 2 | 0.1 | 2.0 | 2.0 | 0 | 2,340 |" in summary
+    assert "| Help articles | 1 | 2.0 | 2.0 | 2.0 | 3 | 2,340 |" in summary
     assert "| 2026-11-15_full-A-ann.json | Requests that need a person | 1 | 0.1 | 0.1 | 0.1 |" in (
         summary
     )
@@ -214,6 +217,13 @@ def test_the_gate_reads_the_newest_run_over_the_whole_set(tmp_path: Path) -> Non
     write_run(tmp_path, "b.json", saved_run(run_at="2026-11-16T00:00:00Z", tag="new"))
     write_run(tmp_path, "c.json", saved_run(run_at="2026-11-17T00:00:00Z", tag="kb", category="kb"))
 
+    # A run of another set, or of a sample of this one, is not what the gate rests on.
+    write_run(
+        tmp_path,
+        "f.json",
+        saved_run(run_at="2026-11-20T00:00:00Z", tag="extended", eval_set="eval/other.jsonl"),
+    )
+    write_run(tmp_path, "g.json", saved_run(run_at="2026-11-21T00:00:00Z", sample=40))
     # A comparison between models, scored by some judges or by none, is not a full run.
     write_run(
         tmp_path,

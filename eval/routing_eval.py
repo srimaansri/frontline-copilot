@@ -285,6 +285,9 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--limit", type=int, default=None, help="score this many, save nothing")
     parser.add_argument("--save", action="store_true", help="write a result file")
     parser.add_argument("--compare", action="store_true", help="score every saved router")
+    parser.add_argument(
+        "--note", default="", help="saved with the result: what a reader must know about it"
+    )
     args = parser.parse_args(argv)
 
     rows = load_set()
@@ -313,6 +316,9 @@ def main(argv: list[str] | None = None) -> None:
         predictions = _predict_with_agent(chosen)
     else:
         name = args.endpoint.removeprefix("databricks-")
+        if ROUTER_PROMPT_VERSION != "r1":
+            # A later prompt is a different router. Its result must not replace the first.
+            name = f"{name}-{ROUTER_PROMPT_VERSION}"
         predictions = _predict_with_model(chosen, args.endpoint)
     predicted = {row_id: value["route"] for row_id, value in predictions.items()}
     scores = score_all(chosen, predicted)
@@ -339,6 +345,7 @@ def main(argv: list[str] | None = None) -> None:
         "git_sha": _git("rev-parse", "HEAD"),
         "set_sha256": _set_sha256(),
         "first_contact": True,
+        "note": args.note,
         "annotators": annotator_agreement(rows, second),
         "replies_not_read": unread,
         **scores,

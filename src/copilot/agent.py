@@ -25,7 +25,8 @@ from __future__ import annotations
 
 import json
 import logging
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
+from contextvars import ContextVar
 from functools import lru_cache
 from typing import Annotated, Any, Literal, TypedDict
 
@@ -45,6 +46,7 @@ from copilot.guardrails import (
     REFUSAL_ANSWER,
     check_input,
     check_output,
+    redact_answer,
     redact_conversation,
 )
 from copilot.llm import ChatModel, build_chat_model, build_router_model, message_text
@@ -57,7 +59,7 @@ from copilot.prompts import (
 from copilot.redaction import Redactor, get_redactor
 from copilot.retriever import Retriever
 from copilot.router import ROUTER_PROMPT_VERSION, route_with_model
-from copilot.schemas import Citation, CopilotAnswer, KBHit, Urgency
+from copilot.schemas import Citation, CopilotAnswer, HandOffDraft, KBHit, Urgency, Usage
 from copilot.tools import ESCALATION_TEAMS, ToolError, Tools
 
 logger = logging.getLogger(__name__)
@@ -77,6 +79,12 @@ EMPTY_ANSWER = (
 )
 NO_ARTICLE_FOUND = "No help article matched this search."
 NO_PLAN_FOUND = "No row in the plan catalogue matched."
+# What the model is told when it asks for a hand-off and the agent has to approve it.
+HAND_OFF_DRAFTED = (
+    "The hand-off is drafted and waits for the agent to approve it. It is not open and "
+    "has no reference yet. Say that you have drafted a hand-off for the agent to check "
+    "and open. Do not say that it is open."
+)
 
 # Tool definitions in the OpenAI function format. The schemas are kept flat on
 # purpose: the serving endpoint accepts no `anyOf` or `pattern`, which is what a
@@ -179,6 +187,49 @@ TOOL_SPECS: list[dict[str, Any]] = [
 
 Route = Literal["agent", "escalate", "refuse"]
 
+# --- progress, as it happens -----------------------------------------------------------------
+
+# What the copilot is doing at one moment: {"stage": ..., "label": ..., "tool": ...}.
+StageEvent = dict[str, Any]
+StageListener = Callable[[StageEvent], None]
+
+# The stages, with the words an interface shows while each one runs.
+STAGE_LABELS: dict[str, str] = {
+    "redaction": "Removing personal details",
+    "input_check": "Checking the request",
+    "model": "Working out what to look up",
+    "answer": "Writing the answer",
+    "simplify": "Rewriting in plainer words",
+    "output_check": "Checking the answer",
+}
+TOOL_LABELS: dict[str, str] = {
+    TOOL_SEARCH_KB: "Searching the help articles",
+    TOOL_PLAN_DETAILS: "Looking up the plan catalogue",
+    TOOL_SUMMARIZE_CALL: "Summarizing the call",
+    TOOL_ESCALATE: "Preparing a hand-off",
+}
+
+# The listener of the run in progress. A context variable, because one copilot serves
+# many requests at once and each has its own listener.
+_LISTENER: ContextVar[StageListener | None] = ContextVar("copilot_stage_listener", default=None)
+
+
+def _emit(stage: str, *, tool: str | None = None) -> None:
+    """Tell the listener, if there is one, what is starting now.
+
+    An event carries a stage name and fixed words. It never carries the question,
+    an answer or anything a tool returned, so a listener cannot leak them.
+    """
+    listener = _LISTENER.get()
+    if listener is None:
+        return
+    label = TOOL_LABELS.get(tool, f"Using {tool}") if tool else STAGE_LABELS[stage]
+    try:
+        listener({"stage": stage, "label": label, "tool": tool})
+    except Exception as error:
+        # Showing progress must never cost an answer.
+        logger.warning("A progress listener failed (%s)", type(error).__name__)
+
 
 class CopilotState(TypedDict):
     """What the graph carries from node to node."""
@@ -198,6 +249,10 @@ class CopilotState(TypedDict):
     cited: list[int]
     # Everything a figure in the answer may come from: the sources and the conversation.
     evidence: list[str]
+    # A hand-off waiting for the agent's approval, if one was drafted.
+    handoff_draft: HandOffDraft | None
+    # Model calls and tokens so far.
+    usage: Usage
 
 
 def format_sources(hits: Sequence[KBHit], first_number: int) -> str:
@@ -207,6 +262,13 @@ def format_sources(hits: Sequence[KBHit], first_number: int) -> str:
         for number, hit in enumerate(hits, start=first_number)
     ]
     return "<context>\n" + "\n\n".join(blocks) + "\n</context>"
+
+
+def _with_replies(usage: Usage, replies: Sequence[Any]) -> Usage:
+    """``usage`` with each of ``replies`` counted as one more model call."""
+    for reply in replies:
+        usage = usage.plus(reply)
+    return usage
 
 
 def _as_number(value: Any) -> float | None:
@@ -286,6 +348,7 @@ class Copilot:
         history: Sequence[Mapping[str, str]] | None = None,
         *,
         trace_tags: Mapping[str, str] | None = None,
+        on_stage: StageListener | None = None,
     ) -> CopilotAnswer:
         """Answer one question.
 
@@ -294,13 +357,22 @@ class Copilot:
             history: Earlier turns as ``{"role": ..., "content": ...}``, oldest first.
             trace_tags: Extra tags for the trace, such as an evaluation row id.
                 The caller must not put personal data in them.
+            on_stage: Called as each stage starts, with what the copilot is now doing.
+                It is called on the thread that runs the answer, so it must return fast.
 
         Returns:
             The answer, its citations, the tools used and any guardrail flags.
         """
-        safe = redact_conversation(question, history or [], self._get_redactor())
-        # Nothing above this line is traced. Only redacted text goes below it.
-        return self._answer(safe.question, list(safe.history), list(safe.flags), trace_tags or {})
+        token = _LISTENER.set(on_stage)
+        try:
+            _emit("redaction")
+            safe = redact_conversation(question, history or [], self._get_redactor())
+            # Nothing above this line is traced. Only redacted text goes below it.
+            return self._answer(
+                safe.question, list(safe.history), list(safe.flags), trace_tags or {}
+            )
+        finally:
+            _LISTENER.reset(token)
 
     def _answer(
         self,
@@ -330,6 +402,8 @@ class Copilot:
             "draft": "",
             "cited": [],
             "evidence": [],
+            "handoff_draft": None,
+            "usage": Usage(),
         }
         with mlflow.start_span(name="run_copilot", span_type=SpanType.AGENT) as root:
             root.set_inputs({"question": question, "history_turns": len(history)})
@@ -366,6 +440,15 @@ class Copilot:
                 guardrail_flags=final["flags"],
                 question_as_processed=question,
                 evidence=final["evidence"],
+                handoff_draft=final["handoff_draft"],
+                usage=final["usage"],
+            )
+            root.set_attributes(
+                {
+                    "copilot.model_calls": answer.usage.model_calls,
+                    "copilot.input_tokens": answer.usage.input_tokens,
+                    "copilot.output_tokens": answer.usage.output_tokens,
+                }
             )
             root.set_outputs(answer.model_dump())
         return answer
@@ -407,6 +490,7 @@ class Copilot:
         because they refused questions that only quoted an override attempt.
         If the router cannot be reached or read, the rules decide.
         """
+        _emit("input_check")
         question = state["question"]
         check = check_input(question)
         if self.settings.router == "rules" or check.route == "escalate":
@@ -431,40 +515,76 @@ class Copilot:
                     "used": readable,
                 }
             )
+        # A router that answered, readably or not, was a model call. One that could not
+        # be reached was not.
+        usage = state["usage"].plus(decision.reply) if decision is not None else state["usage"]
         if decision is None or not decision.parsed:
             return {
                 "route": check.route,
                 "category": check.category,
                 "flags": [*state["flags"], *check.flags, FLAG_ROUTER_FALLBACK],
+                "usage": usage,
             }
         if decision.route == "hand_off":
             return {
                 "route": "escalate",
                 "category": decision.category or "other",
                 "flags": [*state["flags"], FLAG_ACCOUNT_ACTION],
+                "usage": usage,
             }
         if decision.route == "refuse":
             return {
                 "route": "refuse",
                 "category": "other",
                 "flags": [*state["flags"], FLAG_INJECTION],
+                "usage": usage,
             }
-        return {"route": "agent", "category": "other", "flags": list(state["flags"])}
+        return {
+            "route": "agent",
+            "category": "other",
+            "flags": list(state["flags"]),
+            "usage": usage,
+        }
 
     def _escalate(self, state: CopilotState) -> dict[str, Any]:
-        """Open a hand-off without asking the model. The request itself is the reason."""
+        """Hand the request to a person without asking the model. The request is the reason.
+
+        With ``handoff_needs_approval`` the hand-off is drafted and nothing is
+        written: the agent sees the draft, can change it, and opens it. A ticket
+        is someone else's work queue, and a copilot that fills it by itself on a
+        misread request is a nuisance nobody can undo. Without the setting the
+        ticket is written here.
+        """
         category = state["category"]
         # "usage" is a kind of request the guard tells apart; the team that handles it
         # is the one that handles account access.
+        _emit("tool", tool=TOOL_ESCALATE)
         team_category = category if category in ESCALATION_TEAMS else "account_access"
         if category == "other":
             team_category = "other"
+        cannot = CANNOT_DO.get(category, CANNOT_DO["other"])
+        if self.settings.handoff_needs_approval:
+            with mlflow.start_span(name=f"tool_{TOOL_ESCALATE}", span_type=SpanType.TOOL) as span:
+                span.set_inputs({"category": team_category, "urgency": "normal", "written": False})
+                proposal = self._get_tools().draft_hand_off(state["question"], team_category)
+                span.set_outputs(proposal.model_dump())
+            draft = (
+                f"{cannot} This needs a human specialist: {proposal.team} has to handle it.\n\n"
+                "I have drafted the hand-off. Check it below, then open it. "
+                "Nothing has been sent yet."
+            )
+            return {
+                "draft": draft,
+                "escalated": True,
+                "tools_used": [TOOL_ESCALATE],
+                "sources": [draft],
+                "handoff_draft": proposal,
+            }
         with mlflow.start_span(name=f"tool_{TOOL_ESCALATE}", span_type=SpanType.TOOL) as span:
             span.set_inputs({"category": team_category, "urgency": "normal"})
             ticket = self._get_tools().escalate_to_human(state["question"], team_category)
             span.set_outputs(ticket.model_dump())
         team = ESCALATION_TEAMS[ticket.category]
-        cannot = CANNOT_DO.get(category, CANNOT_DO["other"])
         draft = (
             f"{cannot} This needs a human specialist: {team} has to handle it.\n\n"
             f'What to tell the customer: "{ticket.agent_script}"'
@@ -483,6 +603,8 @@ class Copilot:
         """One model turn. On the turn after the last allowed tool round, no tools are offered."""
         iterations = state["iterations"] + 1
         out_of_rounds = iterations > self.settings.max_tool_iterations
+        # The first call decides what to look up. A later one has results to write from.
+        _emit("model" if iterations == 1 else "answer")
         messages = list(state["messages"])
         flags = state["flags"]
         if out_of_rounds:
@@ -492,10 +614,18 @@ class Copilot:
         else:
             model = self._get_model().bind_tools(TOOL_SPECS)
         with mlflow.start_span(name="generate_answer", span_type=SpanType.CHAT_MODEL) as span:
+            sources = [*(hit.text for hit in state["retrieved"]), *state["sources"]]
             span.set_inputs(
                 {
                     "messages": [
-                        {"role": message.type, "content": message_text(message)}
+                        {
+                            "role": message.type,
+                            # An earlier reply of the model's, in this same answer, is
+                            # its own writing and gets the same check as its output.
+                            "content": self._for_trace(message_text(message), sources)
+                            if message.type == "ai"
+                            else message_text(message),
+                        }
                         for message in messages
                     ],
                     "tools_offered": not out_of_rounds,
@@ -504,11 +634,15 @@ class Copilot:
             reply = model.invoke(messages)
             calls = [] if out_of_rounds else list(getattr(reply, "tool_calls", None) or [])
             span.set_outputs(
-                {"content": message_text(reply), "tool_calls": [call["name"] for call in calls]}
+                {
+                    "content": self._for_trace(message_text(reply), sources),
+                    "tool_calls": [call["name"] for call in calls],
+                }
             )
+        usage = state["usage"].plus(reply)
         if not isinstance(reply, AIMessage):
             reply = AIMessage(message_text(reply))
-        return {"messages": [reply], "iterations": iterations, "flags": flags}
+        return {"messages": [reply], "iterations": iterations, "flags": flags, "usage": usage}
 
     def _after_agent(self, state: CopilotState) -> str:
         last = state["messages"][-1]
@@ -523,16 +657,29 @@ class Copilot:
         tools_used = list(state["tools_used"])
         flags = list(state["flags"])
         escalated = state["escalated"]
+        drafts: list[HandOffDraft] = []
         results: list[ToolMessage] = []
         for call in getattr(state["messages"][-1], "tool_calls", None) or []:
             name = str(call["name"])
             arguments = call.get("args") or {}
+            _emit("tool", tool=name)
             with mlflow.start_span(name=f"tool_{name}", span_type=SpanType.TOOL) as span:
+                # The arguments are written by the model, so they are checked like its
+                # answer, once, before anything else sees them. The tool gets the checked
+                # arguments too: its own spans (the search query, for one) record what it
+                # was given, and no tool needs a customer's details to do its work.
+                known = [*(hit.text for hit in retrieved), *sources]
+                arguments = {
+                    key: self._for_trace(value, known) if isinstance(value, str) else value
+                    for key, value in arguments.items()
+                }
                 span.set_inputs(dict(arguments))
                 try:
-                    text, did_escalate = self._call_tool(name, arguments, retrieved)
+                    text, did_escalate = self._call_tool(name, arguments, retrieved, drafts)
                 except ToolError as error:
-                    text, did_escalate = f"Tool error: {error}", False
+                    # The message can quote an argument back, so it is checked as well.
+                    text = self._for_trace(f"Tool error: {error}", known)
+                    did_escalate = False
                     flags.append(f"{FLAG_TOOL_ERROR}:{name}")
                 except Exception as error:
                     # A tool that cannot be reached must not end the answer: the model is
@@ -554,15 +701,22 @@ class Copilot:
             "tools_used": tools_used,
             "flags": flags,
             "escalated": escalated,
+            # The first draft is the one shown: one answer asks the agent for one decision.
+            "handoff_draft": state["handoff_draft"] or (drafts[0] if drafts else None),
         }
 
     def _call_tool(
-        self, name: str, arguments: Mapping[str, Any], retrieved: list[KBHit]
+        self,
+        name: str,
+        arguments: Mapping[str, Any],
+        retrieved: list[KBHit],
+        drafts: list[HandOffDraft],
     ) -> tuple[str, bool]:
-        """Run one tool. Returns its result as text, and whether it opened a hand-off.
+        """Run one tool. Returns its result as text, and whether it handed off to a person.
 
         ``retrieved`` is extended in place with new search hits, so that source
-        numbers stay the same across several searches in one answer.
+        numbers stay the same across several searches in one answer. ``drafts``
+        is given a hand-off that was drafted for the agent to approve.
         """
         tools = self._get_tools()
         if name == TOOL_SEARCH_KB:
@@ -597,15 +751,18 @@ class Copilot:
                 urgency = "low"
             elif requested == "high":
                 urgency = "high"
-            ticket = tools.escalate_to_human(
-                str(arguments.get("reason") or "The agent asked for a hand-off."),
-                str(arguments.get("category") or "other"),
-                urgency,
-            )
+            reason = str(arguments.get("reason") or "The agent asked for a hand-off.")
+            category = str(arguments.get("category") or "other")
+            if self.settings.handoff_needs_approval:
+                proposal = tools.draft_hand_off(reason, category, urgency)
+                drafts.append(proposal)
+                return json.dumps({**proposal.model_dump(), "status": HAND_OFF_DRAFTED}), True
+            ticket = tools.escalate_to_human(reason, category, urgency)
             return json.dumps(ticket.model_dump()), True
         raise ToolError(f"There is no tool called {name[:40]!r}")
 
     def _output_guard(self, state: CopilotState) -> dict[str, Any]:
+        _emit("output_check")
         flags = list(state["flags"])
         from_model = state["route"] == "agent"
         draft = message_text(state["messages"][-1]) if from_model else state["draft"]
@@ -615,6 +772,8 @@ class Copilot:
             from_model = False
         retrieved = state["retrieved"]
         sources = [*(hit.text for hit in retrieved), *state["sources"]]
+        # A rewrite is a model call too. Its reply is kept here so it can be counted.
+        rewrites: list[Any] = []
         # A figure may also come from the conversation: the question, or an earlier turn.
         # The system prompt is left out, so its own numbers do not count as evidence.
         conversation = [
@@ -629,7 +788,7 @@ class Copilot:
             redactor=self._get_redactor(),
             sources=sources,
             target_grade=self.settings.reading_grade_target,
-            simplify=self._simplify if from_model else None,
+            simplify=(lambda text: self._simplify(text, sources, rewrites)) if from_model else None,
             # A fixed reply (a hand-off, a refusal) is not the model's, so it is not checked.
             evidence=evidence if from_model else None,
         )
@@ -646,15 +805,33 @@ class Copilot:
             "cited": list(checked.cited),
             "flags": flags,
             "evidence": evidence,
+            "usage": _with_replies(state["usage"], rewrites),
         }
 
-    def _simplify(self, text: str) -> str:
+    def _simplify(self, text: str, sources: Sequence[str], replies: list[Any]) -> str:
+        _emit("simplify")
         with mlflow.start_span(name="simplify_answer", span_type=SpanType.CHAT_MODEL) as span:
-            span.set_inputs({"answer": text})
+            span.set_inputs({"answer": self._for_trace(text, sources)})
             reply = self._get_model().invoke([SystemMessage(SIMPLIFY_PROMPT), HumanMessage(text)])
+            replies.append(reply)
             rewritten = message_text(reply)
-            span.set_outputs(rewritten)
+            span.set_outputs(self._for_trace(rewritten, sources))
         return rewritten
+
+    def _for_trace(self, text: str, sources: Sequence[str]) -> str:
+        """Text the model wrote, made safe to put on a trace.
+
+        Everything the model is given is redacted, but it can still write out
+        something that is or looks like personal data: a value it pieced
+        together, or one it made up. The output guard removes that from the
+        answer the agent sees. A span is written earlier, while the answer is
+        still a draft, so the same check is applied to whatever of the model's
+        goes on a span: its replies, its tool arguments and its rewrites.
+        What the sources state openly, such as the support number, is kept.
+        """
+        if not text.strip():
+            return text
+        return redact_answer(text, self._get_redactor(), sources).text
 
 
 @lru_cache(maxsize=1)

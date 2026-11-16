@@ -23,6 +23,7 @@ import type {
   CallSummary,
   CallTranscript,
   Meta,
+  StageEvent,
 } from "./types";
 
 /** The file `eval/record_demo.py` writes. */
@@ -32,7 +33,8 @@ interface Recording {
   /** The commit of the code that produced it. */
   git_sha: string;
   meta: Meta;
-  answers: { question: string; response: AskResponse }[];
+  /** `stages` is what the live copilot reported while it worked, with its timing. */
+  answers: { question: string; response: AskResponse; stages?: StageEvent[] }[];
   calls: CallListItem[];
   transcripts: Record<string, CallTranscript>;
   summaries: Record<string, CallSummary>;
@@ -56,6 +58,10 @@ function questionKey(question: string): string {
 
 const ANSWERS = new Map<string, AskResponse>(
   RECORDING.answers.map((item) => [questionKey(item.question), item.response]),
+);
+
+const STAGES = new Map<string, StageEvent[]>(
+  RECORDING.answers.map((item) => [questionKey(item.question), item.stages ?? []]),
 );
 
 /** Recorded questions offered when there is no recording for what was typed, if they exist. */
@@ -194,7 +200,7 @@ export const mockApi: Api = {
     return { status: "ok" };
   },
 
-  async ask(request: AskRequest, signal) {
+  async ask(request: AskRequest, signal, onStage) {
     const question = request.question.trim();
     if (question === ERROR_TRIGGER) {
       await wait(1200, signal);
@@ -204,7 +210,18 @@ export const mockApi: Api = {
       await untilCancelled(signal);
     }
     const answer = mockAnswer(question);
-    await wait(Math.min(answer.seconds, LONGEST_WAIT_SECONDS) * 1000, signal);
+    const total = Math.min(answer.seconds, LONGEST_WAIT_SECONDS);
+    // The stages are replayed in their recorded order and at their recorded times. If
+    // the wait was shortened, the times shrink with it.
+    const pace = answer.seconds > 0 ? total / answer.seconds : 1;
+    let elapsed = 0;
+    for (const stage of STAGES.get(questionKey(question)) ?? []) {
+      const at = Math.min(stage.at * pace, total);
+      await wait((at - elapsed) * 1000, signal);
+      elapsed = at;
+      onStage?.(stage);
+    }
+    await wait((total - elapsed) * 1000, signal);
     return answer;
   },
 
@@ -231,6 +248,16 @@ export const mockApi: Api = {
       throw notRecorded(id);
     }
     return summary;
+  },
+
+  async openHandOff(_request, signal) {
+    await wait(600, signal);
+    // The demo reaches no server, so it cannot write a ticket, and it does not pretend to.
+    throw new ApiError(
+      "The demo does not open tickets. In the live app this writes the ticket and gives " +
+        "you its reference and what to tell the customer.",
+      503,
+    );
   },
 
   async sendFeedback(_request, signal) {

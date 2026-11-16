@@ -44,7 +44,7 @@ export function ExchangeItem({
       />
 
       <div className="mt-5 w-full max-w-3xl self-start">
-        {exchange.status === "pending" && <ProgressHint />}
+        {exchange.status === "pending" && <ProgressHint stage={exchange.stage} />}
         {exchange.status === "error" && (
           <ErrorNotice className="animate-rise" message={exchange.message} onRetry={onRetry} />
         )}

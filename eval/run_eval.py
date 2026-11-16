@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import random
 import statistics
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
@@ -25,12 +26,15 @@ from importlib.metadata import version
 from pathlib import Path
 from typing import Any
 
+from eval.fingerprint import behaviour_fingerprint
 from eval.redaction_eval import _git, _sha256
 from eval.report import as_pass
 from eval.report import write as write_reports
 from eval.stats import percentile, wilson_interval
 
 EVAL_SET = Path("eval/eval_set.jsonl")
+# The seed of a stratified sample, so the same rows are judged every time.
+SAMPLE_SEED = 20261116
 RESULTS_DIR = Path("eval/results")
 EVAL_ID_TAG = "eval_id"
 
@@ -50,26 +54,62 @@ EVAL_ENVIRONMENT: dict[str, str] = {
 }
 
 
-def load_eval_set(
-    path: Path = EVAL_SET, *, category: str | None = None, limit: int | None = None
+def stratified_sample(
+    rows: Sequence[dict[str, Any]], size: int, seed: int = SAMPLE_SEED
 ) -> list[dict[str, Any]]:
-    """Read the evaluation rows, optionally one category and the first ``limit`` of them."""
+    """About ``size`` rows, drawn from every group in proportion, the same ones every time.
+
+    The group is a row's ``stratum``, or its ``category`` when it has none. Each
+    group gives at least one row, so a small sample still covers every kind of
+    question. The rows come back in the order of the file.
+    """
+    groups: dict[str, list[int]] = defaultdict(list)
+    for position, row in enumerate(rows):
+        groups[str(row.get("stratum") or row["category"])].append(position)
+    rng = random.Random(seed)  # noqa: S311 - a fixed seed for a repeatable sample, not security
+    chosen: list[int] = []
+    for name in sorted(groups):
+        positions = groups[name]
+        share = max(1, round(size * len(positions) / len(rows)))
+        chosen.extend(rng.sample(positions, min(share, len(positions))))
+    return [rows[position] for position in sorted(chosen)]
+
+
+def load_eval_set(
+    path: Path = EVAL_SET,
+    *,
+    category: str | None = None,
+    stratum: str | None = None,
+    sample: int | None = None,
+    limit: int | None = None,
+) -> list[dict[str, Any]]:
+    """Read evaluation rows.
+
+    ``category`` and ``stratum`` keep one kind of row. ``sample`` then draws a
+    stratified sample of about that many, and ``limit`` keeps the first few.
+    """
     rows = [
         json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()
     ]
     if category:
         rows = [row for row in rows if row["category"] == category]
+    if stratum:
+        rows = [row for row in rows if row.get("stratum") == stratum]
+    if sample:
+        rows = stratified_sample(rows, sample)
     return rows[:limit] if limit else rows
 
 
 def to_records(
-    rows: Sequence[Mapping[str, Any]], safe_questions: Mapping[str, str] | None = None
+    rows: Sequence[Mapping[str, Any]],
+    safe_questions: Mapping[str, str] | None = None,
+    safe_histories: Mapping[str, list[dict[str, str]]] | None = None,
 ) -> list[dict[str, Any]]:
     """Convert rows to the ``inputs`` / ``expectations`` shape MLflow evaluates.
 
     MLflow stores the inputs with the run. ``safe_questions`` maps a row id to
-    its redacted question, so a question that contains personal data on purpose
-    is never stored as written.
+    its redacted question, and ``safe_histories`` to its redacted conversation,
+    so text that contains personal data on purpose is never stored as written.
     """
     safe = safe_questions or {}
     return [
@@ -77,6 +117,11 @@ def to_records(
             "inputs": {
                 **row["inputs"],
                 "question": safe.get(row.get("id", ""), row["inputs"]["question"]),
+                **(
+                    {"history": safe_histories[row["id"]]}
+                    if safe_histories and row.get("id") in safe_histories
+                    else {}
+                ),
             },
             "expectations": {k: v for k, v in row["expectations"].items() if v is not None},
         }
@@ -172,6 +217,19 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--query-type", required=True, choices=["ann", "hybrid"])
     parser.add_argument("--tag", required=True, help="short name for this run")
     parser.add_argument("--category", default=None, help="only rows of this category")
+    parser.add_argument(
+        "--eval-set",
+        type=Path,
+        default=EVAL_SET,
+        help="the rows to run; the CI gate reads only runs of the default set",
+    )
+    parser.add_argument("--stratum", default=None, help="only rows of this stratum")
+    parser.add_argument(
+        "--sample",
+        type=int,
+        default=None,
+        help="a stratified sample of about this many rows, the same ones every time",
+    )
     parser.add_argument("--limit", type=int, default=None, help="only the first N rows")
     parser.add_argument("--no-judges", action="store_true", help="deterministic scorers only")
     parser.add_argument("--no-ragas", action="store_true", help="skip RAGAS ContextPrecision")
@@ -216,7 +274,13 @@ def main(argv: list[str] | None = None) -> None:
             **({"llm_endpoint": args.llm_endpoint} if args.llm_endpoint else {}),
         }
     )
-    rows = load_eval_set(category=args.category, limit=args.limit)
+    rows = load_eval_set(
+        args.eval_set,
+        category=args.category,
+        stratum=args.stratum,
+        sample=args.sample,
+        limit=args.limit,
+    )
     if not rows:
         print("no evaluation rows match")
         raise SystemExit(1)
@@ -249,9 +313,24 @@ def main(argv: list[str] | None = None) -> None:
         raise SystemExit(1)
     register_raw_questions(raw_by_id)
 
-    def predict(question: str) -> str:
+    # A follow-up row carries the conversation before its question. The copilot is
+    # given it as written and redacts it itself, like the question.
+    history_by_id = {row["id"]: row["inputs"].get("history") or [] for row in rows}
+
+    safe_histories = {
+        row_id: [
+            {"role": turn["role"], "content": redactor.redact(turn["content"]).text}
+            for turn in turns
+        ]
+        for row_id, turns in history_by_id.items()
+        if turns
+    }
+
+    def predict(question: str, history: Any = None) -> str:
         eval_id = id_by_safe_question[question]
-        return copilot.run(raw_by_id[eval_id], trace_tags={EVAL_ID_TAG: eval_id}).answer
+        return copilot.run(
+            raw_by_id[eval_id], history_by_id[eval_id], trace_tags={EVAL_ID_TAG: eval_id}
+        ).answer
 
     run_name = f"{args.tag}-{args.config}-{args.query_type}"
     with mlflow.start_run(run_name=run_name) as run:
@@ -268,7 +347,9 @@ def main(argv: list[str] | None = None) -> None:
             }
         )
         mlflow.genai.evaluate(
-            data=to_records(rows, safe_by_id), predict_fn=predict, scorers=scorers
+            data=to_records(rows, safe_by_id, safe_histories),
+            predict_fn=predict,
+            scorers=scorers,
         )
         traces = mlflow.search_traces(run_id=run.info.run_id, return_type="list")
 
@@ -308,7 +389,12 @@ def main(argv: list[str] | None = None) -> None:
         "rows_scored": len(per_row),
         "rows_without_answer": unanswered,
         "rows_reviewed": sum(1 for row in rows if row.get("reviewed")),
-        "eval_set_sha256": _sha256(EVAL_SET),
+        "eval_set": args.eval_set.as_posix(),
+        "eval_set_sha256": _sha256(args.eval_set),
+        "sample": args.sample,
+        # What decided the copilot's behaviour in this run: the agent's code, its
+        # settings and the evaluation set. The CI gate compares it with the repository.
+        "behaviour": behaviour_fingerprint(),
         "mlflow_run_id": run.info.run_id,
         "versions": {name: version(name) for name in ("mlflow", "ragas", "databricks-sdk")},
         "metrics": metrics,

@@ -69,6 +69,39 @@ export interface Step {
   reference: string | null;
 }
 
+export type Urgency = "low" | "normal" | "high";
+
+/** A hand-off the copilot drafted. Nothing is written until the agent opens it. */
+export interface HandOffDraft {
+  /** "billing", "plan_change", "account_access", "device", "cancellation" or "other". */
+  category: string;
+  urgency: Urgency;
+  /** What is needed, with personal details already replaced. */
+  reason: string;
+  /** Who would pick it up, such as "the billing team". */
+  team: string;
+}
+
+/** What the agent approved, as sent to the server. */
+export interface HandOffRequest {
+  reason: string;
+  category: string;
+  urgency: Urgency;
+}
+
+/** A hand-off that was opened. */
+export interface HandOffTicket {
+  /** The reference to give the customer, such as "ESC-B695DE84". */
+  ticket_id: string;
+  category: string;
+  urgency: Urgency;
+  reason: string;
+  /** What to tell the customer. */
+  agent_script: string;
+  /** False when the ticket could not be written and the transfer must be made by hand. */
+  recorded: boolean;
+}
+
 export interface AskResponse {
   /** Markdown. May contain citation markers such as [1] or [1, 2]. */
   answer: string;
@@ -78,9 +111,23 @@ export interface AskResponse {
   tools_used: string[];
   escalated: boolean;
   guardrail_flags: string[];
+  /** A hand-off waiting for the agent to approve it. Absent or null when there is none. */
+  handoff_draft?: HandOffDraft | null;
   seconds: number;
   trace_id: string | null;
   steps: Step[];
+}
+
+/** What the copilot is doing at one moment, sent while an answer is on its way. */
+export interface StageEvent {
+  /** "redaction", "input_check", "model", "tool", "answer", "simplify" or "output_check". */
+  stage: string;
+  /** The words to show, such as "Searching the help articles". */
+  label: string;
+  /** The tool that is running, on a "tool" stage. */
+  tool: string | null;
+  /** Seconds from the start of the request to the start of this stage. */
+  at: number;
 }
 
 export type Resolution = "resolved" | "escalated" | "unresolved";
@@ -136,9 +183,16 @@ export interface ErrorBody {
 export interface Api {
   getMeta(signal?: AbortSignal): Promise<Meta>;
   getHealth(signal?: AbortSignal): Promise<Health>;
-  ask(request: AskRequest, signal?: AbortSignal): Promise<AskResponse>;
+  /** `onStage` is called as each stage of the answer starts, if the server reports them. */
+  ask(
+    request: AskRequest,
+    signal?: AbortSignal,
+    onStage?: (event: StageEvent) => void,
+  ): Promise<AskResponse>;
   listCalls(signal?: AbortSignal): Promise<CallListItem[]>;
   getCall(transcriptId: string, signal?: AbortSignal): Promise<CallTranscript>;
   summarizeCall(transcriptId: string, signal?: AbortSignal): Promise<CallSummary>;
+  /** Write the hand-off the agent approved. This is the only call that opens a ticket. */
+  openHandOff(request: HandOffRequest, signal?: AbortSignal): Promise<HandOffTicket>;
   sendFeedback(request: FeedbackRequest, signal?: AbortSignal): Promise<FeedbackResponse>;
 }

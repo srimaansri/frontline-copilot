@@ -12,14 +12,20 @@ the tool applies the output check for personal data itself. The built web interf
 
 from __future__ import annotations
 
+import json
 import logging
+import queue
+import threading
 import time
+import traceback
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, Literal
 
 import mlflow
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from mlflow.entities import AssessmentSource, AssessmentSourceType, SpanType
 from pydantic import BaseModel, Field
@@ -28,7 +34,13 @@ from copilot.agent import Copilot
 from copilot.config import Settings, load_settings
 from copilot.guardrails import redact_question
 from copilot.prompts import PROMPT_VERSION
-from copilot.schemas import CallSummary, Citation
+from copilot.schemas import (
+    CallSummary,
+    Citation,
+    CopilotAnswer,
+    EscalationTicket,
+    HandOffDraft,
+)
 from copilot.steps import Step, describe_steps
 from copilot.tools import ToolError
 from copilot.transcripts import get_transcript, list_transcripts
@@ -40,6 +52,7 @@ DISCLAIMER = (
     "Unofficial demo. Not affiliated with or endorsed by any carrier. "
     "Northline Wireless is fictional and all data is synthetic."
 )
+ASK_FAILED = "The copilot could not answer just now. Please try again."
 TOOLS: tuple[tuple[str, str], ...] = (
     ("search_kb", "Help articles"),
     ("get_plan_details", "Plan catalogue"),
@@ -86,9 +99,19 @@ class AskResponse(BaseModel):
     tools_used: list[str]
     escalated: bool
     guardrail_flags: list[str]
+    # A hand-off the copilot drafted. It is written only by POST /api/handoffs.
+    handoff_draft: HandOffDraft | None = None
     seconds: float
     trace_id: str | None
     steps: list[Step]
+
+
+class HandOffRequest(BaseModel):
+    """A hand-off the agent has checked, perhaps changed, and approved."""
+
+    reason: str = Field(min_length=1, max_length=500)
+    category: str = Field(default="other", max_length=40)
+    urgency: Literal["low", "normal", "high"] = "normal"
 
 
 class FeedbackRequest(BaseModel):
@@ -202,24 +225,64 @@ def create_app(
                 trace_tags={"source": "web"},
             )
         except Exception as error:
-            # The reason may quote the question, so only its type is logged or returned.
-            logger.exception("The copilot failed to answer (%s)", type(error).__name__)
-            raise HTTPException(
-                status_code=502, detail="The copilot could not answer just now. Please try again."
-            ) from error
+            _log_failure(error)
+            raise HTTPException(status_code=502, detail=ASK_FAILED) from error
         seconds = time.perf_counter() - started
         trace_id = mlflow.get_last_active_trace_id(thread_local=True) if tracing_now else None
-        fields = answer.model_dump()
-        # The copilot reports the question as it processed it. One that does not is asked
-        # here, so the interface never shows the question as it was typed.
-        processed = fields.pop("question_as_processed", "")
-        return AskResponse(
-            **fields,
-            question_as_processed=processed
-            or redact_question(body.question, copilot_now.redactor).text,
-            seconds=round(seconds, 2),
-            trace_id=trace_id,
-            steps=describe_steps(answer),
+        return _ask_response(copilot_now, body, answer, seconds, trace_id)
+
+    @app.post("/api/ask/stream")
+    def ask_stream(body: AskRequest) -> StreamingResponse:
+        """The same answer as ``/api/ask``, with each stage reported as it starts.
+
+        The reply is a stream of server-sent events: ``stage`` events while the
+        copilot works, then one ``answer`` event with the body ``/api/ask``
+        returns, or one ``error`` event. A stage event holds a stage name and
+        fixed words, never the question or any text a tool returned.
+
+        The answer is worked out on one thread, so that its trace is whole, and
+        the events cross to the response through a queue.
+        """
+        copilot_now = runtime.copilot
+        tracing_now = runtime.tracing
+        events: queue.Queue[tuple[str, dict[str, Any]] | None] = queue.Queue()
+
+        def work() -> None:
+            started = time.perf_counter()
+            try:
+                answer = copilot_now.run(
+                    body.question,
+                    [turn.model_dump() for turn in body.history],
+                    trace_tags={"source": "web"},
+                    # The time lets a recording be replayed at its real pace.
+                    on_stage=lambda event: events.put(
+                        ("stage", {**event, "at": round(time.perf_counter() - started, 2)})
+                    ),
+                )
+                seconds = time.perf_counter() - started
+                trace_id = (
+                    mlflow.get_last_active_trace_id(thread_local=True) if tracing_now else None
+                )
+                response = _ask_response(copilot_now, body, answer, seconds, trace_id)
+                events.put(("answer", response.model_dump()))
+            except Exception as error:
+                _log_failure(error)
+                events.put(("error", {"detail": ASK_FAILED}))
+            finally:
+                events.put(None)
+
+        threading.Thread(target=work, name="copilot-answer", daemon=True).start()
+
+        def stream() -> Iterator[str]:
+            while (item := events.get()) is not None:
+                name, data = item
+                yield f"event: {name}\ndata: {json.dumps(data)}\n\n"
+
+        return StreamingResponse(
+            stream(),
+            media_type="text/event-stream",
+            # A proxy that buffers the reply would hold every stage back until the end.
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
 
     @app.get("/api/calls")
@@ -254,6 +317,29 @@ def create_app(
         except ToolError as error:
             raise _tool_error(error) from error
 
+    @app.post("/api/handoffs")
+    def open_hand_off(body: HandOffRequest) -> EscalationTicket:
+        """Write the hand-off the agent approved, and return its reference and script.
+
+        This is the only place the web interface writes a ticket. The copilot
+        itself only drafts one. The reason may have been edited by the agent, so
+        it is redacted again by the tool before it is stored, and it is never put
+        on the trace as it arrived: the span records the ticket, whose reason is
+        the redacted one.
+        """
+        tools = runtime.copilot.tools
+        try:
+            if not runtime.tracing:
+                return tools.escalate_to_human(body.reason, body.category, body.urgency)
+            with mlflow.start_span(name="open_hand_off", span_type=SpanType.TOOL) as span:
+                span.set_inputs({"category": body.category, "urgency": body.urgency})
+                mlflow.update_current_trace(tags={"source": "web", "view": "hand_off"})
+                ticket = tools.escalate_to_human(body.reason, body.category, body.urgency)
+                span.set_outputs(ticket.model_dump())
+            return ticket
+        except ToolError as error:
+            raise _tool_error(error) from error
+
     @app.post("/api/feedback")
     def feedback(body: FeedbackRequest) -> dict[str, bool]:
         if not runtime.tracing:
@@ -270,6 +356,36 @@ def create_app(
         # Mounted last, so it only receives what no API route matched.
         app.mount("/", StaticFiles(directory=static_dir, html=True), name="web")
     return app
+
+
+def _log_failure(error: BaseException) -> None:
+    """Log that an answer failed: the kind of error and where it was raised. Nothing else.
+
+    An error's message can quote the question, and so can the values a full
+    traceback shows. ``logger.exception`` writes both, which is why it is not
+    used here. The kind of error and the line that raised it are enough to find
+    the cause, and neither can hold a customer's details.
+    """
+    frames = traceback.extract_tb(error.__traceback__)
+    where = f"{Path(frames[-1].filename).name}:{frames[-1].lineno}" if frames else "unknown"
+    logger.error("The copilot failed to answer (%s at %s)", type(error).__name__, where)
+
+
+def _ask_response(
+    copilot: Copilot, body: AskRequest, answer: CopilotAnswer, seconds: float, trace_id: str | None
+) -> AskResponse:
+    """What the interface is sent for one answer."""
+    fields = answer.model_dump()
+    # The copilot reports the question as it processed it. One that does not is asked
+    # here, so the interface never shows the question as it was typed.
+    processed = fields.pop("question_as_processed", "")
+    return AskResponse(
+        **fields,
+        question_as_processed=processed or redact_question(body.question, copilot.redactor).text,
+        seconds=round(seconds, 2),
+        trace_id=trace_id,
+        steps=describe_steps(answer),
+    )
 
 
 def _tool_error(error: ToolError) -> HTTPException:

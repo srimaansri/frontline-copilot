@@ -642,14 +642,15 @@
     border-color: var(--ink);
   }
 
-  .field:has(> textarea:focus-visible, > input:focus-visible),
+  .field:has(> textarea:focus-visible, > input:focus-visible, > select:focus-visible),
   .field[data-force~="focus"] {
     border-color: var(--brand-text);
     box-shadow: 0 0 0 var(--control-border) var(--brand-text);
   }
 
   .field > textarea:focus-visible,
-  .field > input:focus-visible {
+  .field > input:focus-visible,
+  .field > select:focus-visible {
     outline: none;
   }
 

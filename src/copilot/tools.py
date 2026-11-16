@@ -25,7 +25,15 @@ from copilot.llm import ChatModel, build_chat_model, message_text
 from copilot.prompts import SUMMARY_PROMPT
 from copilot.redaction import Redactor, get_redactor
 from copilot.retriever import Retriever
-from copilot.schemas import CallSummary, Citation, EscalationTicket, KBHit, Plan, Urgency
+from copilot.schemas import (
+    CallSummary,
+    Citation,
+    EscalationTicket,
+    HandOffDraft,
+    KBHit,
+    Plan,
+    Urgency,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -316,6 +324,28 @@ class Tools:
             for number, (url, title) in enumerate(list(seen.items())[:3], start=1)
         ]
 
+    def draft_hand_off(
+        self, reason: str, category: str = "other", urgency: Urgency = "normal"
+    ) -> HandOffDraft:
+        """Prepare a hand-off without writing anything.
+
+        The category is brought to a known one, and ``reason``, which a model or
+        an agent wrote, is cut to length and redacted. The result is what the
+        agent is shown to approve, and what ``escalate_to_human`` writes.
+        """
+        if urgency not in get_args(Urgency):
+            raise ToolError("urgency must be low, normal or high")
+        category = category.strip().lower().replace(" ", "_").replace("-", "_")
+        if category not in ESCALATION_TEAMS:
+            category = "other"
+        safe_reason = self.redactor.redact(reason.strip()[:MAX_REASON_CHARS]).text
+        return HandOffDraft(
+            category=category,
+            urgency=urgency,
+            reason=safe_reason,
+            team=ESCALATION_TEAMS[category],
+        )
+
     def escalate_to_human(
         self, reason: str, category: str = "other", urgency: Urgency = "normal"
     ) -> EscalationTicket:
@@ -330,12 +360,8 @@ class Tools:
         and ``recorded`` is false, but the script is the one a written ticket
         gets, so the answer that is evaluated is the answer an agent would see.
         """
-        if urgency not in get_args(Urgency):
-            raise ToolError("urgency must be low, normal or high")
-        category = category.strip().lower().replace(" ", "_").replace("-", "_")
-        if category not in ESCALATION_TEAMS:
-            category = "other"
-        safe_reason = self.redactor.redact(reason.strip()[:MAX_REASON_CHARS]).text
+        draft = self.draft_hand_off(reason, category, urgency)
+        category, safe_reason = draft.category, draft.reason
         ticket_id = self._ticket_id()
         table = self.settings.table("ops", "escalations")
         dry_run = not self.settings.record_escalations

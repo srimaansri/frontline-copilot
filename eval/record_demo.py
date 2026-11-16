@@ -99,6 +99,21 @@ def demo_questions(examples: Sequence[str], eval_questions: Sequence[str]) -> li
     return ordered
 
 
+def read_events(text: str) -> list[tuple[str, Any]]:
+    """Read a body of server-sent events as (event name, data) pairs."""
+    events: list[tuple[str, Any]] = []
+    for block in text.strip().split("\n\n"):
+        name, data = "message", ""
+        for line in block.splitlines():
+            if line.startswith("event:"):
+                name = line[6:].strip()
+            elif line.startswith("data:"):
+                data += line[5:].strip()
+        if data:
+            events.append((name, json.loads(data)))
+    return events
+
+
 def _checked(response: Any, what: str) -> Any:
     if response.status_code != 200:
         msg = f"{what} failed with HTTP {response.status_code}"
@@ -115,13 +130,21 @@ def record(
     questions = demo_questions(examples, eval_questions)[:limit]
     answers: list[dict[str, Any]] = []
     for number, question in enumerate(questions, start=1):
-        response = _checked(
-            client.post("/api/ask", json={"question": question, "history": []}),
-            f"question {number}",
-        )
+        streamed = client.post("/api/ask/stream", json={"question": question, "history": []})
+        if streamed.status_code != 200:
+            msg = f"question {number} failed with HTTP {streamed.status_code}"
+            raise RuntimeError(msg)
+        events = read_events(streamed.text)
+        final = events[-1] if events else ("none", {})
+        if final[0] != "answer":
+            msg = f"question {number} ended with {final[0]}, not an answer"
+            raise RuntimeError(msg)
+        response = final[1]
         # A visitor cannot open the workspace's traces, and a recording cannot be rated.
         response["trace_id"] = None
-        answers.append({"question": question, "response": response})
+        # The stages the copilot reported while it worked, each with the time it started.
+        stages = [data for name, data in events if name == "stage"]
+        answers.append({"question": question, "response": response, "stages": stages})
         print(f"  {number}/{len(questions)} {response['seconds']:.1f}s", flush=True)
 
     calls = _checked(client.get("/api/calls"), "the call list")

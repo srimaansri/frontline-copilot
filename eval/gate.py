@@ -51,6 +51,10 @@ def latest_full_run(results_dir: Path = RESULTS_DIR) -> tuple[str, dict[str, Any
         item
         for item in load_results(results_dir)
         if item[1].get("category") == "all"
+        # Only the reviewed set the thresholds were written for. A run of another
+        # set, or of a sample, is reported and is not what the gate rests on.
+        and item[1].get("eval_set", EVAL_SET.as_posix()) == EVAL_SET.as_posix()
+        and not item[1].get("sample")
         and item[1].get("judge_endpoint")
         and item[1].get("judges", "all") == "all"
     ]

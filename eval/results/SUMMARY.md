@@ -28,49 +28,49 @@ How to read it:
 | 2026-11-16 | models-qwen35-122b-a10b | qwen35-122b-a10b | llama-4-maverick | A | ann | v3 | 40 | 40/40 | 40/40 (91-100%) | 19/22 (66-96%) | n/a | n/a | 23/31 (56-87%) | n/a | 10/11 (62-99%) | 38/40 (83-99%) | 39/40 (87-100%) | 34/37 (78-98%) | 40/40 (91-100%) | `8478690` | 2026-11-16_models-qwen35-122b-a10b-A-ann.json |
 | 2026-11-16 | models-gemma-3-12b | gemma-3-12b | llama-4-maverick | A | ann | v3 | 40 | 40/40 | 39/40 (87-100%) | 15/22 (47-84%) | n/a | n/a | 21/31 (50-82%) | n/a | 9/11 (52-95%) | 37/40 (80-98%) | 38/40 (83-99%) | 29/37 (62-89%) | 40/40 (91-100%) | `8478690` | 2026-11-16_models-gemma-3-12b-A-ann.json |
 
-## Time to answer
+## Time and model work per answer
 
-Seconds from the question to the checked answer, one row at a time. The median hides the slow answers, so the 95th percentile and the slowest are shown too. Requests that need a person are answered by rules with no model call, which is why they are fast.
+Seconds from the question to the checked answer, one row at a time. The median hides the slow answers, so the 95th percentile and the slowest are shown too. Model calls and tokens are the medians per answer, as the copilot counted them: the router, the model that answers, and a rewrite if there was one. `n/a` is a run from before they were counted. A request that the rules hand off makes no model call.
 
-| Run | Questions | Rows | Median | 95th percentile | Slowest |
-|---|---|---|---|---|---|
-| 2026-11-14_m3-kb-A-ann.json | All | 22 | 2.3 | 2.9 | 3.7 |
-| 2026-11-14_m3-kb-v2-A-ann.json | All | 22 | 2.1 | 2.7 | 2.8 |
-| 2026-11-14_m3-kb-v2-B-ann.json | All | 22 | 2.1 | 2.8 | 3.1 |
-| 2026-11-15_m3-kb-v2-B-hybrid.json | All | 22 | 2.0 | 2.7 | 3.1 |
-| 2026-11-15_m4-full-A-ann.json | All | 40 | 2.5 | 4.3 | 13.4 |
-| 2026-11-15_m4-full-A-ann.json | Trick questions | 3 | 0.9 | 2.3 | 2.3 |
-| 2026-11-15_m4-full-A-ann.json | Call summaries | 4 | 4.0 | 5.4 | 5.4 |
-| 2026-11-15_m4-full-A-ann.json | Requests that need a person | 5 | 1.6 | 3.5 | 3.5 |
-| 2026-11-15_m4-full-A-ann.json | Help articles | 22 | 2.5 | 3.3 | 3.7 |
-| 2026-11-15_m4-full-A-ann.json | Plan lookups | 6 | 2.5 | 13.4 | 13.4 |
-| 2026-11-16_models-gpt-oss-120b-A-ann.json | All | 40 | 3.8 | 5.3 | 9.7 |
-| 2026-11-16_models-gpt-oss-120b-A-ann.json | Trick questions | 3 | 1.9 | 4.4 | 4.4 |
-| 2026-11-16_models-gpt-oss-120b-A-ann.json | Call summaries | 4 | 4.4 | 5.3 | 5.3 |
-| 2026-11-16_models-gpt-oss-120b-A-ann.json | Requests that need a person | 5 | 0.0 | 0.0 | 0.0 |
-| 2026-11-16_models-gpt-oss-120b-A-ann.json | Help articles | 22 | 3.8 | 4.6 | 4.7 |
-| 2026-11-16_models-gpt-oss-120b-A-ann.json | Plan lookups | 6 | 3.6 | 9.7 | 9.7 |
-| 2026-11-16_models-llama-4-maverick-A-ann.json | All | 40 | 4.9 | 6.8 | 7.8 |
-| 2026-11-16_models-llama-4-maverick-A-ann.json | Trick questions | 3 | 2.4 | 5.0 | 5.0 |
-| 2026-11-16_models-llama-4-maverick-A-ann.json | Call summaries | 4 | 6.7 | 7.5 | 7.5 |
-| 2026-11-16_models-llama-4-maverick-A-ann.json | Requests that need a person | 5 | 0.0 | 0.0 | 0.0 |
-| 2026-11-16_models-llama-4-maverick-A-ann.json | Help articles | 22 | 5.3 | 6.6 | 7.8 |
-| 2026-11-16_models-llama-4-maverick-A-ann.json | Plan lookups | 6 | 3.6 | 6.1 | 6.1 |
-| 2026-11-16_models-qwen3-next-80b-a3b-instruct-A-ann.json | All | 40 | 3.3 | 4.7 | 5.1 |
-| 2026-11-16_models-qwen3-next-80b-a3b-instruct-A-ann.json | Trick questions | 3 | 1.7 | 3.6 | 3.6 |
-| 2026-11-16_models-qwen3-next-80b-a3b-instruct-A-ann.json | Call summaries | 4 | 4.1 | 4.7 | 4.7 |
-| 2026-11-16_models-qwen3-next-80b-a3b-instruct-A-ann.json | Requests that need a person | 5 | 0.0 | 0.0 | 0.0 |
-| 2026-11-16_models-qwen3-next-80b-a3b-instruct-A-ann.json | Help articles | 22 | 3.3 | 5.0 | 5.1 |
-| 2026-11-16_models-qwen3-next-80b-a3b-instruct-A-ann.json | Plan lookups | 6 | 3.6 | 4.4 | 4.4 |
-| 2026-11-16_models-qwen35-122b-a10b-A-ann.json | All | 40 | 3.8 | 8.2 | 8.9 |
-| 2026-11-16_models-qwen35-122b-a10b-A-ann.json | Trick questions | 3 | 2.6 | 4.9 | 4.9 |
-| 2026-11-16_models-qwen35-122b-a10b-A-ann.json | Call summaries | 4 | 7.8 | 8.2 | 8.2 |
-| 2026-11-16_models-qwen35-122b-a10b-A-ann.json | Requests that need a person | 5 | 0.0 | 0.0 | 0.0 |
-| 2026-11-16_models-qwen35-122b-a10b-A-ann.json | Help articles | 22 | 3.9 | 5.1 | 5.4 |
-| 2026-11-16_models-qwen35-122b-a10b-A-ann.json | Plan lookups | 6 | 3.6 | 8.9 | 8.9 |
-| 2026-11-16_models-gemma-3-12b-A-ann.json | All | 40 | 3.5 | 5.6 | 7.0 |
-| 2026-11-16_models-gemma-3-12b-A-ann.json | Trick questions | 3 | 2.4 | 4.6 | 4.6 |
-| 2026-11-16_models-gemma-3-12b-A-ann.json | Call summaries | 4 | 5.4 | 7.0 | 7.0 |
-| 2026-11-16_models-gemma-3-12b-A-ann.json | Requests that need a person | 5 | 0.0 | 0.0 | 0.0 |
-| 2026-11-16_models-gemma-3-12b-A-ann.json | Help articles | 22 | 3.6 | 5.1 | 5.6 |
-| 2026-11-16_models-gemma-3-12b-A-ann.json | Plan lookups | 6 | 3.2 | 4.0 | 4.0 |
+| Run | Questions | Rows | Median | 95th percentile | Slowest | Model calls | Tokens |
+|---|---|---|---|---|---|---|---|
+| 2026-11-14_m3-kb-A-ann.json | All | 22 | 2.3 | 2.9 | 3.7 | n/a | n/a |
+| 2026-11-14_m3-kb-v2-A-ann.json | All | 22 | 2.1 | 2.7 | 2.8 | n/a | n/a |
+| 2026-11-14_m3-kb-v2-B-ann.json | All | 22 | 2.1 | 2.8 | 3.1 | n/a | n/a |
+| 2026-11-15_m3-kb-v2-B-hybrid.json | All | 22 | 2.0 | 2.7 | 3.1 | n/a | n/a |
+| 2026-11-15_m4-full-A-ann.json | All | 40 | 2.5 | 4.3 | 13.4 | n/a | n/a |
+| 2026-11-15_m4-full-A-ann.json | Trick questions | 3 | 0.9 | 2.3 | 2.3 | n/a | n/a |
+| 2026-11-15_m4-full-A-ann.json | Call summaries | 4 | 4.0 | 5.4 | 5.4 | n/a | n/a |
+| 2026-11-15_m4-full-A-ann.json | Requests that need a person | 5 | 1.6 | 3.5 | 3.5 | n/a | n/a |
+| 2026-11-15_m4-full-A-ann.json | Help articles | 22 | 2.5 | 3.3 | 3.7 | n/a | n/a |
+| 2026-11-15_m4-full-A-ann.json | Plan lookups | 6 | 2.5 | 13.4 | 13.4 | n/a | n/a |
+| 2026-11-16_models-gpt-oss-120b-A-ann.json | All | 40 | 3.8 | 5.3 | 9.7 | n/a | n/a |
+| 2026-11-16_models-gpt-oss-120b-A-ann.json | Trick questions | 3 | 1.9 | 4.4 | 4.4 | n/a | n/a |
+| 2026-11-16_models-gpt-oss-120b-A-ann.json | Call summaries | 4 | 4.4 | 5.3 | 5.3 | n/a | n/a |
+| 2026-11-16_models-gpt-oss-120b-A-ann.json | Requests that need a person | 5 | 0.0 | 0.0 | 0.0 | n/a | n/a |
+| 2026-11-16_models-gpt-oss-120b-A-ann.json | Help articles | 22 | 3.8 | 4.6 | 4.7 | n/a | n/a |
+| 2026-11-16_models-gpt-oss-120b-A-ann.json | Plan lookups | 6 | 3.6 | 9.7 | 9.7 | n/a | n/a |
+| 2026-11-16_models-llama-4-maverick-A-ann.json | All | 40 | 4.9 | 6.8 | 7.8 | n/a | n/a |
+| 2026-11-16_models-llama-4-maverick-A-ann.json | Trick questions | 3 | 2.4 | 5.0 | 5.0 | n/a | n/a |
+| 2026-11-16_models-llama-4-maverick-A-ann.json | Call summaries | 4 | 6.7 | 7.5 | 7.5 | n/a | n/a |
+| 2026-11-16_models-llama-4-maverick-A-ann.json | Requests that need a person | 5 | 0.0 | 0.0 | 0.0 | n/a | n/a |
+| 2026-11-16_models-llama-4-maverick-A-ann.json | Help articles | 22 | 5.3 | 6.6 | 7.8 | n/a | n/a |
+| 2026-11-16_models-llama-4-maverick-A-ann.json | Plan lookups | 6 | 3.6 | 6.1 | 6.1 | n/a | n/a |
+| 2026-11-16_models-qwen3-next-80b-a3b-instruct-A-ann.json | All | 40 | 3.3 | 4.7 | 5.1 | n/a | n/a |
+| 2026-11-16_models-qwen3-next-80b-a3b-instruct-A-ann.json | Trick questions | 3 | 1.7 | 3.6 | 3.6 | n/a | n/a |
+| 2026-11-16_models-qwen3-next-80b-a3b-instruct-A-ann.json | Call summaries | 4 | 4.1 | 4.7 | 4.7 | n/a | n/a |
+| 2026-11-16_models-qwen3-next-80b-a3b-instruct-A-ann.json | Requests that need a person | 5 | 0.0 | 0.0 | 0.0 | n/a | n/a |
+| 2026-11-16_models-qwen3-next-80b-a3b-instruct-A-ann.json | Help articles | 22 | 3.3 | 5.0 | 5.1 | n/a | n/a |
+| 2026-11-16_models-qwen3-next-80b-a3b-instruct-A-ann.json | Plan lookups | 6 | 3.6 | 4.4 | 4.4 | n/a | n/a |
+| 2026-11-16_models-qwen35-122b-a10b-A-ann.json | All | 40 | 3.8 | 8.2 | 8.9 | n/a | n/a |
+| 2026-11-16_models-qwen35-122b-a10b-A-ann.json | Trick questions | 3 | 2.6 | 4.9 | 4.9 | n/a | n/a |
+| 2026-11-16_models-qwen35-122b-a10b-A-ann.json | Call summaries | 4 | 7.8 | 8.2 | 8.2 | n/a | n/a |
+| 2026-11-16_models-qwen35-122b-a10b-A-ann.json | Requests that need a person | 5 | 0.0 | 0.0 | 0.0 | n/a | n/a |
+| 2026-11-16_models-qwen35-122b-a10b-A-ann.json | Help articles | 22 | 3.9 | 5.1 | 5.4 | n/a | n/a |
+| 2026-11-16_models-qwen35-122b-a10b-A-ann.json | Plan lookups | 6 | 3.6 | 8.9 | 8.9 | n/a | n/a |
+| 2026-11-16_models-gemma-3-12b-A-ann.json | All | 40 | 3.5 | 5.6 | 7.0 | n/a | n/a |
+| 2026-11-16_models-gemma-3-12b-A-ann.json | Trick questions | 3 | 2.4 | 4.6 | 4.6 | n/a | n/a |
+| 2026-11-16_models-gemma-3-12b-A-ann.json | Call summaries | 4 | 5.4 | 7.0 | 7.0 | n/a | n/a |
+| 2026-11-16_models-gemma-3-12b-A-ann.json | Requests that need a person | 5 | 0.0 | 0.0 | 0.0 | n/a | n/a |
+| 2026-11-16_models-gemma-3-12b-A-ann.json | Help articles | 22 | 3.6 | 5.1 | 5.6 | n/a | n/a |
+| 2026-11-16_models-gemma-3-12b-A-ann.json | Plan lookups | 6 | 3.2 | 4.0 | 4.0 | n/a | n/a |

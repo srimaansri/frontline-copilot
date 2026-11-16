@@ -8,6 +8,7 @@ import { AnswerCard } from "@/features/ask/AnswerCard";
 import { AnswerFooter } from "@/features/ask/AnswerFooter";
 import { Composer } from "@/features/ask/Composer";
 import { ExampleList } from "@/features/ask/EmptyState";
+import { HandOffDraftCard } from "@/features/ask/HandOffDraftCard";
 import type { FeedbackState } from "@/features/ask/FeedbackButtons";
 import { ProgressHint } from "@/features/ask/ProgressHint";
 import { QuestionBubble } from "@/features/ask/QuestionBubble";
@@ -22,6 +23,8 @@ import {
   ERROR_MESSAGE,
   EXAMPLES,
   HANDOFF,
+  HANDOFF_DRAFT,
+  HANDOFF_TICKET,
   META,
   NO_CITATIONS,
   noop,
@@ -154,6 +157,16 @@ export function AnswerSection() {
       <Row label="hand-off: script line and banner">
         <AnswerSpecimen exchange={HANDOFF} />
       </Row>
+      <Row label="hand-off drafted, waiting for the agent">
+        <div className="max-w-3xl">
+          <HandOffDraftCard draft={HANDOFF_DRAFT} />
+        </div>
+      </Row>
+      <Row label="hand-off opened by the agent">
+        <div className="max-w-3xl">
+          <HandOffDraftCard draft={HANDOFF_DRAFT} initialTicket={HANDOFF_TICKET} />
+        </div>
+      </Row>
       <Row label="refusal">
         <AnswerSpecimen exchange={REFUSAL} />
       </Row>
@@ -163,7 +176,14 @@ export function AnswerSection() {
         </div>
       </Row>
       <Row label="pending">
-        <ProgressHint />
+        <ProgressHint
+          stage={{
+            stage: "tool",
+            label: "Searching the help articles",
+            tool: "search_kb",
+            at: 0.9,
+          }}
+        />
       </Row>
     </GallerySection>
   );

@@ -25,7 +25,8 @@ This repo is being built milestone by milestone. Every number here comes from a 
 | M6 | Results, model and data cards, responsible-AI notes | The cards are written: [model card](docs/MODEL_CARD.md), [data card](docs/DATA_CARD.md), [responsible-AI notes](docs/RESPONSIBLE_AI.md). Not done: the demo video, and a check of the judge against hand labels |
 | M7 | Fix and prove: guard and history fixes, intervals and a CI gate on the evaluation, a public demo that replays real answers | Done |
 | M8 | An evaluation that can fail, and a measured router | Part done: a [held-out routing set](#routing-measured-on-messages-the-rules-had-never-seen) with six routers scored on it, the best one now in the agent, and a [check on every figure](#a-check-on-every-figure-in-an-answer). Not done: the larger evaluation set, the judge checked against hand labels, abstention, tokens per answer |
-| M9, M10 | Live progress, approval before a ticket is written, after-call work, call assist, compliance review | Not started. Planned in [PLAN.md section 16](PLAN.md) |
+| M9 | Live progress, approval before a ticket is written, after-call work | Part done: the interface shows each stage of an answer as the copilot starts it, streamed from the API, and a hand-off is drafted for the agent to approve before anything is written. Not done: a clarifying question for an ambiguous request, after-call wrap-up |
+| M10 | Call assist and compliance review | Not started. Planned in [PLAN.md section 16](PLAN.md) |
 
 The full specification is in [PLAN.md](PLAN.md).
 
@@ -227,6 +228,10 @@ python -m eval.claim_check_eval
 - **Calls.** The redacted call transcripts, with a summary on request shown beside the transcript.
 
 ![A hand-off in the dark theme. The agent's question held a name and a phone number; the line under it shows them replaced by placeholders, and the route of steps branches to a tag that says a person has the request.](docs/img/cue-hand-off.png)
+
+While an answer is on its way, the page shows what the copilot is really doing: "Checking the request", "Searching the help articles", "Writing the answer". The agent reports each stage as it starts and the API streams them (`POST /api/ask/stream`, server-sent events). An event is a stage name and fixed words; it never carries the question or anything a tool returned.
+
+When a request needs a person, the copilot does not open a ticket. It drafts one: which team, how urgent, and what is needed, with personal details replaced. The agent reads it, changes what is wrong, and opens it, or decides not to. Only then is a ticket written (`POST /api/handoffs`), and the agent gets the reference and what to tell the customer.
 
 It is a REST API ([api/main.py](api/main.py), FastAPI) that calls the same agent code the evaluation measures, and a front end in [web](web) (React, TypeScript, Vite, Tailwind) that the API serves. The look is specified in [web/DESIGN.md](web/DESIGN.md), and the mockups and decisions behind it are in [design](design). Both pictures on this page are from the public demo, so the answers in them are recordings of the live copilot's output.
 
