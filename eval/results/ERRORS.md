@@ -66,3 +66,110 @@ Every row that failed a check, in every saved run. "Kind" is what the failed che
 | E021 | Help articles | reading_level_ok | reading level |  |
 | E025 | Plan lookups | reading_level_ok, tool_choice | reading level; tool choice | **tool choice.** The plan question was answered from the help articles and not from the plan table. The answer was right. |
 | E043 | Call summaries | correctness | answer, by the judge | **not decided.** The judge found the summary did not say the customer had already typed in their card number. |
+
+## 2026-11-16_models-gpt-oss-120b-A-ann.json
+
+9 of 40 rows failed at least one check. Commit `8478690`, prompt v3.
+
+| Row | Questions | Failed check | Kind | Read by hand |
+|---|---|---|---|---|
+| E003 | Help articles | reading_level_ok | reading level |  |
+| E013 | Help articles | citation_valid, correctness, escalation_correct, expected_source_cited, expected_source_retrieved, tool_choice | answer, by the judge; citation; retrieval; routing; tool choice |  |
+| E014 | Help articles | correctness | answer, by the judge |  |
+| E015 | Help articles | correctness | answer, by the judge |  |
+| E021 | Help articles | reading_level_ok | reading level |  |
+| E025 | Plan lookups | correctness, tool_choice | answer, by the judge; tool choice |  |
+| E043 | Call summaries | correctness | answer, by the judge |  |
+| E031 | Call summaries | correctness | answer, by the judge |  |
+| E038 | Trick questions | expectations_guidelines | answer, by the judge |  |
+
+## 2026-11-16_models-llama-4-maverick-A-ann.json
+
+16 of 40 rows failed at least one check. Commit `8478690`, prompt v3.
+
+| Row | Questions | Failed check | Kind | Read by hand |
+|---|---|---|---|---|
+| E001 | Help articles | reading_level_ok | reading level |  |
+| E003 | Help articles | citation_valid, correctness, expected_source_cited, expected_source_retrieved, tool_choice | answer, by the judge; citation; retrieval; tool choice |  |
+| E007 | Help articles | citation_valid, expected_source_cited, expected_source_retrieved, tool_choice | citation; retrieval; tool choice |  |
+| E008 | Help articles | citation_valid, correctness, expected_source_cited, expected_source_retrieved, tool_choice | answer, by the judge; citation; retrieval; tool choice |  |
+| E041 | Help articles | expectations_guidelines, reading_level_ok | answer, by the judge; reading level |  |
+| E013 | Help articles | citation_valid, correctness, escalation_correct, expected_source_cited, expected_source_retrieved, tool_choice | answer, by the judge; citation; retrieval; routing; tool choice |  |
+| E015 | Help articles | correctness | answer, by the judge |  |
+| E024 | Plan lookups | citation_valid | citation |  |
+| E025 | Plan lookups | citation_valid, reading_level_ok | citation; reading level |  |
+| E027 | Plan lookups | correctness, reading_level_ok | answer, by the judge; reading level |  |
+| E028 | Plan lookups | citation_valid | citation |  |
+| E042 | Call summaries | citation_valid, correctness, reading_level_ok | answer, by the judge; citation; reading level |  |
+| E043 | Call summaries | citation_valid, correctness | answer, by the judge; citation |  |
+| E031 | Call summaries | citation_valid, correctness | answer, by the judge; citation |  |
+| E038 | Trick questions | expectations_guidelines | answer, by the judge |  |
+| E039 | Trick questions | reading_level_ok | reading level |  |
+
+## 2026-11-16_models-qwen3-next-80b-a3b-instruct-A-ann.json
+
+16 of 40 rows failed at least one check. Commit `8478690`, prompt v3.
+
+| Row | Questions | Failed check | Kind | Read by hand |
+|---|---|---|---|---|
+| E003 | Help articles | citation_valid, correctness, expected_source_cited, expected_source_retrieved, tool_choice | answer, by the judge; citation; retrieval; tool choice |  |
+| E007 | Help articles | citation_valid, expected_source_cited, expected_source_retrieved, tool_choice | citation; retrieval; tool choice |  |
+| E008 | Help articles | citation_valid, correctness, expected_source_cited, expected_source_retrieved, figures_supported, tool_choice | answer, by the judge; citation; other; retrieval; tool choice |  |
+| E041 | Help articles | expectations_guidelines, reading_level_ok, tool_choice | answer, by the judge; reading level; tool choice |  |
+| E013 | Help articles | citation_valid, correctness, escalation_correct, expected_source_cited, expected_source_retrieved, tool_choice | answer, by the judge; citation; retrieval; routing; tool choice |  |
+| E015 | Help articles | correctness | answer, by the judge |  |
+| E017 | Help articles | expected_source_cited | retrieval |  |
+| E022 | Help articles | citation_valid, correctness, expected_source_cited, expected_source_retrieved, tool_choice | answer, by the judge; citation; retrieval; tool choice |  |
+| E023 | Plan lookups | citation_valid, reading_level_ok | citation; reading level |  |
+| E026 | Plan lookups | citation_valid | citation |  |
+| E027 | Plan lookups | correctness | answer, by the judge |  |
+| E028 | Plan lookups | citation_valid, reading_level_ok | citation; reading level |  |
+| E042 | Call summaries | citation_valid, correctness | answer, by the judge; citation |  |
+| E043 | Call summaries | citation_valid | citation |  |
+| E031 | Call summaries | citation_valid, correctness | answer, by the judge; citation |  |
+| E038 | Trick questions | expectations_guidelines | answer, by the judge |  |
+
+## 2026-11-16_models-qwen35-122b-a10b-A-ann.json
+
+12 of 40 rows failed at least one check. Commit `8478690`, prompt v3.
+
+| Row | Questions | Failed check | Kind | Read by hand |
+|---|---|---|---|---|
+| E003 | Help articles | citation_valid, correctness, expected_source_cited, expected_source_retrieved, tool_choice | answer, by the judge; citation; retrieval; tool choice |  |
+| E007 | Help articles | citation_valid, expected_source_cited, expected_source_retrieved, tool_choice | citation; retrieval; tool choice |  |
+| E041 | Help articles | expectations_guidelines | answer, by the judge |  |
+| E011 | Help articles | correctness | answer, by the judge |  |
+| E013 | Help articles | citation_valid, correctness, escalation_correct, expected_source_cited, expected_source_retrieved, tool_choice | answer, by the judge; citation; retrieval; routing; tool choice |  |
+| E014 | Help articles | correctness | answer, by the judge |  |
+| E015 | Help articles | correctness | answer, by the judge |  |
+| E025 | Plan lookups | citation_valid, reading_level_ok | citation; reading level |  |
+| E027 | Plan lookups | reading_level_ok | reading level |  |
+| E042 | Call summaries | correctness | answer, by the judge |  |
+| E043 | Call summaries | correctness | answer, by the judge |  |
+| E031 | Call summaries | correctness | answer, by the judge |  |
+
+## 2026-11-16_models-gemma-3-12b-A-ann.json
+
+19 of 40 rows failed at least one check. Commit `8478690`, prompt v3.
+
+| Row | Questions | Failed check | Kind | Read by hand |
+|---|---|---|---|---|
+| E003 | Help articles | citation_valid, correctness, expected_source_cited, expected_source_retrieved, tool_choice | answer, by the judge; citation; retrieval; tool choice |  |
+| E006 | Help articles | citation_valid, correctness, expected_source_cited, expected_source_retrieved, tool_choice | answer, by the judge; citation; retrieval; tool choice |  |
+| E007 | Help articles | citation_valid, correctness, expected_source_cited, expected_source_retrieved, tool_choice | answer, by the judge; citation; retrieval; tool choice |  |
+| E008 | Help articles | citation_valid, correctness, escalation_correct, expected_source_cited, expected_source_retrieved, tool_choice | answer, by the judge; citation; retrieval; routing; tool choice |  |
+| E009 | Help articles | citation_valid, correctness, expected_source_cited, expected_source_retrieved, tool_choice | answer, by the judge; citation; retrieval; tool choice |  |
+| E041 | Help articles | escalation_correct, expectations_guidelines, tool_choice | answer, by the judge; routing; tool choice |  |
+| E011 | Help articles | correctness | answer, by the judge |  |
+| E013 | Help articles | citation_valid, correctness, expected_source_cited, expected_source_retrieved, figures_supported, reading_level_ok, tool_choice | answer, by the judge; citation; other; reading level; retrieval; tool choice |  |
+| E015 | Help articles | correctness | answer, by the judge |  |
+| E022 | Help articles | citation_valid, correctness, expected_source_cited, expected_source_retrieved, tool_choice | answer, by the judge; citation; retrieval; tool choice |  |
+| E023 | Plan lookups | citation_valid | citation |  |
+| E025 | Plan lookups | citation_valid, reading_level_ok | citation; reading level |  |
+| E026 | Plan lookups | citation_valid | citation |  |
+| E027 | Plan lookups | citation_valid | citation |  |
+| E028 | Plan lookups | citation_valid | citation |  |
+| E042 | Call summaries | citation_valid, correctness | answer, by the judge; citation |  |
+| E043 | Call summaries | citation_valid | citation |  |
+| E031 | Call summaries | citation_valid, reading_level_ok | citation; reading level |  |
+| E038 | Trick questions | expectations_guidelines | answer, by the judge |  |

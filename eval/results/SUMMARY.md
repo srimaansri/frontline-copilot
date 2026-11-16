@@ -22,6 +22,11 @@ How to read it:
 | 2026-11-14 | m3-kb-v2 | gpt-oss-120b | rules | B | ann | v2 | 22 | 22/22 | n/a | 20/21 (77-100%) | 21/21 (84-100%) | 21/21 (84-100%) | 18/21 (65-96%) | 22/22 (85-100%) | 1/1 (20-100%) | 19/22 (66-96%) | n/a | n/a | n/a | `1a35afb` | 2026-11-14_m3-kb-v2-B-ann.json |
 | 2026-11-15 | m3-kb-v2 | gpt-oss-120b | rules | B | hybrid | v2 | 22 | 22/22 | n/a | 21/21 (84-100%) | 21/21 (84-100%) | 21/21 (84-100%) | 18/21 (65-96%) | 22/22 (85-100%) | 1/1 (20-100%) | 20/22 (72-98%) | n/a | n/a | n/a | `1a35afb` | 2026-11-15_m3-kb-v2-B-hybrid.json |
 | 2026-11-15 | m4-full | gpt-oss-120b | rules | A | ann | v3 | 40 | 40/40 | n/a | 22/22 (85-100%) | 22/22 (85-100%) | 22/22 (85-100%) | 27/31 (71-95%) | 31/31 (88-100%) | 11/11 (74-100%) | 37/40 (80-98%) | 40/40 (91-100%) | 36/37 (86-100%) | 40/40 (91-100%) | `8624268` | 2026-11-15_m4-full-A-ann.json |
+| 2026-11-16 | models-gpt-oss-120b | gpt-oss-120b | llama-4-maverick | A | ann | v3 | 40 | 40/40 | 40/40 (91-100%) | 21/22 (78-100%) | n/a | n/a | 25/31 (63-91%) | n/a | 10/11 (62-99%) | 38/40 (83-99%) | 39/40 (87-100%) | 35/37 (82-99%) | 40/40 (91-100%) | `8478690` | 2026-11-16_models-gpt-oss-120b-A-ann.json |
+| 2026-11-16 | models-llama-4-maverick | llama-4-maverick | llama-4-maverick | A | ann | v3 | 40 | 40/40 | 40/40 (91-100%) | 18/22 (61-93%) | n/a | n/a | 23/31 (56-87%) | n/a | 9/11 (52-95%) | 34/40 (70-93%) | 39/40 (87-100%) | 33/37 (75-96%) | 40/40 (91-100%) | `8478690` | 2026-11-16_models-llama-4-maverick-A-ann.json |
+| 2026-11-16 | models-qwen3-next-80b-a3b-instruct | qwen3-next-80b-a3b-instruct | llama-4-maverick | A | ann | v3 | 40 | 40/40 | 39/40 (87-100%) | 17/22 (56-90%) | n/a | n/a | 23/31 (56-87%) | n/a | 9/11 (52-95%) | 37/40 (80-98%) | 39/40 (87-100%) | 31/37 (68-93%) | 40/40 (91-100%) | `8478690` | 2026-11-16_models-qwen3-next-80b-a3b-instruct-A-ann.json |
+| 2026-11-16 | models-qwen35-122b-a10b | qwen35-122b-a10b | llama-4-maverick | A | ann | v3 | 40 | 40/40 | 40/40 (91-100%) | 19/22 (66-96%) | n/a | n/a | 23/31 (56-87%) | n/a | 10/11 (62-99%) | 38/40 (83-99%) | 39/40 (87-100%) | 34/37 (78-98%) | 40/40 (91-100%) | `8478690` | 2026-11-16_models-qwen35-122b-a10b-A-ann.json |
+| 2026-11-16 | models-gemma-3-12b | gemma-3-12b | llama-4-maverick | A | ann | v3 | 40 | 40/40 | 39/40 (87-100%) | 15/22 (47-84%) | n/a | n/a | 21/31 (50-82%) | n/a | 9/11 (52-95%) | 37/40 (80-98%) | 38/40 (83-99%) | 29/37 (62-89%) | 40/40 (91-100%) | `8478690` | 2026-11-16_models-gemma-3-12b-A-ann.json |
 
 ## Time to answer
 
@@ -39,3 +44,33 @@ Seconds from the question to the checked answer, one row at a time. The median h
 | 2026-11-15_m4-full-A-ann.json | Requests that need a person | 5 | 1.6 | 3.5 | 3.5 |
 | 2026-11-15_m4-full-A-ann.json | Help articles | 22 | 2.5 | 3.3 | 3.7 |
 | 2026-11-15_m4-full-A-ann.json | Plan lookups | 6 | 2.5 | 13.4 | 13.4 |
+| 2026-11-16_models-gpt-oss-120b-A-ann.json | All | 40 | 3.8 | 5.3 | 9.7 |
+| 2026-11-16_models-gpt-oss-120b-A-ann.json | Trick questions | 3 | 1.9 | 4.4 | 4.4 |
+| 2026-11-16_models-gpt-oss-120b-A-ann.json | Call summaries | 4 | 4.4 | 5.3 | 5.3 |
+| 2026-11-16_models-gpt-oss-120b-A-ann.json | Requests that need a person | 5 | 0.0 | 0.0 | 0.0 |
+| 2026-11-16_models-gpt-oss-120b-A-ann.json | Help articles | 22 | 3.8 | 4.6 | 4.7 |
+| 2026-11-16_models-gpt-oss-120b-A-ann.json | Plan lookups | 6 | 3.6 | 9.7 | 9.7 |
+| 2026-11-16_models-llama-4-maverick-A-ann.json | All | 40 | 4.9 | 6.8 | 7.8 |
+| 2026-11-16_models-llama-4-maverick-A-ann.json | Trick questions | 3 | 2.4 | 5.0 | 5.0 |
+| 2026-11-16_models-llama-4-maverick-A-ann.json | Call summaries | 4 | 6.7 | 7.5 | 7.5 |
+| 2026-11-16_models-llama-4-maverick-A-ann.json | Requests that need a person | 5 | 0.0 | 0.0 | 0.0 |
+| 2026-11-16_models-llama-4-maverick-A-ann.json | Help articles | 22 | 5.3 | 6.6 | 7.8 |
+| 2026-11-16_models-llama-4-maverick-A-ann.json | Plan lookups | 6 | 3.6 | 6.1 | 6.1 |
+| 2026-11-16_models-qwen3-next-80b-a3b-instruct-A-ann.json | All | 40 | 3.3 | 4.7 | 5.1 |
+| 2026-11-16_models-qwen3-next-80b-a3b-instruct-A-ann.json | Trick questions | 3 | 1.7 | 3.6 | 3.6 |
+| 2026-11-16_models-qwen3-next-80b-a3b-instruct-A-ann.json | Call summaries | 4 | 4.1 | 4.7 | 4.7 |
+| 2026-11-16_models-qwen3-next-80b-a3b-instruct-A-ann.json | Requests that need a person | 5 | 0.0 | 0.0 | 0.0 |
+| 2026-11-16_models-qwen3-next-80b-a3b-instruct-A-ann.json | Help articles | 22 | 3.3 | 5.0 | 5.1 |
+| 2026-11-16_models-qwen3-next-80b-a3b-instruct-A-ann.json | Plan lookups | 6 | 3.6 | 4.4 | 4.4 |
+| 2026-11-16_models-qwen35-122b-a10b-A-ann.json | All | 40 | 3.8 | 8.2 | 8.9 |
+| 2026-11-16_models-qwen35-122b-a10b-A-ann.json | Trick questions | 3 | 2.6 | 4.9 | 4.9 |
+| 2026-11-16_models-qwen35-122b-a10b-A-ann.json | Call summaries | 4 | 7.8 | 8.2 | 8.2 |
+| 2026-11-16_models-qwen35-122b-a10b-A-ann.json | Requests that need a person | 5 | 0.0 | 0.0 | 0.0 |
+| 2026-11-16_models-qwen35-122b-a10b-A-ann.json | Help articles | 22 | 3.9 | 5.1 | 5.4 |
+| 2026-11-16_models-qwen35-122b-a10b-A-ann.json | Plan lookups | 6 | 3.6 | 8.9 | 8.9 |
+| 2026-11-16_models-gemma-3-12b-A-ann.json | All | 40 | 3.5 | 5.6 | 7.0 |
+| 2026-11-16_models-gemma-3-12b-A-ann.json | Trick questions | 3 | 2.4 | 4.6 | 4.6 |
+| 2026-11-16_models-gemma-3-12b-A-ann.json | Call summaries | 4 | 5.4 | 7.0 | 7.0 |
+| 2026-11-16_models-gemma-3-12b-A-ann.json | Requests that need a person | 5 | 0.0 | 0.0 | 0.0 |
+| 2026-11-16_models-gemma-3-12b-A-ann.json | Help articles | 22 | 3.6 | 5.1 | 5.6 |
+| 2026-11-16_models-gemma-3-12b-A-ann.json | Plan lookups | 6 | 3.2 | 4.0 | 4.0 |
