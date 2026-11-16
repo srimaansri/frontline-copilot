@@ -21,9 +21,31 @@ import ast
 import hashlib
 from pathlib import Path
 
-# What decides the copilot's behaviour, and what decides how it is scored.
+# What an answer depends on, and what decides how it is scored. The modules are
+# named one by one: the ones the agent imports to answer a question. A module that
+# cannot change an answer (the compliance checker, the chunker, whose effect is in
+# the search index and not in this repository) is left out, so that adding to it
+# does not make an evaluation look stale. A new module on the answering path has to
+# be added here by hand, and ``tests/test_fingerprint.py`` fails until it is.
+ANSWER_PATH_MODULES: tuple[str, ...] = (
+    "agent",
+    "claims",
+    "config",
+    "guardrails",
+    "llm",
+    "luhn",
+    "prompts",
+    "readability",
+    "redaction",
+    "retriever",
+    "router",
+    "schemas",
+    "steps",
+    "text",
+    "tools",
+)
 BEHAVIOUR_GLOBS: tuple[str, ...] = (
-    "src/copilot/*.py",
+    *(f"src/copilot/{name}.py" for name in ANSWER_PATH_MODULES),
     "config/settings.yaml",
     "eval/eval_set.jsonl",
     "eval/scorers.py",
@@ -51,7 +73,9 @@ def behaviour_fingerprint(root: Path = Path()) -> dict[str, object]:
 
 
 def changed_files(saved: dict[str, str], current: dict[str, str]) -> list[str]:
-    """The files that were added, removed or changed between two fingerprints."""
-    return sorted(
-        name for name in saved.keys() | current.keys() if saved.get(name) != current.get(name)
-    )
+    """The files of ``current`` that ``saved`` does not hold with the same hash.
+
+    Only the files that count now are compared. A run saved when the fingerprint
+    covered more files is not made stale by the ones that have since been left out.
+    """
+    return sorted(name for name, digest in current.items() if saved.get(name) != digest)
