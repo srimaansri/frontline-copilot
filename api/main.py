@@ -48,6 +48,7 @@ from copilot.schemas import (
     HandOffDraft,
     SavedWrapUp,
     Sentiment,
+    Usage,
 )
 from copilot.steps import Step, describe_steps
 from copilot.tools import MAX_WRAP_UP_CHARS, ToolError, valid_transcript_id
@@ -111,6 +112,8 @@ class AskResponse(BaseModel):
     guardrail_flags: list[str]
     # A hand-off the copilot drafted. It is written only by POST /api/handoffs.
     handoff_draft: HandOffDraft | None = None
+    # Model calls and tokens this answer took.
+    usage: Usage = Field(default_factory=Usage)
     seconds: float
     trace_id: str | None
     steps: list[Step]

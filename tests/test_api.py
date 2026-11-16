@@ -273,6 +273,13 @@ def test_ask_returns_the_answer_with_its_steps_and_the_redacted_question() -> No
     assert body["tools_used"] == ["search_kb"]
     assert body["escalated"] is False
     assert body["trace_id"] is None
+    # The count of model calls and tokens goes to the interface with the answer.
+    assert body["usage"] == {
+        "model_calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "calls_without_counts": 0,
+    }
     assert body["seconds"] >= 0
     assert [step["stage"] for step in body["steps"]][:3] == ["redaction", "input_check", "tool"]
     assert body["steps"][0]["title"] == "Personal details removed"

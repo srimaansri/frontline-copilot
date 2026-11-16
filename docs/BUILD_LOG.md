@@ -819,3 +819,25 @@ They also found defects, each confirmed by running the code before it was change
 - `eval/eval_set_extended.jsonl`. Each row has `evidence`; the unanswerable rows are the ones to look at hardest, because "the article leaves this detail out" is a judgement.
 - The five compliance rules and their definitions at the top of `src/copilot/compliance.py`.
 - The wrap-up form's wording in `web/src/features/calls/WrapUpPanel.tsx`.
+
+## 2026-11-16 — Deployed, and checked through the app's own address
+
+**Tool:** Claude Code.
+
+**What was done:** `python setup/deploy_app.py` at commit `5448544`. The script updated the existing app's resources (the router's endpoint and `ops.call_wrapups` are new), built the interface, uploaded 39 files and started the app. The deployment succeeded in 247 seconds.
+
+**Checked on 2026-11-15, through the app's address with a workspace sign-in:**
+
+- The app's resources now include `router-model` and `ops-call-wrapups`.
+- **The stage events arrive as they happen.** This was the open question: a proxy that buffered the reply would deliver every stage at once at the end. For "How much is the late payment fee, and can it be waived?" each event reached the client within 0.1 second of the time the server stamped on it (request check at 0.01 s, first model call at 0.80 s, the search at 1.24 s, writing at 1.63 s, the output check at 2.75 s, the answer at 2.85 s), with a trace.
+- "pls cancel his line", which no rule matches, came back in 0.79 seconds as a cancellation draft for the account team, with nothing written. The router is reachable from the app.
+- A wrap-up draft for call T0002 came back in 2.7 seconds: resolved, troubleshooting, positive.
+
+**Found by this check:** the count of model calls and tokens was on the trace and not in what the API sends, because the response model did not list it. Fixed.
+
+**Not done**
+
+- Nobody has clicked through the deployed page in a browser while signed in. These checks went through the API.
+- Saving a wrap-up and opening a hand-off were not exercised on the deployed app, only on a local one.
+- This deploy predates the fix above and the second router prompt's result file. Free Edition stops the app 24 hours after it starts.
+

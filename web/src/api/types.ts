@@ -102,6 +102,15 @@ export interface HandOffTicket {
   recorded: boolean;
 }
 
+/** The model work one answer took, as the copilot counted it. */
+export interface Usage {
+  model_calls: number;
+  input_tokens: number;
+  output_tokens: number;
+  /** Calls whose reply carried no token count. When not zero, the totals are a lower bound. */
+  calls_without_counts: number;
+}
+
 export interface AskResponse {
   /** Markdown. May contain citation markers such as [1] or [1, 2]. */
   answer: string;
@@ -113,6 +122,8 @@ export interface AskResponse {
   guardrail_flags: string[];
   /** A hand-off waiting for the agent to approve it. Absent or null when there is none. */
   handoff_draft?: HandOffDraft | null;
+  /** Absent in a recording made before it was counted. */
+  usage?: Usage;
   seconds: number;
   trace_id: string | null;
   steps: Step[];
