@@ -52,3 +52,22 @@ CREATE TABLE IF NOT EXISTS frontline.ops.call_wrapups (
   follow_up       STRING COMMENT 'The next step, redacted. NULL if nothing is left to do',
   sentiment       STRING COMMENT 'The customer''s mood at the end: positive, neutral or negative'
 ) COMMENT 'After-call records approved by an agent. A call saved twice has two rows; the latest saved_at is current.';
+
+-- What the rule check found in each call (Milestone 10). Written by
+-- pipelines/06_call_insights.py, which replaces every row on each run. One row per
+-- call, also for a call in which no rule fired, so that "checked, nothing found" and
+-- "not checked" are different. No column holds text from a call: only the call id,
+-- counts, rule names, turn numbers and the checker's own fixed sentences.
+--
+-- A finding is a reason to open the call, not a verdict. The rules miss some
+-- breaches; eval/compliance_eval.py measures how many.
+CREATE TABLE IF NOT EXISTS frontline.gold.call_insights (
+  transcript_id STRING NOT NULL COMMENT 'The call, as in silver.transcripts_redacted',
+  n_turns       INT COMMENT 'Turns in the call. Every turn_index below is smaller than this',
+  n_findings    INT COMMENT 'How many findings the rule check raised. 0 when no rule fired',
+  rules         ARRAY<STRING> COMMENT 'The rules that fired, each once, in the checker''s order',
+  findings      ARRAY<STRUCT<rule: STRING, turn_index: INT, reason: STRING>>
+                COMMENT 'Each finding: the rule, the turn it points at (from 0), and the checker''s fixed sentence',
+  git_sha       STRING COMMENT 'Commit of the checker that wrote the row',
+  _checked_at   TIMESTAMP COMMENT 'UTC, when the pipeline checked the call'
+) COMMENT 'Rule-check findings per redacted call, from copilot.compliance. A reason to review a call, not a verdict.';
