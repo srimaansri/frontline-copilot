@@ -2,8 +2,12 @@
 # MAGIC %md
 # MAGIC # 01 Ingest: landing volume to bronze
 # MAGIC
-# MAGIC Reads the four files uploaded by `data_gen/upload.py` and writes them as Delta
+# MAGIC Reads the five files uploaded by `data_gen/upload.py` and writes them as Delta
 # MAGIC tables, unchanged apart from two lineage columns.
+# MAGIC
+# MAGIC The transcripts come in two files that share one shape: the 200 ordinary calls
+# MAGIC (T0001 to T0200) and the calls with a seeded rule breach (T0201 on). They go into
+# MAGIC one bronze table, and `_source_file` says which file a row came from.
 # MAGIC
 # MAGIC Bronze holds the **unredacted** transcripts. That is acceptable here only because
 # MAGIC the data is synthetic. In production this schema would be locked down with Unity
@@ -61,6 +65,8 @@ TRANSCRIPT_SCHEMA = T.StructType(
         T.StructField("resolution", T.StringType(), True),
     ]
 )
+# Both files hold calls in TRANSCRIPT_SCHEMA. Their ids do not overlap.
+TRANSCRIPT_FILES = ("transcripts.jsonl", "compliance_transcripts.jsonl")
 LABEL_SCHEMA = T.StructType(
     [
         T.StructField("transcript_id", T.StringType(), False),
@@ -108,7 +114,10 @@ counts = {
         spark.read.schema(KB_SCHEMA).json(f"{landing}/kb_articles.jsonl"), "kb_articles"
     ),
     "transcripts": write_bronze(
-        spark.read.schema(TRANSCRIPT_SCHEMA).json(f"{landing}/transcripts.jsonl"), "transcripts"
+        spark.read.schema(TRANSCRIPT_SCHEMA).json(
+            [f"{landing}/{name}" for name in TRANSCRIPT_FILES]
+        ),
+        "transcripts",
     ),
     "pii_labels": write_bronze(
         spark.read.schema(LABEL_SCHEMA).json(f"{landing}/pii_labels.jsonl"), "pii_labels"
@@ -125,5 +134,16 @@ counts = {
 empty = [name for name, count in counts.items() if count == 0]
 if empty:
     raise RuntimeError(f"bronze tables with no rows: {empty}")
+
+# Every later table is keyed on the call id, so the same id in both files stops the run here.
+repeated = (
+    spark.table(settings.table("bronze", "transcripts"))
+    .groupBy("transcript_id")
+    .count()
+    .where("count > 1")
+    .count()
+)
+if repeated:
+    raise RuntimeError(f"{repeated} transcript ids appear more than once in {TRANSCRIPT_FILES}")
 
 dbutils.notebook.exit(json.dumps(counts))

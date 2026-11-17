@@ -42,6 +42,7 @@ export const DEMO_NAMES = [
   "calls",
   "calls-summary",
   "calls-assist",
+  "calls-findings",
 ] as const;
 
 export type DemoName = (typeof DEMO_NAMES)[number];
@@ -72,12 +73,39 @@ const DEMO_QUESTIONS: Partial<Record<DemoName, string>> = {
 /** The question to send as soon as the Ask view opens, if the demo is one of its states. */
 export const DEMO_QUESTION: string | null = DEMO === null ? null : (DEMO_QUESTIONS[DEMO] ?? null);
 
+/** The ordinary call the Calls demos open on. Every recording has it. */
+const ORDINARY_CALL = "T0002";
+
+/**
+ * A call in which the agent reads a card number back, so the rule check has a
+ * finding to show. It is the first of `BREACH_CALL_IDS` in `eval/record_demo.py`.
+ */
+const FLAGGED_CALL = "T0215";
+
+function demoCall(): string | null {
+  if (DEMO === "calls-findings") {
+    return FLAGGED_CALL;
+  }
+  return DEMO === "calls" || DEMO === "calls-summary" || DEMO === "calls-assist"
+    ? ORDINARY_CALL
+    : null;
+}
+
 /** The call the Calls view opens on, if the demo is one of its states. */
-export const DEMO_CALL: string | null =
-  DEMO === "calls" || DEMO === "calls-summary" || DEMO === "calls-assist" ? "T0002" : null;
+export const DEMO_CALL: string | null = demoCall();
+
+/**
+ * The call to open when the list does not have `DEMO_CALL`. A recording made
+ * before the breach calls were added has no flagged call; the demo then opens
+ * an ordinary one, where the page says plainly that no rule check was recorded.
+ */
+export const DEMO_CALL_FALLBACK: string | null = DEMO === "calls-findings" ? ORDINARY_CALL : null;
 
 /** True when the Calls demo should also ask for the summary. */
 export const DEMO_CALL_SUMMARY = DEMO === "calls-summary";
 
 /** True when the Calls demo should open the call in its replay, with the whole call on show. */
 export const DEMO_CALL_ASSIST = DEMO === "calls-assist";
+
+/** True when the Calls demo opens with only the flagged calls listed. */
+export const DEMO_FLAGGED_ONLY = DEMO === "calls-findings";

@@ -25,12 +25,13 @@ export const PAIRS = [
   ["ink", "surface", "body", "Answers, list rows, buttons, popover"],
   ["ink", "sunken", "body", "Agent's question, customer's turn, step titles on the rail"],
   ["ink", "brand-tint", "body", "Selected call row"],
-  ["ink", "warn-tint", "body", "Hand-off banner"],
+  ["ink", "warn-tint", "body", "Hand-off banner; a finding of the rule check"],
 
   // --- Secondary text ------------------------------------------------------------------------
   ["ink-2", "paper", "body", "Lede, cues, response time, call caption, stage key"],
   ["ink-2", "surface", "body", "Cues, tool badges, popover labels, data tags"],
   ["ink-2", "sunken", "body", "Step details, cues and legend on the rail"],
+  ["ink-2", "warn-tint", "body", "What the rule check is, and its count, over its findings"],
 
   // --- Hints ---------------------------------------------------------------------------------
   ["ink-3", "paper", "body", "Footer, hint under the question box, stage numerals"],
@@ -42,13 +43,14 @@ export const PAIRS = [
   ["ink-2", "line", "body", "Filter chip label while pressed"],
   ["ok", "line", "ui", "Status shape in a filter chip while pressed"],
   ["notice", "line", "ui", "Status shape in a filter chip while pressed"],
-  ["warn", "line", "ui", "Status shape in a filter chip while pressed"],
+  ["warn", "line", "ui", "Status shape in a filter chip, and the flag in its switch, while pressed"],
 
   // --- Cobalt --------------------------------------------------------------------------------
   ["brand-text", "surface", "body", "Links, citation numerals, arrows on cards"],
   ["brand-text", "brand-tint", "body", "Citation chip under the pointer"],
   ["brand-text", "paper", "ui", "Focus ring on the page; field focus ring"],
   ["brand-text", "sunken", "ui", "Focus ring on the rail"],
+  ["brand-text", "warn-tint", "ui", "Focus ring of \"Go to turn\" on a finding"],
   ["on-brand", "brand", "body", "Primary button, send button, selected citation chip"],
   ["on-brand", "brand-strong", "body", "Primary button under the pointer"],
   ["on-brand", "brand-press", "body", "Primary button and citation chip while pressed"],
@@ -74,11 +76,11 @@ export const PAIRS = [
   ["notice", "surface", "body", "Call status in the list"],
   ["notice", "sunken", "body", "Step status on the rail"],
   ["notice", "brand-tint", "body", "Call status in the selected row"],
-  ["warn", "paper", "body", "Call status in the call header; border of the hand-off banner"],
-  ["warn", "surface", "body", "Call status in the list, Negative mood, error notice"],
-  ["warn", "sunken", "body", "Step status on the rail"],
-  ["warn", "brand-tint", "body", "Call status in the selected row"],
-  ["warn", "warn-tint", "ui", "Icon in the hand-off banner"],
+  ["warn", "paper", "body", "Call status in the call header; border of the hand-off banner; the label and outline of a flagged turn"],
+  ["warn", "surface", "body", "Call status in the list, Negative mood, error notice; the flag in a list row and in its switch"],
+  ["warn", "sunken", "body", "Step status on the rail; the flag in a row under the pointer; outline of a flagged customer turn"],
+  ["warn", "brand-tint", "body", "Call status and the flag in the selected row"],
+  ["warn", "warn-tint", "ui", "Icon in the hand-off banner; the flag over the rule check's findings and the rule between two of them"],
   ["notice", "warn-tint", "body", "New at this turn, on the hint to hand off in call assist"],
   ["ink-3", "warn-tint", "body", "The turn a hint to hand off dates from, in call assist"],
   ["block", "surface", "body", "Not responding, in the popover"],
@@ -91,8 +93,7 @@ export const PAIRS = [
   // --- Boundaries ----------------------------------------------------------------------------
   ["line-strong", "paper", "ui", "Control borders on the page; dashed data tags"],
   ["line-strong", "surface", "ui", "Control borders, unfilled signal bars"],
-  ["line-strong", "sunken", "ui", "The route and its legs on the rail"],
-  ["edge", "paper", "ui", "Outline of the answer card"],
+  ["line-strong", "sunken", "ui", "The route and its legs on the rail"],  ["edge", "paper", "ui", "Outline of the answer card"],
   ["edge", "sunken", "ui", "Outline of the summary card on the rail"],
   ["edge", "brand-tint", "ui", "Outline of the selected call row"],
 ];

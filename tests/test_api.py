@@ -28,6 +28,24 @@ from copilot.tools import ToolError
 
 PHONE = "480-555-0132"
 TURNS = [{"speaker": "customer", "text": "Hi, this is <PERSON_1>."}]
+# A call in which the agent reads a card number back, as the redacted table holds it.
+BREACH_TURNS = [
+    {"speaker": "agent", "text": "Can I have your account number, please?"},
+    {"speaker": "customer", "text": "It's <ACCOUNT_NUMBER_1>."},
+    {"speaker": "customer", "text": "My card is <CREDIT_CARD_1>, said the walrus."},
+    {"speaker": "agent", "text": "Thanks, I have <CREDIT_CARD_1>."},
+]
+TRANSCRIPTS = {"T0001": TURNS, "T0207": BREACH_TURNS}
+# The calls list as the warehouse returns it: checked and clean, checked and flagged,
+# and a call the pipeline has not checked.
+CALL_ROWS: list[dict[str, Any]] = [
+    {"transcript_id": "T0001", "category": "billing", "resolution": "escalated",
+     "rules_json": "[]"},
+    {"transcript_id": "T0207", "category": "billing", "resolution": "resolved",
+     "rules_json": '["card_read_back"]'},
+    {"transcript_id": "T0300", "category": "scam", "resolution": "unresolved",
+     "rules_json": None},
+]  # fmt: skip
 DRAFT = CallWrapUp(
     transcript_id="T0001",
     disposition="escalated",
@@ -46,6 +64,20 @@ APPROVED: dict[str, Any] = {
     "follow_up": {"owner": "team", "action": "Review the late fee."},
     "sentiment": "neutral",
 }
+# The wrap-up of T0001 as the wrap-ups table returns it: redacted when it was saved.
+STORED_ROW: dict[str, Any] = {
+    "wrapup_id": "WRP-4F2A91C7",
+    "saved_at": "2026-11-14 16:42:05",
+    "disposition": "escalated",
+    "category": "billing",
+    "notes_json": json.dumps(
+        ["The customer disputed a late fee.", "Call back on <PHONE_NUMBER_1>."]
+    ),
+    "promises_json": "[]",
+    "follow_up_owner": "team",
+    "follow_up": "Review the late fee.",
+    "sentiment": "neutral",
+}
 
 
 class FakeRedactor:
@@ -62,17 +94,30 @@ class FakeRedactor:
 class FakeTools:
     def __init__(self) -> None:
         self.statements: list[str] = []
+        self.parameters: list[dict[str, Any]] = []
         self.tickets: list[tuple[str, str, str]] = []
         self.drafted: list[str] = []
         self.saved: list[CallWrapUp] = []
         self.wrap_up_failure: Exception | None = None
+        self.sql_failure: Exception | None = None
 
     def sql(self, statement: str, parameters: Any) -> list[dict[str, Any]]:
         self.statements.append(statement)
-        if "ORDER BY transcript_id" in statement:
-            return [{"transcript_id": "T0001", "category": "billing", "resolution": "escalated"}]
-        if parameters["transcript_id"][1] == "T0001":
-            return [{"turns_json": json.dumps(TURNS)}]
+        self.parameters.append(dict(parameters))
+        if isinstance(self.sql_failure, Exception):
+            raise self.sql_failure
+        if "ORDER BY t.transcript_id" in statement:
+            rows = CALL_ROWS
+            if "n_findings > 0" in statement:
+                rows = [row for row in rows if row["rules_json"] not in (None, "[]")]
+            if ":rule" in statement:
+                rows = [row for row in rows if parameters["rule"][1] in (row["rules_json"] or "")]
+            return rows
+        call_id = parameters["transcript_id"][1]
+        if "call_wrapups" in statement:
+            return [STORED_ROW] if call_id == "T0001" else []
+        if call_id in TRANSCRIPTS:
+            return [{"turns_json": json.dumps(TRANSCRIPTS[call_id])}]
         return []
 
     def escalate_to_human(
@@ -414,13 +459,165 @@ def test_a_failure_inside_the_copilot_does_not_leak_its_reason() -> None:
 # --- calls -------------------------------------------------------------------------------------
 
 
-def test_calls_are_listed_from_the_redacted_table() -> None:
+def test_calls_are_listed_from_the_redacted_table_with_what_the_rule_check_found() -> None:
     client, copilot = client_for()
 
     assert client.get("/api/calls").json() == [
-        {"transcript_id": "T0001", "category": "billing", "resolution": "escalated"}
+        {"transcript_id": "T0001", "category": "billing", "resolution": "escalated",
+         "findings": []},
+        {"transcript_id": "T0207", "category": "billing", "resolution": "resolved",
+         "findings": ["card_read_back"]},
+        # Not checked is not the same as nothing found.
+        {"transcript_id": "T0300", "category": "scam", "resolution": "unresolved",
+         "findings": None},
+    ]  # fmt: skip
+    statement = copilot.tools.statements[0]
+    assert "silver.transcripts_redacted" in statement
+    assert "gold.call_insights" in statement
+    assert "bronze" not in statement
+    assert copilot.tools.parameters[0] == {}
+
+
+def test_the_calls_list_can_be_narrowed_to_calls_with_a_finding_or_to_one_rule() -> None:
+    client, copilot = client_for()
+
+    flagged = client.get("/api/calls", params={"finding": "any"}).json()
+    by_rule = client.get("/api/calls", params={"finding": "card_read_back"}).json()
+    other_rule = client.get("/api/calls", params={"finding": "full_ssn_requested"}).json()
+
+    assert [call["transcript_id"] for call in flagged] == ["T0207"]
+    assert [call["transcript_id"] for call in by_rule] == ["T0207"]
+    assert other_rule == []
+    # The rule travels as a bound value. It is never part of the statement.
+    assert copilot.tools.parameters[1] == {"rule": ("STRING", "card_read_back")}
+    assert "card_read_back" not in copilot.tools.statements[1]
+
+
+def test_a_finding_filter_that_names_no_rule_is_refused_before_any_lookup() -> None:
+    client, copilot = client_for()
+
+    response = client.get("/api/calls", params={"finding": "x' OR 1=1 --"})
+
+    assert response.status_code == 400
+    assert "must be one of: any, disclosure_before_verification" in response.json()["detail"]
+    assert copilot.tools.statements == []
+    assert client.get("/api/calls", params={"finding": "x" * 41}).status_code == 422
+
+
+def test_a_calls_list_that_cannot_be_read_does_not_leak_its_reason(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    client, copilot = client_for()
+    copilot.tools.sql_failure = RuntimeError(f"TABLE_OR_VIEW_NOT_FOUND near {PHONE}")
+
+    with caplog.at_level("DEBUG"):
+        response = client.get("/api/calls")
+
+    assert response.status_code == 502
+    assert response.json() == {"detail": "The calls could not be read just now. Please try again."}
+    logged = "\n".join(record.getMessage() + (record.exc_text or "") for record in caplog.records)
+    assert "RuntimeError at test_api.py:" in logged
+    assert PHONE not in logged
+    assert "TABLE_OR_VIEW_NOT_FOUND" not in logged
+
+
+def test_a_calls_list_with_no_insights_table_is_a_fault_of_the_server_not_of_the_caller() -> None:
+    # The list joins gold.call_insights. Before the pipeline has written it, the
+    # warehouse fails the statement, and the SQL runner reports that in these words.
+    client, copilot = client_for()
+    copilot.tools.sql_failure = ToolError("The data lookup did not finish (state FAILED)")
+
+    response = client.get("/api/calls")
+
+    assert response.status_code == 502
+    assert response.json() == {"detail": "The data lookup did not finish (state FAILED)"}
+    assert "gold.call_insights" in copilot.tools.statements[0]
+    # The same fault on a filtered list, on one call's rule check and on a saved wrap-up.
+    assert client.get("/api/calls", params={"finding": "any"}).status_code == 502
+    assert client.get("/api/calls/T0207/findings").status_code == 502
+    assert client.get("/api/calls/T0001/wrapup/saved").status_code == 502
+
+
+# --- the rule check on one call ------------------------------------------------------------------
+
+
+def test_the_findings_of_a_call_are_a_rule_a_turn_and_fixed_words() -> None:
+    client, copilot = client_for()
+
+    response = client.get("/api/calls/t0207/findings")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["transcript_id"] == "T0207"
+    assert body["findings"] == [
+        {
+            "rule": "card_read_back",
+            "turn_index": 3,
+            "reason": "The agent says a full payment card number.",
+        }
     ]
+    assert body["rules_checked"] == [
+        "disclosure_before_verification",
+        "verification_skipped",
+        "card_read_back",
+        "unauthorized_promise",
+        "full_ssn_requested",
+    ]
+    # Nothing the call says comes back with its findings, not even a placeholder.
+    assert "walrus" not in response.text
+    assert "<" not in response.text
+    # One read, of the redacted table, and no other table.
+    assert len(copilot.tools.statements) == 1
     assert "silver.transcripts_redacted" in copilot.tools.statements[0]
+    assert "call_insights" not in copilot.tools.statements[0]
+
+
+def test_a_call_in_which_no_rule_fires_has_no_findings_and_still_says_what_was_checked() -> None:
+    client, _ = client_for()
+
+    body = client.get("/api/calls/T0001/findings").json()
+
+    assert body["findings"] == []
+    assert len(body["rules_checked"]) == 5
+
+
+def test_the_rule_check_is_not_traced_and_calls_no_model(monkeypatch: pytest.MonkeyPatch) -> None:
+    started: list[str] = []
+    monkeypatch.setattr(
+        api_module.mlflow, "start_span", lambda **kwargs: started.append(kwargs["name"])
+    )
+    client, copilot = client_for(tracing=True)
+
+    assert client.get("/api/calls/T0207/findings").status_code == 200
+    assert started == []
+    assert copilot.calls == []
+    assert copilot.tools.drafted == []
+
+
+def test_a_bad_or_unknown_call_has_no_findings_to_give() -> None:
+    client, _ = client_for()
+
+    assert client.get("/api/calls/T12/findings").status_code == 400
+    missing = client.get("/api/calls/T9999/findings")
+    assert missing.status_code == 404
+    assert missing.json() == {"detail": "No transcript was found with the id T9999"}
+
+
+def test_a_rule_check_that_fails_does_not_leak_its_reason(caplog: pytest.LogCaptureFixture) -> None:
+    client, copilot = client_for()
+    copilot.tools.sql_failure = RuntimeError(f"warehouse stopped while reading {PHONE}")
+
+    with caplog.at_level("DEBUG"):
+        response = client.get("/api/calls/T0207/findings")
+
+    assert response.status_code == 502
+    assert response.json() == {
+        "detail": "The rule check could not be run just now. Please try again."
+    }
+    logged = "\n".join(record.getMessage() + (record.exc_text or "") for record in caplog.records)
+    assert "RuntimeError at test_api.py:" in logged
+    assert PHONE not in logged
+    assert "warehouse stopped" not in logged
 
 
 def test_a_transcript_is_returned_as_turns() -> None:
@@ -659,6 +856,78 @@ def test_a_wrap_up_failure_does_not_leak_its_reason(
     assert "RuntimeError at test_api.py:" in logged
     assert PHONE not in logged
     assert "model failed" not in logged
+
+
+def test_a_saved_wrap_up_is_read_back_with_when_it_was_saved() -> None:
+    client, copilot = client_for()
+
+    response = client.get("/api/calls/t0001/wrapup/saved")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "wrapup_id": "WRP-4F2A91C7",
+        "transcript_id": "T0001",
+        "disposition": "escalated",
+        "category": "billing",
+        "notes": ["The customer disputed a late fee.", "Call back on <PHONE_NUMBER_1>."],
+        "promises": [],
+        "follow_up": {"owner": "team", "action": "Review the late fee."},
+        "sentiment": "neutral",
+        "recorded": True,
+        "saved_at": "2026-11-14T16:42:05Z",
+    }
+    # One read of the wrap-ups table, and nothing is drafted, saved or asked of a model.
+    assert len(copilot.tools.statements) == 1
+    assert "ops.call_wrapups" in copilot.tools.statements[0]
+    assert copilot.tools.parameters[0] == {"transcript_id": ("STRING", "T0001")}
+    assert copilot.tools.drafted == []
+    assert copilot.tools.saved == []
+
+
+def test_a_call_with_no_saved_wrap_up_reads_back_as_nothing() -> None:
+    client, _ = client_for()
+
+    response = client.get("/api/calls/T0207/wrapup/saved")
+
+    assert response.status_code == 200
+    assert response.json() is None
+
+
+def test_reading_a_saved_wrap_up_is_not_traced(monkeypatch: pytest.MonkeyPatch) -> None:
+    spans, _ = record_spans(monkeypatch)
+    client, _ = client_for(tracing=True)
+
+    assert client.get("/api/calls/T0001/wrapup/saved").status_code == 200
+    assert spans == []
+
+
+def test_a_malformed_id_has_no_saved_wrap_up_and_nothing_is_looked_up() -> None:
+    client, copilot = client_for()
+
+    response = client.get("/api/calls/T12/wrapup/saved")
+
+    assert response.status_code == 400
+    assert "not a valid transcript id" in response.json()["detail"]
+    assert copilot.tools.statements == []
+
+
+def test_a_saved_wrap_up_that_cannot_be_read_does_not_leak_its_reason(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    client, copilot = client_for()
+    copilot.tools.sql_failure = RuntimeError(f"warehouse stopped on the note about {PHONE}")
+
+    with caplog.at_level("DEBUG"):
+        response = client.get("/api/calls/T0001/wrapup/saved")
+
+    assert response.status_code == 502
+    assert response.json() == {
+        "detail": "The saved wrap-up could not be read just now. Please try again."
+    }
+    logged = "\n".join(record.getMessage() + (record.exc_text or "") for record in caplog.records)
+    assert "RuntimeError at test_api.py:" in logged
+    assert PHONE not in logged
+    assert "warehouse stopped" not in logged
 
 
 # --- call assist ---------------------------------------------------------------------------------

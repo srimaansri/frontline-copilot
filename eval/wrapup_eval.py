@@ -60,8 +60,21 @@ CATEGORIES: tuple[str, ...] = get_args(CallCategory)
 NO_ANSWER = "no_answer"
 # The one prompt version that was written before any call was scored.
 FIRST_CONTACT_VERSION = "w1"
+# The last of the 200 ordinary calls (``synth_transcripts --seed 42``). The calls with
+# a seeded rule breach, T0201 on, are in the same table and are not measured here.
+LAST_MEASURED_CALL = "T0200"
 
 T = TypeVar("T")
+
+
+def measured_calls(calls: Iterable[Mapping[str, str]]) -> list[Mapping[str, str]]:
+    """The calls this measurement is about: the 200 ordinary ones.
+
+    The saved results were made when the table held only those. The breach
+    calls were added to it later for the compliance review, and scoring them
+    too would change what the published figures mean without saying so.
+    """
+    return [call for call in calls if call["transcript_id"] <= LAST_MEASURED_CALL]
 
 
 # --- scoring ----------------------------------------------------------------------------------
@@ -404,7 +417,8 @@ def main(argv: list[str] | None = None) -> None:
         "llm_endpoint": settings.llm_endpoint,
     }
 
-    calls, _ = with_retries(lambda: list_transcripts(tools.sql, settings))
+    listed, _ = with_retries(lambda: list_transcripts(tools.sql, settings))
+    calls = measured_calls(listed)
     chosen = calls[: args.limit] if args.limit else calls
     progress = RESULTS_DIR / f"wrapup_{name}.progress.jsonl"
     done: dict[str, dict[str, Any]] = {}

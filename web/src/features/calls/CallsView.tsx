@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
 import { api, errorMessage } from "@/api/client";
@@ -9,12 +9,19 @@ import { IconButton } from "@/components/ui/icon-button";
 import { useLoad, type Loadable } from "@/hooks/useLoad";
 import { EXTRA_WIDE_SCREEN, useMediaQuery } from "@/hooks/useMediaQuery";
 import { cn } from "@/lib/cn";
-import { DEMO_CALL, DEMO_CALL_ASSIST, DEMO_CALL_SUMMARY } from "@/lib/devHooks";
+import {
+  DEMO_CALL,
+  DEMO_CALL_ASSIST,
+  DEMO_CALL_FALLBACK,
+  DEMO_CALL_SUMMARY,
+} from "@/lib/devHooks";
 import { humanize } from "@/lib/format";
 
 import { CallList } from "./CallList";
 import { callRowId } from "./callRowId";
 import { CallStatus } from "./CallStatus";
+import { turnElementId } from "./findingRules";
+import { FindingsPanel } from "./FindingsPanel";
 import { ReplayView } from "./ReplayView";
 import { SummaryPanel } from "./SummaryPanel";
 import { TranscriptPanel } from "./TranscriptPanel";
@@ -86,19 +93,41 @@ interface CallDetailProps {
 }
 
 /**
- * One call: its transcript, with its summary and its wrap-up beside it or, on
- * smaller screens, above it. "Replay with assist" swaps both for the call played
- * back turn by turn with call assist following it.
+ * One call, in one of two modes that share the header.
+ *
+ * Reading it: what the rule check found, then the transcript with the flagged
+ * turns marked, with the summary and the wrap-up beside it or, on smaller
+ * screens, above it.
+ *
+ * "Replay with assist" swaps all of that for the call played back turn by turn
+ * with call assist following it. The rule check is left out of the replay on
+ * purpose. It is a verdict on the finished call, and the replay shows the call
+ * as it was while it was still going on: there call assist raises its own
+ * reminders, from the same rules, at the turn each one happens.
  */
 function CallDetail({ call, summary, onSummarize, wrapUps, onBack }: CallDetailProps) {
   const { transcript_id: transcriptId } = call;
   const threeColumns = useMediaQuery(EXTRA_WIDE_SCREEN);
   const backButton = useRef<HTMLButtonElement>(null);
+  const turnIds = useId();
   const load = useCallback(
     (signal: AbortSignal) => api.getCall(transcriptId, signal),
     [transcriptId],
   );
   const { state: transcript, reload } = useLoad(load);
+  const loadFindings = useCallback(
+    (signal: AbortSignal) => api.getFindings(transcriptId, signal),
+    [transcriptId],
+  );
+  const { state: findings, reload: reloadFindings } = useLoad(loadFindings);
+
+  /** Bring the turn a finding points at into view, and move focus to it. */
+  const goToTurn = (turnIndex: number) => {
+    const turn = document.getElementById(turnElementId(turnIds, turnIndex));
+    turn?.scrollIntoView({ block: "center" });
+    turn?.focus({ preventScroll: true });
+  };
+
   // In mock mode `?demo=calls-assist` opens the call already in its replay.
   const [replaying, setReplaying] = useState(DEMO_CALL_ASSIST);
   const canReplay = transcript.status === "ready" && transcript.data.turns.length > 0;
@@ -108,6 +137,13 @@ function CallDetail({ call, summary, onSummarize, wrapUps, onBack }: CallDetailP
   useEffect(() => {
     backButton.current?.focus();
   }, []);
+
+  // A call that already has a saved wrap-up shows it, not the offer of an empty draft.
+  // The look is made once for each call; opening the call again asks nothing.
+  const { load: loadWrapUp } = wrapUps;
+  useEffect(() => {
+    loadWrapUp(transcriptId);
+  }, [loadWrapUp, transcriptId]);
 
   // The copilot's two pieces of work on a call, one under the other on the sunken tone.
   const summaryPanel = (
@@ -133,9 +169,23 @@ function CallDetail({ call, summary, onSummarize, wrapUps, onBack }: CallDetailP
           onReopen={() => {
             wrapUps.reopen(transcriptId);
           }}
+          onRecheck={() => {
+            wrapUps.recheck(transcriptId);
+          }}
         />
       </div>
     </>
+  );
+
+  // What the rule check found. It is about the turns, and it is the rule check
+  // speaking, not Cue, so it is never on the sunken tone with the copilot's work.
+  const findingsPanel = (
+    <FindingsPanel
+      findings={findings}
+      turnCount={transcript.status === "ready" ? transcript.data.turns.length : null}
+      onGoToTurn={goToTurn}
+      onRetry={reloadFindings}
+    />
   );
 
   return (
@@ -166,12 +216,23 @@ function CallDetail({ call, summary, onSummarize, wrapUps, onBack }: CallDetailP
       ) : (
         <div className="scroll-area flex min-h-0 flex-1 flex-col xl:flex-row xl:overflow-hidden">
           {!threeColumns && (
-            <div className="shrink-0 border-b border-line bg-sunken px-4 py-5 sm:px-8">
-              {summaryPanel}
-            </div>
+            <>
+              {/* First on a narrow screen: a finding is why a supervisor opened the call. */}
+              <div className="shrink-0 px-4 py-5 sm:px-8">{findingsPanel}</div>
+              <div className="shrink-0 border-y border-line bg-sunken px-4 py-5 sm:px-8">
+                {summaryPanel}
+              </div>
+            </>
           )}
           <div className="min-w-0 flex-1 xl:scroll-area">
-            <TranscriptPanel transcript={transcript} onRetry={reload} />
+            {/* On a wide screen it heads the transcript's own column. */}
+            {threeColumns && <div className="px-8 pt-6">{findingsPanel}</div>}
+            <TranscriptPanel
+              transcript={transcript}
+              onRetry={reload}
+              findings={findings.status === "ready" ? findings.data.findings : undefined}
+              turnIdPrefix={turnIds}
+            />
           </div>
           {threeColumns && (
             // The copilot's side rail, on the sunken tone.
@@ -195,7 +256,7 @@ export function NothingSelected() {
         Each transcript can be summarized: what the call was about, the customer&apos;s mood and the
         next step. It can also be wrapped up: a record of the call, drafted for you to check and
         save. And it can be replayed turn by turn, with call assist following it as it would a
-        live call.
+        live call. A flag in the list marks a call in which a rule check found something to read.
       </p>
     </div>
   );
@@ -241,8 +302,18 @@ export function CallsView() {
     }
   }, [fetchSummary]);
 
+  const find = (transcriptId: string | null) =>
+    calls.status === "ready"
+      ? (calls.data.find((call) => call.transcript_id === transcriptId) ?? null)
+      : null;
+  // A demo that opens on a call the recording does not have opens its stand-in instead.
+  const selected =
+    find(selectedId) ??
+    (selectedId !== null && selectedId === DEMO_CALL ? find(DEMO_CALL_FALLBACK) : null);
+  const shownId = selected?.transcript_id ?? selectedId;
+
   const back = () => {
-    const returnTo = selectedId;
+    const returnTo = shownId;
     // The list has to be on screen again before one of its rows can take focus.
     flushSync(() => {
       setSelectedId(null);
@@ -251,11 +322,6 @@ export function CallsView() {
       document.getElementById(callRowId(returnTo))?.focus();
     }
   };
-
-  const selected =
-    calls.status === "ready"
-      ? (calls.data.find((call) => call.transcript_id === selectedId) ?? null)
-      : null;
 
   return (
     <div className="flex h-full min-h-0">
@@ -266,7 +332,12 @@ export function CallsView() {
           selected ? "hidden" : "flex",
         )}
       >
-        <CallList calls={calls} selectedId={selectedId} onSelect={setSelectedId} onRetry={reload} />
+        <CallList
+          calls={calls}
+          selectedId={shownId}
+          onSelect={setSelectedId}
+          onRetry={reload}
+        />
       </div>
       <section
         aria-label="Call"

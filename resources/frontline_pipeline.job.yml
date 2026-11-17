@@ -1,15 +1,16 @@
-# The five pipeline notebooks as one job, run in order on serverless compute.
+# The six pipeline notebooks as one job, run in order on serverless compute.
 #
 # Free Edition allows 5 concurrent job tasks. This is a simple chain, so one task
-# runs at a time.
+# runs at a time. The order is the order of the tasks below, not of the file names:
+# 06_call_insights runs before 05_quality_checks, which checks the table it writes.
 
 resources:
   jobs:
     frontline_pipeline:
       name: frontline-pipeline
       description: >-
-        Ingest, redact, chunk, index and check the Frontline Copilot data.
-        Every task is safe to re-run.
+        Ingest, redact, chunk and index the Frontline Copilot data, run the rule
+        check on every call, and check the result. Every task is safe to re-run.
       max_concurrent_runs: 1
 
       environments:
@@ -62,9 +63,21 @@ resources:
               vs_endpoint: ${var.vs_endpoint}
               embedding_endpoint: ${var.embedding_endpoint}
 
-        - task_key: quality_checks
+        # Needs only the redacted transcripts. It is placed after the index so that a
+        # fault in it cannot hold back the tables the copilot answers from.
+        - task_key: call_insights
           depends_on:
             - task_key: index
+          environment_key: pipeline
+          notebook_task:
+            notebook_path: ../pipelines/06_call_insights.py
+            base_parameters:
+              catalog: ${var.catalog}
+              git_sha: ${bundle.git.commit}
+
+        - task_key: quality_checks
+          depends_on:
+            - task_key: call_insights
           environment_key: pipeline
           notebook_task:
             notebook_path: ../pipelines/05_quality_checks.py

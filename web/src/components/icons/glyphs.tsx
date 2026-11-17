@@ -123,6 +123,17 @@ export function AnswerCheckIcon(props: IconProps) {
   );
 }
 
+// --- The rule check on a call -----------------------------------------------------------------
+
+/** Rule check: a flag on its pole, its fly cut to a notch. A rule pointed here. */
+export function FlagIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M6 21.5V4h13l-4.5 4.5L19 13H6" />
+    </Icon>
+  );
+}
+
 // --- Mood of a call ---------------------------------------------------------------------------
 // One eight-sided face, the same eyes, and only the mouth changes.
 

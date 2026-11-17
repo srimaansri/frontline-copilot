@@ -34,6 +34,7 @@ chunks = spark.table(settings.table("gold", "kb_chunks"))
 articles = spark.table(settings.table("silver", "kb_articles_clean"))
 transcripts = spark.table(settings.table("silver", "transcripts_redacted"))
 plans = spark.table(settings.table("gold", "plans"))
+insights = spark.table(settings.table("gold", "call_insights"))
 
 results: list[tuple[str, bool, str]] = []
 
@@ -55,6 +56,7 @@ for table_name, df, keys in (
     ("silver.kb_articles_clean", articles, ["article_id", "url", "title", "body_text"]),
     ("silver.transcripts_redacted", transcripts, ["transcript_id", "turns"]),
     ("gold.plans", plans, ["plan_id", "name", "monthly_price_usd"]),
+    ("gold.call_insights", insights, ["transcript_id", "n_turns", "rules", "findings"]),
 ):
     null_condition = None
     for key in keys:
@@ -128,6 +130,47 @@ check(
     "redaction_found_something_in_every_transcript",
     with_placeholder == n_transcripts,
     f"{with_placeholder} of {n_transcripts} transcripts have at least one redaction",
+)
+duplicate_calls = transcripts.groupBy("transcript_id").count().where("count > 1").count()
+check("unique_transcript_ids", duplicate_calls == 0, f"{duplicate_calls} duplicated transcript ids")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Call insights
+# MAGIC
+# MAGIC The rule check has to cover every redacted call exactly once, point only at turns
+# MAGIC that exist, and hold no text from a call. Whether its findings are right is not
+# MAGIC checked here: `eval/compliance_eval.py` measures that on labelled calls.
+
+# COMMAND ----------
+
+n_insights = insights.count()
+unchecked = transcripts.join(insights, "transcript_id", "left_anti").count()
+unknown_calls = insights.join(transcripts, "transcript_id", "left_anti").count()
+check(
+    "every_call_is_checked_once",
+    n_insights == n_transcripts and unchecked == 0 and unknown_calls == 0,
+    f"{n_insights} rows for {n_transcripts} calls, {unchecked} calls with no row, "
+    f"{unknown_calls} rows for no call",
+)
+# A finding that points past the end of its call, or a count that disagrees with the list.
+bad_shape = insights.where(
+    "n_findings != size(findings) "
+    "OR exists(findings, f -> f.turn_index < 0 OR f.turn_index >= n_turns) "
+    "OR exists(findings, f -> NOT array_contains(rules, f.rule))"
+).count()
+check(
+    "findings_point_at_turns_of_their_call",
+    bad_shape == 0,
+    f"{bad_shape} calls with a finding outside the call or a count that does not match",
+)
+# A placeholder in a reason would mean text was copied out of a turn.
+copied = insights.where("exists(findings, f -> f.reason LIKE '%<%' OR f.reason LIKE '%>%')").count()
+check(
+    "call_insights_hold_no_transcript_text",
+    copied == 0,
+    f"{copied} calls whose findings hold a placeholder",
 )
 
 # COMMAND ----------

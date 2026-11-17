@@ -8,8 +8,12 @@ This is a thin layer. Every endpoint calls the same ``copilot.agent`` and
 view's summary and its after-call wrap-up call their tools directly, not through
 the agent graph; each tool applies the output check for personal data itself. A
 wrap-up is drafted by one request and stored by another, which the agent sends
-once they have checked it. Call assist (``copilot.assist``) is asked for one
-turn of a call at a time and holds no session. The built web interface in
+once they have checked it, and a third reads the stored record back when the
+call is opened again. Call assist (``copilot.assist``) is asked for one
+turn of a call at a time and holds no session. The rule check on a call
+(``copilot.compliance``) is plain rules on the redacted turns, with no model
+call: the calls list reads what the pipeline found, and the findings of one
+call are worked out when it is opened. The built web interface in
 ``web/dist`` is served at ``/``, and the API lives under ``/api``.
 """
 
@@ -35,6 +39,8 @@ from pydantic import BaseModel, Field
 
 from copilot.agent import Copilot
 from copilot.assist import ASSIST_PROMPT_VERSION, MAX_TURN, AssistState, CallAssist
+from copilot.call_insights import finding_fields, findings_of
+from copilot.compliance import RULES
 from copilot.config import Settings, load_settings
 from copilot.guardrails import redact_question
 from copilot.prompts import PROMPT_VERSION, WRAP_UP_PROMPT_VERSION
@@ -54,7 +60,8 @@ from copilot.schemas import (
 )
 from copilot.steps import Step, describe_steps
 from copilot.tools import MAX_WRAP_UP_CHARS, ToolError, valid_transcript_id
-from copilot.transcripts import get_transcript, list_transcripts
+from copilot.transcripts import get_transcript, list_calls
+from copilot.wrapups import StoredWrapUp, latest_wrap_up
 
 logger = logging.getLogger(__name__)
 
@@ -69,11 +76,13 @@ ASK_FAILED = "The copilot could not answer just now. Please try again."
 SERVER_FAULTS = ("The model", "The data lookup", "SQL_WAREHOUSE_ID")
 WRAP_UP_FAILED = "The wrap-up could not be drafted just now. Please try again."
 SAVE_FAILED = "The wrap-up could not be saved just now. Please try again."
+SAVED_WRAP_UP_FAILED = "The saved wrap-up could not be read just now. Please try again."
 CALLS_FAILED = "The calls could not be read just now. Please try again."
 SUMMARY_FAILED = "The summary could not be written just now. Please try again."
 HAND_OFF_FAILED = "The hand-off could not be opened just now. Please try again."
 FEEDBACK_FAILED = "The rating could not be saved just now. Please try again."
 ASSIST_FAILED = "Call assist could not read this turn just now. Please try again."
+FINDINGS_FAILED = "The rule check could not be run just now. Please try again."
 TOOLS: tuple[tuple[str, str], ...] = (
     ("search_kb", "Help articles"),
     ("get_plan_details", "Plan catalogue"),
@@ -161,6 +170,29 @@ class WrapUpSaveRequest(BaseModel):
     )
     follow_up: FollowUpBody | None = None
     sentiment: Sentiment
+
+
+class RuleFinding(BaseModel):
+    """One thing the rule check found in a call. No field holds text from the call."""
+
+    # The rule's name, such as "card_read_back".
+    rule: str
+    # The turn it points at, counted from 0 in the call's turns.
+    turn_index: int
+    # The checker's own fixed sentence about that turn.
+    reason: str
+
+
+class CallFindings(BaseModel):
+    """What the rule check found in one call, and which rules it ran.
+
+    An empty ``findings`` means no rule fired. It does not mean the call is
+    clean: the rules miss some breaches.
+    """
+
+    transcript_id: str
+    findings: list[RuleFinding]
+    rules_checked: list[str]
 
 
 class AssistResponse(AssistState):
@@ -360,10 +392,19 @@ def create_app(
         )
 
     @app.get("/api/calls")
-    def calls() -> list[dict[str, str]]:
+    def calls(
+        finding: Annotated[str | None, Query(max_length=40)] = None,
+    ) -> list[dict[str, Any]]:
+        """Every call, each with the rules the rule check fired on it.
+
+        ``findings`` is the list of rule names from ``gold.call_insights``, empty
+        when no rule fired and null when the pipeline has not checked the call.
+        ``?finding=any`` keeps the calls with a finding, and ``?finding=<rule>``
+        the calls one rule fired on. The rule is a bound value in the statement.
+        """
         copilot_now = runtime.copilot
         try:
-            return list_transcripts(copilot_now.tools.sql, copilot_now.settings)
+            return list_calls(copilot_now.tools.sql, copilot_now.settings, finding)
         except ToolError as error:
             raise _tool_error(error) from error
         except Exception as error:
@@ -381,6 +422,32 @@ def create_app(
             _log_failure(error)
             raise HTTPException(status_code=502, detail=CALLS_FAILED) from error
         return {"transcript_id": transcript_id.strip().upper(), "turns": turns}
+
+    @app.get("/api/calls/{transcript_id}/findings")
+    def findings(transcript_id: str) -> CallFindings:
+        """Run the rule check on one call, now, on its redacted turns.
+
+        It is worked out here and not read from ``gold.call_insights``: the
+        check is a few pattern matches, it needs no table the transcript
+        endpoint does not already read, and the turn numbers it returns are
+        those of the transcript as it is at this moment. No model is called and
+        nothing is traced. A finding is a rule name, a turn number and fixed
+        words, never text from the call.
+        """
+        copilot_now = runtime.copilot
+        try:
+            turns = get_transcript(copilot_now.tools.sql, copilot_now.settings, transcript_id)
+            found = findings_of(turns)
+        except ToolError as error:
+            raise _tool_error(error) from error
+        except Exception as error:
+            _log_failure(error)
+            raise HTTPException(status_code=502, detail=FINDINGS_FAILED) from error
+        return CallFindings(
+            transcript_id=transcript_id.strip().upper(),
+            findings=[RuleFinding(**finding_fields(finding)) for finding in found],
+            rules_checked=list(RULES),
+        )
 
     @app.post("/api/calls/{transcript_id}/summary")
     def summary(transcript_id: str) -> CallSummary:
@@ -470,6 +537,24 @@ def create_app(
         except Exception as error:
             _log_failure(error)
             raise HTTPException(status_code=502, detail=SAVE_FAILED) from error
+
+    @app.get("/api/calls/{transcript_id}/wrapup/saved")
+    def saved_wrap_up(transcript_id: str) -> StoredWrapUp | None:
+        """The wrap-up most recently saved for one call, or null if none was.
+
+        It is read from ``ops.call_wrapups`` as it was stored, so every line in
+        it has already passed the output check: nothing is redacted again here
+        and nothing is put on a trace. The record says when it was saved. It
+        does not say by whom, because the table does not record that.
+        """
+        copilot_now = runtime.copilot
+        try:
+            return latest_wrap_up(copilot_now.tools.sql, copilot_now.settings, transcript_id)
+        except ToolError as error:
+            raise _tool_error(error) from error
+        except Exception as error:
+            _log_failure(error)
+            raise HTTPException(status_code=502, detail=SAVED_WRAP_UP_FAILED) from error
 
     @app.get("/api/calls/{transcript_id}/assist")
     def assist_at(

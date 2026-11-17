@@ -160,6 +160,32 @@ export interface CallListItem {
   transcript_id: string;
   category: string;
   resolution: Resolution;
+  /**
+   * The rules the rule check fired on this call, by name. Empty when none fired.
+   * Null or absent when the call has not been checked, which is not the same thing.
+   */
+  findings?: string[] | null;
+}
+
+/** One thing the rule check found in a call. It holds no text from the call. */
+export interface RuleFinding {
+  /** The rule's name, such as "card_read_back". */
+  rule: string;
+  /** The turn it points at, counted from 0 in the call's turns. */
+  turn_index: number;
+  /** The checker's own fixed sentence about that turn. */
+  reason: string;
+}
+
+/**
+ * What the rule check found in one call. An empty list means no rule fired, not
+ * that the call is clean: the rules miss some breaches.
+ */
+export interface CallFindings {
+  transcript_id: string;
+  findings: RuleFinding[];
+  /** The names of the rules that were run. */
+  rules_checked: string[];
 }
 
 export type Speaker = "agent" | "customer";
@@ -222,6 +248,12 @@ export interface SavedWrapUp extends WrapUpFields {
   transcript_id: string;
   /** False when the record could not be written. */
   recorded: boolean;
+  /**
+   * When it was saved, in UTC, such as "2026-11-16T14:02:11Z". On a record read
+   * back from the server. The reply to a save does not carry it. Who saved it is
+   * not here: the server does not record that.
+   */
+  saved_at?: string;
 }
 
 /** The help article call assist has on show. */
@@ -315,6 +347,8 @@ export interface Api {
   ): Promise<AskResponse>;
   listCalls(signal?: AbortSignal): Promise<CallListItem[]>;
   getCall(transcriptId: string, signal?: AbortSignal): Promise<CallTranscript>;
+  /** Run the rule check on one call. Plain rules on the redacted turns, with no model call. */
+  getFindings(transcriptId: string, signal?: AbortSignal): Promise<CallFindings>;
   summarizeCall(transcriptId: string, signal?: AbortSignal): Promise<CallSummary>;
   /** Draft the after-call record of a call. It stores nothing. */
   draftWrapUp(transcriptId: string, signal?: AbortSignal): Promise<CallWrapUp>;
@@ -324,6 +358,8 @@ export interface Api {
     request: WrapUpFields,
     signal?: AbortSignal,
   ): Promise<SavedWrapUp>;
+  /** The wrap-up most recently saved for a call, as it was stored. Null when none was. */
+  getSavedWrapUp(transcriptId: string, signal?: AbortSignal): Promise<SavedWrapUp | null>;
   /**
    * What call assist shows once a call has reached `turn`, counted from 0. The
    * server holds no session: the page asks again as the replay moves on.

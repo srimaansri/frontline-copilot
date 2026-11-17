@@ -16,6 +16,7 @@ from eval.wrapup_eval import (
     DISPOSITIONS,
     NO_ANSWER,
     is_rate_limit,
+    measured_calls,
     predict,
     print_scores,
     read_progress,
@@ -61,6 +62,24 @@ class RateLimitedError(Exception):
 
 
 # --- the labels ---------------------------------------------------------------------------------
+
+
+def test_only_the_200_ordinary_calls_are_measured() -> None:
+    listed = [
+        *CALLS,
+        {"transcript_id": "T0200", "category": "billing", "resolution": "resolved"},
+        # The calls with a seeded rule breach share the table and are left out.
+        {"transcript_id": "T0201", "category": "billing", "resolution": "resolved"},
+        {"transcript_id": "T0582", "category": "scam", "resolution": "escalated"},
+    ]
+
+    assert [call["transcript_id"] for call in measured_calls(listed)] == [
+        "T0001",
+        "T0002",
+        "T0003",
+        "T0004",
+        "T0200",
+    ]
 
 
 def test_the_measurement_scores_the_labels_the_generator_writes() -> None:

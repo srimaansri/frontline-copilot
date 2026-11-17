@@ -1,16 +1,18 @@
 import { memo, useDeferredValue, useId, useMemo, useState } from "react";
 
 import type { CallListItem, Resolution } from "@/api/types";
-import { CloseIcon, SearchIcon } from "@/components/icons/glyphs";
+import { CloseIcon, FlagIcon, SearchIcon } from "@/components/icons/glyphs";
 import { ErrorNotice } from "@/components/shared/ErrorNotice";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Loadable } from "@/hooks/useLoad";
 import { cn } from "@/lib/cn";
+import { DEMO_FLAGGED_ONLY } from "@/lib/devHooks";
 import { countOf, humanize } from "@/lib/format";
 
 import { callRowId } from "./callRowId";
 import { CallStatus, CallStatusStamp } from "./CallStatus";
+import { isChecked, rulesFired, ruleTitle } from "./findingRules";
 
 export type CallFilter = Resolution | "all";
 
@@ -27,8 +29,12 @@ export interface CallRowProps {
   onSelect: (transcriptId: string) => void;
 }
 
-/** One call in the list: its id, its category and how it ended. */
+/**
+ * One call in the list: its id, its category, a flag if the rule check fired on
+ * it, and how it ended.
+ */
 export const CallRow = memo(function CallRow({ call, selected, onSelect }: CallRowProps) {
+  const flagged = rulesFired(call) > 0;
   return (
     <li className="border-t border-line">
       <button
@@ -53,7 +59,18 @@ export const CallRow = memo(function CallRow({ call, selected, onSelect }: CallR
         <span className={cn("truncate text-ink", selected && "font-bold")}>
           {humanize(call.category)}
         </span>
-        <CallStatus resolution={call.resolution} />
+        <span className="flex items-center gap-3">
+          {flagged && (
+            // The flag, not a status shape: the shapes say how a call ended.
+            <span className="text-warn">
+              <FlagIcon size={16} />
+              <span className="sr-only">
+                Flagged by the rule check: {(call.findings ?? []).map(ruleTitle).join("; ")}.
+              </span>
+            </span>
+          )}
+          <CallStatus resolution={call.resolution} />
+        </span>
       </button>
     </li>
   );
@@ -151,8 +168,62 @@ export function ResolutionFilter({ value, onChange, counts }: ResolutionFilterPr
   );
 }
 
-function matches(call: CallListItem, query: string, filter: CallFilter): boolean {
+export interface FlaggedFilterProps {
+  on: boolean;
+  onChange: (on: boolean) => void;
+  /** How many calls the rule check fired on. Null while the calls are loading. */
+  count: number | null;
+  /** False when no call in the list has been through the rule check. */
+  checked: boolean;
+}
+
+/**
+ * A switch that keeps only the calls the rule check fired on. It works with the
+ * filter on how a call ended, not in place of it. When no call has been checked
+ * there is nothing to filter on, and it says so, as a label about the data.
+ */
+export function FlaggedFilter({ on, onChange, count, checked }: FlaggedFilterProps) {
+  if (count !== null && !checked) {
+    return (
+      <p className="rounded-box border border-dashed border-line-strong px-2 py-2 text-label font-semibold text-ink-2">
+        No rule check has run on these calls, so none is flagged.
+      </p>
+    );
+  }
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      onClick={() => {
+        onChange(!on);
+      }}
+      className={cn(
+        "flex w-full items-center gap-3 rounded-box frame border-ink px-2 py-2 text-left transition-colors",
+        on ? "bg-ink text-surface" : "bg-surface text-ink hover:bg-sunken active:bg-line",
+      )}
+    >
+      <span className="flex min-h-6 items-center gap-1 font-mono font-bold">
+        {/* On ink the flag is a plain silhouette, as the status shapes are. */}
+        <FlagIcon size={16} className={on ? undefined : "text-warn"} />
+        {count ?? ""}
+      </span>
+      <span className={cn("text-label", on ? "text-surface" : "text-ink-2")}>
+        Flagged by the rule check
+      </span>
+    </button>
+  );
+}
+
+function matches(
+  call: CallListItem,
+  query: string,
+  filter: CallFilter,
+  flaggedOnly: boolean,
+): boolean {
   if (filter !== "all" && call.resolution !== filter) {
+    return false;
+  }
+  if (flaggedOnly && rulesFired(call) === 0) {
     return false;
   }
   if (query === "") {
@@ -171,14 +242,27 @@ export interface CallListProps {
   onRetry: () => void;
 }
 
-/** Every call, with a search box and a filter on how the call ended. */
+/**
+ * Every call, with a search box, a filter on how the call ended, and a switch
+ * that keeps only the calls the rule check flagged.
+ */
 export function CallList({ calls, selectedId, onSelect, onRetry }: CallListProps) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<CallFilter>("all");
+  // In mock mode `?demo=calls-findings` opens with the switch already on.
+  const [flaggedOnly, setFlaggedOnly] = useState(DEMO_FLAGGED_ONLY);
   // Typing stays responsive while the list catches up.
   const deferredQuery = useDeferredValue(query);
 
   const items = calls.status === "ready" ? calls.data : null;
+
+  const flaggedCount = useMemo(
+    () => (items === null ? null : items.filter((call) => rulesFired(call) > 0).length),
+    [items],
+  );
+  const anyChecked = useMemo(() => (items ?? []).some(isChecked), [items]);
+  // With no rule check to filter on, the switch is not shown and must not hide every call.
+  const onlyFlagged = flaggedOnly && anyChecked;
 
   const counts = useMemo(() => {
     if (items === null) {
@@ -194,10 +278,10 @@ export function CallList({ calls, selectedId, onSelect, onRetry }: CallListProps
 
   const visible = useMemo(() => {
     const needle = deferredQuery.trim().toLowerCase();
-    return (items ?? []).filter((call) => matches(call, needle, filter));
-  }, [items, deferredQuery, filter]);
+    return (items ?? []).filter((call) => matches(call, needle, filter, onlyFlagged));
+  }, [items, deferredQuery, filter, onlyFlagged]);
 
-  const filtered = query.trim() !== "" || filter !== "all";
+  const filtered = query.trim() !== "" || filter !== "all" || onlyFlagged;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -221,6 +305,14 @@ export function CallList({ calls, selectedId, onSelect, onRetry }: CallListProps
         </div>
         <div className="mt-3">
           <ResolutionFilter value={filter} onChange={setFilter} counts={counts} />
+        </div>
+        <div className="mt-2">
+          <FlaggedFilter
+            on={onlyFlagged}
+            onChange={setFlaggedOnly}
+            count={flaggedCount}
+            checked={anyChecked}
+          />
         </div>
       </div>
 
@@ -261,9 +353,10 @@ export function CallList({ calls, selectedId, onSelect, onRetry }: CallListProps
                 onClick={() => {
                   setQuery("");
                   setFilter("all");
+                  setFlaggedOnly(false);
                 }}
               >
-                Clear search and filter
+                Clear search and filters
               </Button>
             )}
           </div>

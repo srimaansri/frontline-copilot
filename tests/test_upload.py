@@ -54,12 +54,23 @@ def test_nothing_is_uploaded_when_a_file_is_missing(tmp_path: Path) -> None:
     assert fake.calls == []
 
 
-def test_the_default_file_list_covers_all_four_inputs() -> None:
+def test_the_default_file_list_covers_all_five_inputs() -> None:
     assert [name for _, name in DATA_FILES] == [
         "kb_articles.jsonl",
         "transcripts.jsonl",
+        "compliance_transcripts.jsonl",
         "pii_labels.jsonl",
         "plans.csv",
     ]
     # The knowledge base in use is the committed synthetic one.
     assert DATA_FILES[0][0] == Path("data/synthetic/kb_articles.jsonl")
+
+
+def test_the_breach_calls_keep_their_own_file_and_their_labels_stay_local() -> None:
+    by_name = {name: local for local, name in DATA_FILES}
+
+    # Two generators write a file called transcripts.jsonl. In the volume they must not collide.
+    assert by_name["transcripts.jsonl"] == Path("data/raw/transcripts.jsonl")
+    assert by_name["compliance_transcripts.jsonl"] == Path("data/raw/compliance/transcripts.jsonl")
+    assert len(by_name) == len(DATA_FILES)
+    assert Path("data/raw/compliance/compliance_labels.jsonl") not in by_name.values()

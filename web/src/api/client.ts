@@ -3,6 +3,7 @@ import type {
   AskRequest,
   AskResponse,
   AssistState,
+  CallFindings,
   CallListItem,
   CallSummary,
   CallTranscript,
@@ -182,6 +183,8 @@ const httpApi: Api = {
   listCalls: (signal) => request<CallListItem[]>("/calls", { signal }),
   getCall: (transcriptId, signal) =>
     request<CallTranscript>(`/calls/${encodeURIComponent(transcriptId)}`, { signal }),
+  getFindings: (transcriptId, signal) =>
+    request<CallFindings>(`/calls/${encodeURIComponent(transcriptId)}/findings`, { signal }),
   summarizeCall: (transcriptId, signal) =>
     request<CallSummary>(`/calls/${encodeURIComponent(transcriptId)}/summary`, {
       method: "POST",
@@ -197,6 +200,10 @@ const httpApi: Api = {
       `/calls/${encodeURIComponent(transcriptId)}/wrapup/save`,
       post(body, signal),
     ),
+  getSavedWrapUp: (transcriptId, signal) =>
+    request<SavedWrapUp | null>(`/calls/${encodeURIComponent(transcriptId)}/wrapup/saved`, {
+      signal,
+    }),
   assistCall: (transcriptId, turn, signal) =>
     request<AssistState>(
       `/calls/${encodeURIComponent(transcriptId)}/assist?turn=${String(turn)}`,
@@ -217,11 +224,14 @@ function mockApi(): Api {
     ask: async (body, signal, onStage) => (await load()).ask(body, signal, onStage),
     listCalls: async (signal) => (await load()).listCalls(signal),
     getCall: async (transcriptId, signal) => (await load()).getCall(transcriptId, signal),
+    getFindings: async (transcriptId, signal) => (await load()).getFindings(transcriptId, signal),
     summarizeCall: async (transcriptId, signal) =>
       (await load()).summarizeCall(transcriptId, signal),
     draftWrapUp: async (transcriptId, signal) => (await load()).draftWrapUp(transcriptId, signal),
     saveWrapUp: async (transcriptId, body, signal) =>
       (await load()).saveWrapUp(transcriptId, body, signal),
+    getSavedWrapUp: async (transcriptId, signal) =>
+      (await load()).getSavedWrapUp(transcriptId, signal),
     assistCall: async (transcriptId, turn, signal) =>
       (await load()).assistCall(transcriptId, turn, signal),
     openHandOff: async (body, signal) => (await load()).openHandOff(body, signal),
