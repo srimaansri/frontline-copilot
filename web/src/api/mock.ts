@@ -169,9 +169,10 @@ function similarRecording(question: string, shown: string, offered: string[]): A
 function noRecording(question: string, offered: string[]): AskResponse {
   return {
     answer:
-      "This page is a recording of the live copilot, and none of its " +
-      `${ANSWERS.size} recorded questions is close to that one. The live copilot would ` +
-      "search the help articles and the plan catalogue for it.",
+      "This page replays recordings of the live copilot and cannot run it. It has no " +
+      "recording of that question as you typed it. The live copilot would search the help " +
+      `articles and the plan catalogue for it. Some of the ${ANSWERS.size} questions it ` +
+      "does have are below, the closest first.",
     question_as_processed: question,
     citations: [],
     tools_used: [],
