@@ -118,7 +118,7 @@ function closestRecording(question: string): {
   // Two recordings that are equally close are two different questions the typed one
   // could mean ("cancel his line" and "what is the process to cancel"). Picking one
   // would be a guess, so both are offered and neither is shown.
-  const tied = best !== undefined && ranked[1] !== undefined && ranked[1].score === best.score;
+  const tied = best !== undefined && ranked[1]?.score === best.score;
   const shown = best !== undefined && best.score >= SHOW_AT && !tied ? best.question : null;
   const close = ranked
     .filter((match) => match.score >= OFFER_AT && match.question !== shown)
