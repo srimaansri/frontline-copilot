@@ -117,8 +117,14 @@ export function topicWords(text: string): Set<string> {
     if (STOP_WORDS.has(raw) || raw.length < 2) {
       continue;
     }
-    const word = SAME_TOPIC[raw] ?? stem(raw);
-    words.add(SAME_TOPIC[word] ?? word);
+    // The word itself is kept beside its topic. "Asia" and "Mexico" are both travel,
+    // and a question about one should not be answered with a recording about the other.
+    const word = stem(raw);
+    words.add(word);
+    const topic = SAME_TOPIC[raw] ?? SAME_TOPIC[word];
+    if (topic !== undefined) {
+      words.add(topic);
+    }
   }
   return words;
 }
