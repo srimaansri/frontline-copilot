@@ -19,6 +19,8 @@ export interface ExchangeItemProps {
   onCite: (number: number) => void;
   onToggleDetails: () => void;
   onRetry: () => void;
+  /** Asks another question, from the demo's list of recorded ones. */
+  onAsk: (question: string) => void;
 }
 
 /** One question with whatever came of it: a wait, an answer, or an error to retry. */
@@ -31,6 +33,7 @@ export function ExchangeItem({
   onCite,
   onToggleDetails,
   onRetry,
+  onAsk,
 }: ExchangeItemProps) {
   const questionId = `${exchange.id}-question`;
   const detailsId = `${exchange.id}-details`;
@@ -60,6 +63,7 @@ export function ExchangeItem({
               activeCitation={highlight?.number ?? null}
               onCite={onCite}
               onToggleDetails={onToggleDetails}
+              onAsk={onAsk}
             />
             {!sidePanel && selected && (
               <div

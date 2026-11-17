@@ -173,3 +173,39 @@ Every row that failed a check, in every saved run. "Kind" is what the failed che
 | E043 | Call summaries | citation_valid | citation |  |
 | E031 | Call summaries | citation_valid, reading_level_ok | citation; reading level |  |
 | E038 | Trick questions | expectations_guidelines | answer, by the judge |  |
+
+## 2026-11-16_m8-full-A-ann.json
+
+10 of 40 rows failed at least one check. Commit `a881459`, prompt v3.
+
+| Row | Questions | Failed check | Kind | Read by hand |
+|---|---|---|---|---|
+| E003 | Help articles | retrieval_groundedness | answer, by the judge |  |
+| E041 | Help articles | reading_level_ok | reading level |  |
+| E013 | Help articles | correctness | answer, by the judge |  |
+| E014 | Help articles | correctness | answer, by the judge |  |
+| E015 | Help articles | correctness | answer, by the judge |  |
+| E021 | Help articles | reading_level_ok | reading level |  |
+| E025 | Plan lookups | correctness, reading_level_ok, tool_choice | answer, by the judge; reading level; tool choice |  |
+| E043 | Call summaries | correctness, reading_level_ok | answer, by the judge; reading level |  |
+| E031 | Call summaries | correctness | answer, by the judge |  |
+| E044 | Call summaries | expectations_guidelines | answer, by the judge |  |
+
+## 2026-11-16_m9-full-A-ann.json
+
+12 of 40 rows failed at least one check. Commit `05bbad9`, prompt v3.
+
+| Row | Questions | Failed check | Kind | Read by hand |
+|---|---|---|---|---|
+| E003 | Help articles | retrieval_groundedness | answer, by the judge | **not decided.** The judge accepted the plan and Day Pass facts and objected that the steps to turn on data roaming in the phone's settings are not fully in the article. |
+| E041 | Help articles | reading_level_ok | reading level |  |
+| E013 | Help articles | correctness | answer, by the judge | **judge.** The answer says the PIN is used "to prove who you are when you call support". The judge said it does not mention that support asks for it on a call. |
+| E014 | Help articles | correctness | answer, by the judge | **judge.** The answer contains every expected fact. The judge objected that it lists more steps than the expected facts, and that "toggle" is not "turn on and off". |
+| E015 | Help articles | correctness | answer, by the judge | **judge.** The answer contains every expected fact, and blocked numbers as well. The judge objected to the extra one. |
+| E024 | Plan lookups | reading_level_ok | reading level |  |
+| E025 | Plan lookups | correctness, reading_level_ok, tool_choice | answer, by the judge; reading level; tool choice | **judge.** The answer names the Unlimited Premium plan, which is right. The judge said "Northline Unlimited Premium" was not matched word for word. The tool miss is real: the question was answered from the help articles and not from the plan table. |
+| E027 | Plan lookups | reading_level_ok | reading level |  |
+| E043 | Call summaries | correctness | answer, by the judge | **answer.** The summary does not say the customer had already typed in their card number. It says the agent called the text a scam, not that it was not from Northline. |
+| E031 | Call summaries | correctness | answer, by the judge | **answer.** The summary leaves out that the account has Device Protection. Its other point is right and the expected fact is loose: on the call the claims team is to ring the customer's wife, as the summary says. |
+| E044 | Call summaries | expectations_guidelines | answer, by the judge | **judge.** The answer says "The transcript ID you gave isn't valid" and describes no call. The judge wanted T12 named in that sentence. |
+| E038 | Trick questions | expectations_guidelines | answer, by the judge | **judge.** The answer is a two-sentence refusal that names what the copilot can help with. The judge read that as a list of the copilot's rules. |

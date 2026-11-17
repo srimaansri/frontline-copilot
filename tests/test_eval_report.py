@@ -8,6 +8,7 @@ import pytest
 
 from copilot.prompts import PROMPT_VERSION
 from eval import gate, report
+from eval.fingerprint import behaviour_fingerprint
 from eval.stats import percentile, rate_with_interval, wilson_interval
 
 
@@ -18,8 +19,6 @@ def saved_run(**changes: Any) -> dict[str, Any]:
         "tag": "full",
         "git_sha": "abcdef1234567890",
         "git_dirty": False,
-        "chunk_config": "A",
-        "query_type": "ann",
         "prompt_version": PROMPT_VERSION,
         "llm_endpoint": "databricks-gpt-oss-120b",
         "judge_endpoint": "databricks-judge",
@@ -28,6 +27,11 @@ def saved_run(**changes: Any) -> dict[str, Any]:
         "rows_reviewed": 2,
         "rows_without_answer": [],
         "eval_set_sha256": "same",
+        "behaviour": {"sha256": "abc", "files": {"src/copilot/agent.py": "1"}},
+        "router": "model",
+        "router_endpoint": "databricks-router",
+        "chunk_config": "A",
+        "query_type": "ann",
         "metrics": {
             "retrieval_groundedness": {"kind": "pass_fail", "passed": 2, "scored": 2, "rate": 1.0},
             "no_pii_leak": {"kind": "pass_fail", "passed": 2, "scored": 2, "rate": 1.0},
@@ -127,7 +131,7 @@ def test_reports_are_built_from_the_saved_runs_only(tmp_path: Path) -> None:
     summary = (tmp_path / "SUMMARY.md").read_text(encoding="utf-8")
     assert "1/2 (9-91%)" in summary
     # The answering model and the router are named, so two runs can be told apart.
-    assert "| full | gpt-oss-120b | rules | A | ann |" in summary
+    assert "| full | gpt-oss-120b | router | A | ann |" in summary
     assert "redaction_" not in summary
     assert "| 2026-11-15_full-A-ann.json | All | 2 | 0.1 | 2.0 | 2.0 | 0 | 2,340 |" in summary
     assert "| Help articles | 1 | 2.0 | 2.0 | 2.0 | 3 | 2,340 |" in summary
@@ -176,9 +180,29 @@ def test_the_committed_reports_match_the_committed_runs() -> None:
 
 # --- the gate ---------------------------------------------------------------------------------
 
+BEHAVIOUR = {"sha256": "abc", "files": {"src/copilot/agent.py": "1"}}
+SETTINGS = {
+    "llm_endpoint": "databricks-gpt-oss-120b",
+    "router": "model",
+    "router_endpoint": "databricks-router",
+    "chunk_config": "A",
+    "query_type": "ann",
+}
+
+
+def check(run: dict[str, Any], **changes: Any) -> list[str]:
+    arguments: dict[str, Any] = {
+        "eval_set_sha256": "same",
+        "prompt_version": PROMPT_VERSION,
+        "behaviour": BEHAVIOUR,
+        "settings": SETTINGS,
+        **changes,
+    }
+    return gate.problems(run, **arguments)
+
 
 def test_a_run_that_meets_the_thresholds_passes() -> None:
-    assert gate.problems(saved_run(), eval_set_sha256="same", prompt_version=PROMPT_VERSION) == []
+    assert check(saved_run()) == []
 
 
 def test_a_run_below_a_threshold_fails_and_says_which() -> None:
@@ -191,13 +215,13 @@ def test_a_run_below_a_threshold_fails_and_says_which() -> None:
     }
     del run["metrics"]["no_pii_leak"]
 
-    found = gate.problems(run, eval_set_sha256="same", prompt_version=PROMPT_VERSION)
+    found = check(run)
 
     assert found == ["no_pii_leak was not scored", "reading_level_ok is 1/2 (0.50), below 0.80"]
 
 
 def test_a_run_made_with_another_set_or_prompt_is_stale() -> None:
-    found = gate.problems(saved_run(), eval_set_sha256="different", prompt_version="v99")
+    found = check(saved_run(), eval_set_sha256="different", prompt_version="v99")
 
     assert len(found) == 2
     assert "evaluation set has changed" in found[0]
@@ -207,9 +231,42 @@ def test_a_run_made_with_another_set_or_prompt_is_stale() -> None:
 def test_a_run_from_a_dirty_tree_or_with_missing_answers_fails() -> None:
     run = saved_run(git_dirty=True, rows_without_answer=["E002"])
 
-    found = gate.problems(run, eval_set_sha256="same", prompt_version=PROMPT_VERSION)
+    found = check(run)
 
     assert len(found) == 2
+
+
+def test_a_run_of_code_that_has_since_changed_is_stale_and_the_gate_says_what_changed() -> None:
+    now = {
+        "sha256": "xyz",
+        "files": {"src/copilot/agent.py": "2", "src/copilot/router.py": "1"},
+    }
+
+    found = check(saved_run(), behaviour=now)
+
+    assert len(found) == 1
+    assert "stale" in found[0]
+    assert "src/copilot/agent.py, src/copilot/router.py" in found[0]
+
+
+def test_a_run_saved_before_fingerprints_cannot_pass() -> None:
+    run = saved_run()
+    del run["behaviour"]
+
+    found = check(run)
+
+    assert len(found) == 1
+    assert "before runs recorded a fingerprint" in found[0]
+
+
+def test_a_run_made_with_another_model_or_router_is_not_the_configured_system() -> None:
+    run = saved_run(llm_endpoint="databricks-other-model", router="rules")
+
+    found = check(run)
+
+    assert len(found) == 2
+    assert "llm_endpoint = databricks-other-model" in found[0]
+    assert "router = rules" in found[1]
 
 
 def test_the_gate_reads_the_newest_run_over_the_whole_set(tmp_path: Path) -> None:
@@ -249,7 +306,11 @@ def test_the_committed_results_pass_the_gate() -> None:
     assert latest is not None
     assert (
         gate.problems(
-            latest[1], eval_set_sha256=gate.sha256(gate.EVAL_SET), prompt_version=PROMPT_VERSION
+            latest[1],
+            eval_set_sha256=gate.sha256(gate.EVAL_SET),
+            prompt_version=PROMPT_VERSION,
+            behaviour=behaviour_fingerprint(),
+            settings=gate.configured_settings(),
         )
         == []
     )

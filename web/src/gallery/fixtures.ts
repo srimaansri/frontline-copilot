@@ -6,6 +6,7 @@
 
 import {
   mockAnswer,
+  mockAssist,
   mockCalls,
   mockFindings,
   mockMeta,
@@ -14,6 +15,7 @@ import {
   mockWrapUps,
 } from "@/api/mock";
 import type {
+  AssistState,
   CallFindings,
   CallListItem,
   CallSummary,
@@ -192,6 +194,71 @@ export const SAVED_WRAP_UP: SavedWrapUp = {
   follow_up: WRAP_UP.follow_up,
   sentiment: WRAP_UP.sentiment,
   recorded: true,
+};
+
+/**
+ * What call assist shows for the call about a late fee at the turn the customer
+ * states the issue: the article comes up and a next step is written. It was
+ * written for the gallery, as the wrap-up above was, and is used only until the
+ * recording holds what the live copilot showed for T0001.
+ */
+const ASSIST_SPECIMEN: AssistState = {
+  transcript_id: "T0001",
+  turn: 3,
+  turns_total: TRANSCRIPT.turns.length,
+  article: {
+    title: "Late payment fee",
+    url: "https://help.northline.example/articles/late-payment-fee",
+    heading: "How to ask for a waiver",
+    passage:
+      "You can request that the $5 fee be removed one time. Follow these steps:\n" +
+      "1. Gather your account number and the bill that has the fee.\n" +
+      "2. Call support:\n" +
+      "- Dial 611 from your Northline phone, or\n" +
+      "- Dial 1-800-555-0199 from any phone.",
+    score: 0.6,
+    since_turn: 3,
+  },
+  next_step: {
+    text: "I understand. You can ask for a one-time waiver of the $5 late fee, and the billing team will review it.",
+    since_turn: 3,
+    unsupported: [],
+  },
+  step_problem: null,
+  identity_checked_at: null,
+  reminders: [],
+  hand_off: null,
+  changed: ["article", "next_step"],
+  cost: { searches: 2, model_calls: 1 },
+  seconds: 1.8,
+};
+
+const RECORDED_ASSIST: AssistState[] | undefined = mockAssist.T0001;
+
+/** True when the assist specimens show a recording and not the specimen above. */
+export const ASSIST_IS_RECORDED = RECORDED_ASSIST !== undefined;
+
+/** The turn at which the first article comes up, or the specimen above. */
+export const ASSIST_AT_THE_ISSUE: AssistState =
+  RECORDED_ASSIST?.find((state) => state.changed.includes("article")) ?? ASSIST_SPECIMEN;
+
+/** The same call one turn on: nothing is new, so nothing is marked. */
+export const ASSIST_A_TURN_LATER: AssistState = RECORDED_ASSIST?.[ASSIST_AT_THE_ISSUE.turn + 1] ?? {
+  ...ASSIST_AT_THE_ISSUE,
+  turn: ASSIST_AT_THE_ISSUE.turn + 1,
+  changed: [],
+  seconds: 0.2,
+};
+
+/** Before the customer has said why they called. */
+export const ASSIST_NOTHING_YET: AssistState = RECORDED_ASSIST?.[0] ?? {
+  ...ASSIST_SPECIMEN,
+  turn: 0,
+  article: null,
+  next_step: null,
+  changed: [],
+  cost: { searches: 0, model_calls: 0 },
+  seconds: 0.2,
 };
 
 /** One call of each kind of ending, for the list rows. */

@@ -27,5 +27,43 @@
       "cause": "not decided",
       "found": "The judge found the summary did not say the customer had already typed in their card number."
     }
+  },
+  "2026-11-16_m9-full-A-ann.json": {
+    "E003": {
+      "cause": "not decided",
+      "found": "The judge accepted the plan and Day Pass facts and objected that the steps to turn on data roaming in the phone's settings are not fully in the article."
+    },
+    "E013": {
+      "cause": "judge",
+      "found": "The answer says the PIN is used \"to prove who you are when you call support\". The judge said it does not mention that support asks for it on a call."
+    },
+    "E014": {
+      "cause": "judge",
+      "found": "The answer contains every expected fact. The judge objected that it lists more steps than the expected facts, and that \"toggle\" is not \"turn on and off\"."
+    },
+    "E015": {
+      "cause": "judge",
+      "found": "The answer contains every expected fact, and blocked numbers as well. The judge objected to the extra one."
+    },
+    "E025": {
+      "cause": "judge",
+      "found": "The answer names the Unlimited Premium plan, which is right. The judge said \"Northline Unlimited Premium\" was not matched word for word. The tool miss is real: the question was answered from the help articles and not from the plan table."
+    },
+    "E031": {
+      "cause": "answer",
+      "found": "The summary leaves out that the account has Device Protection. Its other point is right and the expected fact is loose: on the call the claims team is to ring the customer's wife, as the summary says."
+    },
+    "E038": {
+      "cause": "judge",
+      "found": "The answer is a two-sentence refusal that names what the copilot can help with. The judge read that as a list of the copilot's rules."
+    },
+    "E043": {
+      "cause": "answer",
+      "found": "The summary does not say the customer had already typed in their card number. It says the agent called the text a scam, not that it was not from Northline."
+    },
+    "E044": {
+      "cause": "judge",
+      "found": "The answer says \"The transcript ID you gave isn't valid\" and describes no call. The judge wanted T12 named in that sentence."
+    }
   }
 }

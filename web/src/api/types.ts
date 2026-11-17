@@ -127,6 +127,19 @@ export interface AskResponse {
   seconds: number;
   trace_id: string | null;
   steps: Step[];
+  /** Set only by the public demo, for a question it has no recording of as typed. */
+  demo?: DemoNote;
+}
+
+/**
+ * What the public demo did with a question it has no recording of. The demo is a
+ * static page and cannot run the copilot, so it says which of two things it did.
+ */
+export interface DemoNote {
+  /** The recorded question whose answer is shown. Null when no recording is close. */
+  shown_for: string | null;
+  /** Recorded questions to try, the closest first. */
+  suggestions: string[];
 }
 
 /** What the copilot is doing at one moment, sent while an answer is on its way. */
@@ -243,6 +256,67 @@ export interface SavedWrapUp extends WrapUpFields {
   saved_at?: string;
 }
 
+/** The help article call assist has on show. */
+export interface AssistArticle {
+  title: string;
+  url: string;
+  /** The heading of the passage, when it has one. */
+  heading: string | null;
+  /** The part of the article that matters now, as plain text. Steps keep their lines. */
+  passage: string;
+  score: number | null;
+  /** The turn, counted from 0, at which this article came up. */
+  since_turn: number;
+}
+
+/** What the agent could say next, written from the article on show. */
+export interface AssistNextStep {
+  text: string;
+  since_turn: number;
+  /** Kinds of figure in it ("money", "phone", ...) that are in neither the article nor the call. */
+  unsupported: string[];
+}
+
+/** Something the compliance rules found, at the turn it happened. */
+export interface AssistReminder {
+  /** "account_before_identity", "card_read_back", "unauthorized_promise" or "full_ssn_requested". */
+  rule: string;
+  title: string;
+  detail: string;
+  turn: number;
+}
+
+/** The customer asked for a change to their account. Nothing is drafted or sent. */
+export interface AssistHandOff {
+  category: string;
+  /** Who would pick it up, such as "the billing team". */
+  team: string;
+  turn: number;
+}
+
+/** What "changed" can name: what is new at exactly this turn. */
+export type AssistChange = "article" | "next_step" | "identity" | "reminder" | "hand_off";
+
+/** Everything the assist panel shows once a call has reached one turn. Turns count from 0. */
+export interface AssistState {
+  transcript_id: string;
+  turn: number;
+  turns_total: number;
+  article: AssistArticle | null;
+  next_step: AssistNextStep | null;
+  /** Why an article has no next step, when something went wrong or the step was withheld. */
+  step_problem: string | null;
+  /** The turn at which the customer first answered an identity question. Null: not yet. */
+  identity_checked_at: number | null;
+  reminders: AssistReminder[];
+  hand_off: AssistHandOff | null;
+  changed: AssistChange[];
+  /** What following the call this far costs, when it is followed turn by turn. */
+  cost: { searches: number; model_calls: number };
+  /** How long the server took to work this turn out. */
+  seconds: number;
+}
+
 export interface FeedbackRequest {
   trace_id: string;
   helpful: boolean;
@@ -286,6 +360,11 @@ export interface Api {
   ): Promise<SavedWrapUp>;
   /** The wrap-up most recently saved for a call, as it was stored. Null when none was. */
   getSavedWrapUp(transcriptId: string, signal?: AbortSignal): Promise<SavedWrapUp | null>;
+  /**
+   * What call assist shows once a call has reached `turn`, counted from 0. The
+   * server holds no session: the page asks again as the replay moves on.
+   */
+  assistCall(transcriptId: string, turn: number, signal?: AbortSignal): Promise<AssistState>;
   /** Write the hand-off the agent approved. This is the only call that opens a ticket. */
   openHandOff(request: HandOffRequest, signal?: AbortSignal): Promise<HandOffTicket>;
   sendFeedback(request: FeedbackRequest, signal?: AbortSignal): Promise<FeedbackResponse>;

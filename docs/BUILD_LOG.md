@@ -841,3 +841,36 @@ They also found defects, each confirmed by running the code before it was change
 - Saving a wrap-up and opening a hand-off were not exercised on the deployed app, only on a local one.
 - This deploy predates the fix above and the second router prompt's result file. Free Edition stops the app 24 hours after it starts.
 
+## 2026-11-16 — Failure-mode tests find three defects; tooling to check the judge; call assist by replay
+
+**Tool:** Claude Code. Two agents worked in separate worktrees while the measurements ran, and their branches were merged into `web-ui`.
+
+**What was built**
+
+- **Tests of what happens when a part fails** (`tests/test_failure_modes.py`, `tests/test_failure_modes_api.py`, 72 tests with fakes, no model call): the model that answers times out, on the first call and on a later one; the router is slow or unreachable; a tool raises; the warehouse is stopped; the search finds nothing; the model asks for a tool that does not exist, sends arguments of the wrong type, or never stops asking; MLflow cannot save a rating; the largest request the API accepts.
+- **Tooling to check the judge against a person** (`eval/judge_sheet.py`, `eval/judge_controls.py`, `eval/judge_agreement.py`). The first writes the judge's verdicts on a saved run as a sheet to label, from the traces, so only redacted text is written. The second builds 23 deliberately wrong answers by editing saved real answers (a changed figure, a dropped fact, an added claim, an answer to another question, a broken rule) and has the judge score them. The third reads the labelled sheets and reports agreement, Cohen's kappa with a bootstrap interval, and every disagreement.
+- **Call assist by replay** (`src/copilot/assist.py`, `GET /api/calls/{id}/assist?turn=N`, the "Replay with assist" switch in the Calls view, `eval/assist_eval.py`). A recorded call plays turn by turn. A search runs on what the customer said in their last two turns; the model is called only when the article on show changes; reminders come from the compliance rules on the turns so far.
+
+**Three defects the tests found**, each written first as a test expected to fail, then fixed in commit `9685556`:
+
+1. **A tool name the model made up was used unchecked.** A name that is not one of the four tools went into the span name, `tools_used`, the `tool_error` flag and the progress event. A name holding a phone number therefore reached the trace, the API response and the event stream. It is now a fixed word, `unknown_tool`, everywhere except in what the model is told, which is redacted.
+2. **A failed rewrite threw the answer away.** The rewrite into plainer words is optional, but a timeout on it raised out of the output check and the request failed. The first draft is now kept, with a flag and a step that say so.
+3. **Four endpoints answered an unexpected failure with a bare 500**, and the error left the application with its message for the web server to log. `GET /api/calls`, `GET /api/calls/{id}`, the summary and the feedback endpoint now log the kind of error and answer with fixed words, like `/api/ask`.
+
+**Fixed in the same commit, from behaviour the tests recorded**
+
+- One reply of the model could run any number of tools: 25 searches in one round all ran. It now runs the first six (`max_tool_calls_per_round`); the rest are answered with an error, because every call needs a reply.
+- A plan argument that could not be read was dropped, which widened the lookup: `max_price="cheap"` returned the whole catalogue as if it were the answer. It is now an error the model is told about.
+- A summary the model wrote badly came back as a 400, the status of a caller's mistake. A fault of the model or the warehouse is now a 502.
+
+**Decisions**
+
+- **The fixes change the code an answer depends on, so the full evaluation was run again.** The run finished an hour earlier (`m8-full`, commit `a881459`) is kept, and a new one (`m9-full`) was started at the fixed code. A CI gate that fails on a stale evaluation is only honest if the same rule is applied when it costs an hour.
+- **Left as they are, each with a passing test whose name says what happens:** a failure of the model that answers fails the request (the client is told to try again, and the chat model already retries twice); tool arguments that are not valid JSON end in the fixed fallback answer; an answer written after a search that found nothing is delivered with a flag, not blocked.
+
+**For the owner to review**
+
+- **The judge has not been checked yet. The tooling is ready and the labels are yours.** `python -m eval.judge_sheet <run>.json --blind`, type yes or no in the `human` column, then `python -m eval.judge_agreement`.
+- In a three-control trial (4 judge calls, not saved) the groundedness judge passed an answer with "It also takes $5 off your bill every month." added to it: its reason covered only the sentences that answer the question. One answer is an observation, not a rate. The full controls run follows.
+- Call assist: the table of right articles per script in `eval/assist_eval.py` was written by the agent that built the feature and nobody has reviewed it. The two thresholds came from 14 hand-written lines and five calls, and the query rule was changed after a first trial on calls T0001 to T0005, so those five are reported apart.
+- Call assist replays stored, redacted calls. There is no audio, no speech recognition and no live redaction.

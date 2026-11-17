@@ -2,6 +2,7 @@ import type {
   Api,
   AskRequest,
   AskResponse,
+  AssistState,
   CallFindings,
   CallListItem,
   CallSummary,
@@ -203,6 +204,11 @@ const httpApi: Api = {
     request<SavedWrapUp | null>(`/calls/${encodeURIComponent(transcriptId)}/wrapup/saved`, {
       signal,
     }),
+  assistCall: (transcriptId, turn, signal) =>
+    request<AssistState>(
+      `/calls/${encodeURIComponent(transcriptId)}/assist?turn=${String(turn)}`,
+      { signal },
+    ),
   openHandOff: (body: HandOffRequest, signal) =>
     request<HandOffTicket>("/handoffs", post(body, signal)),
   sendFeedback: (body: FeedbackRequest, signal) =>
@@ -226,6 +232,8 @@ function mockApi(): Api {
       (await load()).saveWrapUp(transcriptId, body, signal),
     getSavedWrapUp: async (transcriptId, signal) =>
       (await load()).getSavedWrapUp(transcriptId, signal),
+    assistCall: async (transcriptId, turn, signal) =>
+      (await load()).assistCall(transcriptId, turn, signal),
     openHandOff: async (body, signal) => (await load()).openHandOff(body, signal),
     sendFeedback: async (body, signal) => (await load()).sendFeedback(body, signal),
   };

@@ -295,3 +295,43 @@ export function PanelIcon(props: IconProps) {
     </Icon>
   );
 }
+
+// --- Replay ----------------------------------------------------------------------------------
+
+/** Play: a triangle that points the way the call runs. */
+export function PlayIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M8 4.5l7.5 7.5L8 19.5z" />
+    </Icon>
+  );
+}
+
+/** Pause: two bars. */
+export function PauseIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M8.5 5v14M15.5 5v14" />
+    </Icon>
+  );
+}
+
+/** One turn on: the play triangle up against a bar. */
+export function NextTurnIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M6 5l7 7-7 7z" />
+      <path d="M17.5 5v14" />
+    </Icon>
+  );
+}
+
+/** Back to the first turn: a bar, and the triangle turned to face it. */
+export function StartAgainIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M6.5 5v14" />
+      <path d="M18 5l-7 7 7 7z" />
+    </Icon>
+  );
+}

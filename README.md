@@ -4,31 +4,35 @@
 
 > Unofficial demo. Not affiliated with or endorsed by any carrier. No real customer data.
 
-An AI copilot for frontline support agents at a wireless carrier, built end to end on **Databricks Free Edition**. An agent asks a question in plain words and gets a short, plain-language answer with cited help articles, a plan lookup grounded in SQL, a summary of a redacted call transcript, or a hand-off to a human when the request needs real account access.
+An AI copilot for the person on the phone with a customer: a frontline support agent at a wireless carrier. Built end to end on **Databricks Free Edition**.
+
+Answering a question from a help article is the easy part. The hard part is being safe to lean on while a customer waits. That means never repeating a customer's details to a model or a log, never stating a price the source does not hold, never changing an account or filing a ticket by itself, knowing when a person is needed, and being able to say with numbers how often each of those goes wrong. This repository is about that second part.
 
 [![The copilot answering a billing question. The answer highlights the facts to say out loud and numbers its sources; a side rail lists its source and the five steps taken.](docs/img/cue-answer.png)](https://srimaansri.github.io/frontline-copilot/)
 
-**See it in a browser:** <https://srimaansri.github.io/frontline-copilot/> is a public demo. The page is static and calls no server, so it cannot run the copilot: it replays recordings. Every answer in it is what the live copilot returned for that question, recorded by [eval/record_demo.py](eval/record_demo.py) with the date and the commit, which the page shows under "What's running". A question with no recording gets a note that says so. The picture above is from it. The live app, which calls the real agent, runs on Databricks Apps and needs a sign-in to the workspace; see [Try it](#try-it).
+**See it in a browser:** <https://srimaansri.github.io/frontline-copilot/> is a public demo. The page is static and calls no server, so it cannot run the copilot: it replays recordings. Every answer in it is what the live copilot returned for that question, recorded by [eval/record_demo.py](eval/record_demo.py) with the date and the commit, which the page shows under "What's running". For a question with no recording it offers the closest recorded questions to click, and says that nothing was run. The picture above is from it. The live app, which calls the real agent, runs on Databricks Apps and needs a sign-in to the workspace; see [Try it](#try-it).
 
-## Status
+## What it does, and how well
 
-This repo is being built milestone by milestone. Every number here comes from a real run, with its date and git SHA. The full reports are in [eval/results](eval/results): [SUMMARY.md](eval/results/SUMMARY.md) has every rate with its 95% interval, and [ERRORS.md](eval/results/ERRORS.md) lists every row that failed.
+Every figure below comes from a saved run with its date and commit, and each links to the section that gives its interval and its limits. The sets are small and the data is synthetic, so read these as what was measured, not as a forecast.
 
-| Milestone | What | State |
+| What it does | Measured on | Result |
 |---|---|---|
-| M0 | Scaffold: tooling, config loader, CI | Done |
-| M1 | Data generation and PII redaction, measured locally | Done |
-| M2 | Databricks pipelines: bronze, silver, gold, quality checks | Done |
-| M3 | Retrieval-augmented answers and the first evaluation | Done |
-| M4 | Agent with tools, guardrails, escalation | Done |
-| M5 | App, MCP server | Both run locally against the live workspace. The MCP Docker image builds and starts. The app is deployed on Databricks Apps and answers there (checked 2026-11-15, see [Try it](#try-it)). It began as a Streamlit page and is now a REST API with a React front end |
-| M6 | Results, model and data cards, responsible-AI notes | The cards are written: [model card](docs/MODEL_CARD.md), [data card](docs/DATA_CARD.md), [responsible-AI notes](docs/RESPONSIBLE_AI.md). Not done: the demo video, and a check of the judge against hand labels |
-| M7 | Fix and prove: guard and history fixes, intervals and a CI gate on the evaluation, a public demo that replays real answers | Done |
-| M8 | An evaluation that can fail, and a measured router | Part done: a [held-out routing set](#routing-measured-on-messages-the-rules-had-never-seen) with six routers scored on it, the best one now in the agent, and a [check on every figure](#a-check-on-every-figure-in-an-answer). Not done: the larger evaluation set, the judge checked against hand labels, abstention, tokens per answer |
-| M9 | Live progress, approval before a ticket is written, after-call work | Built: the interface shows each stage of an answer as the copilot starts it, a hand-off is drafted for the agent to approve before anything is written, and the copilot drafts the after-call wrap-up (how the call ended, what it was about, notes, promises, who owns the next step) for the agent to check and save. Not done: a clarifying question for an ambiguous request, and a pipeline step that wraps up all calls in a batch |
-| M10 | Call assist and compliance review | Part done: [every call is checked for five rule breaches](#checking-every-call-for-a-broken-rule), with recall and precision per rule on held-out wording. Not started: live call assist |
+| [Sends each message the right way](#routing-measured-on-messages-the-rules-had-never-seen): answer it, hand it to a person, or refuse it | 133 held-out messages, written and labelled without sight of the rules | 129 of 133 right. The plain rules it started with: 67 of 133 |
+| [Checks every figure in an answer](#a-check-on-every-figure-in-an-answer) against the text it was written from | 43 live answers, and 194 copies with one figure changed | 170 of 194 changed figures caught; 0 of 76 real figures wrongly reported |
+| [Keeps personal data out](#redaction-results-so-far) of the model, the logs and the traces | 39 personal values in phrasings the redactor had never seen | 30 found on first contact, 36 after fixing what that showed |
+| [Reviews every call](#checking-every-call-for-a-broken-rule) for five rule breaches | 200 held-out calls with seeded breaches, and the 200 clean ones | 46 of 46 for the two rules that rest on redaction; 21 of 27, 15 of 20, 14 of 20 for the three that rest on wording; 0 of 200 clean calls flagged |
+| [Answers from help articles and the plan catalogue](#the-agent-all-40-questions), with its sources | 40 reviewed questions, scored by code and by an LLM judge | 25 of 31 judged correct, 21 of 22 grounded, 22 of 22 cite the right article |
+| Drafts a hand-off or an after-call wrap-up and waits | The deployed app | Nothing is written until the agent approves it |
+| Shows what it is doing while it works | The deployed app, through Databricks' proxy | Each stage reaches the page within 0.1 second of starting |
 
-The full specification is in [PLAN.md](PLAN.md).
+## The ideas that carry it
+
+- **Redact before the trace opens.** MLflow records a traced function's inputs before its body runs, so redacting inside the trace is too late. The question and its conversation are redacted first, outside any span, and a test reads a real recorded trace for a planted phone number. What the model writes is checked again before it goes on a span.
+- **Rules, then a small model, then the rules again.** Plain rules hand off a clear account request at no cost. Everything else is routed by a small model that reads the policy in words. If that model is slow or unreachable, the rules decide and the answer says so. The order came from measurement: putting the rules' refusals in front of the model made it worse.
+- **The copilot drafts; a person approves.** A hand-off and a wrap-up are drafts in the answer. A ticket is someone else's work queue, and a copilot that fills it by itself on a misread request cannot be undone by the agent.
+- **A number has to be able to fail.** The first evaluation sat at its ceiling and the routing score was measured on the rows the rules were written from. The fixes: sets written by someone who never saw the code, first-contact results that are kept when later ones improve, intervals on every rate, and a CI gate that fails when the code an evaluation measured has changed.
+- **Say what was not done.** Each section ends with its limits, and [docs/BUILD_LOG.md](docs/BUILD_LOG.md) records what went wrong on the way, including an outside review that found three real gaps and how each was closed.
 
 ## The data is synthetic
 
@@ -121,32 +125,48 @@ question -> redact -> rules, router +-> hand-off (account requests) ------+
 ```
 
 - **Redaction comes first**, outside any trace, so the personal data it detects in a question never reaches the model, a log or MLflow. What it does not detect gets through: on phrasings it had not seen, it found 30 of 39 values, and 36 of 39 after fixes ([redaction results](#redaction-results-so-far)).
-- **The input guard** in this run used plain rules alone. A request to change, refund, cancel, unlock or look up something on one customer's account went straight to a hand-off, and an attempt to override the instructions got a fixed refusal. On messages the rules had never seen they turned out to be half right, so the copilot now keeps them for clear account requests and gives everything else to a small model that reads the routing policy: see [Routing](#routing-measured-on-messages-the-rules-had-never-seen).
-- **The output guard** rewrites an answer that is well above the reading target, then checks citations, then removes personal data. The carrier's public contact details are kept, so an answer can still say which number to call.
+- **The input guard** is plain rules, then a small model. A clear request to change, refund, cancel, unlock or look up something on one customer's account is handed off by the rules with no model call. Everything else goes to a router model that reads the routing policy in words, because on messages the rules had never seen they were half right: see [Routing](#routing-measured-on-messages-the-rules-had-never-seen). If the router cannot be reached, the rules decide and the answer says so.
+- **A hand-off is a draft.** The copilot fills in the reason, the team and the urgency, and the agent opens the ticket. Nothing is written before that.
+- **The output guard** rewrites an answer that is well above the reading target, then checks citations, removes personal data, and checks [every figure against the sources](#a-check-on-every-figure-in-an-answer). The carrier's public contact details are kept, so an answer can still say which number to call.
 
-All 40 evaluation rows, with the default setting (A, vector search), prompt v3, at commit `8624268`. The run finished on 2026-11-15 at 00:58 UTC.
+All 40 evaluation rows, with the default setting (A, vector search), prompt v3 and the router, at commit `05bbad9`. The run finished on 2026-11-16 at 06:53 UTC. It is the run the [CI gate](eval/gate.py) checks: the gate fails if the code an answer depends on has changed since.
 
 | Kind of question | Rows | Correct | Rules followed | Hand-off decision right | Right tool used | No personal data in the answer |
 |---|---|---|---|---|---|---|
 | Help articles | 22 | 18/21 | 1/1 | 22/22 | 22/22 | 22/22 |
-| Plan lookups | 6 | 6/6 | 1/1 | 6/6 | 5/6 | 6/6 |
-| Call summaries | 4 | 2/3 | 1/1 | 4/4 | 3/3 | 4/4 |
+| Plan lookups | 6 | 5/6 | 1/1 | 6/6 | 5/6 | 6/6 |
+| Call summaries | 4 | 1/3 | 0/1 | 4/4 | 3/3 | 4/4 |
 | Requests that need a person | 5 | not scored | 5/5 | 5/5 | 5/5 | 5/5 |
-| Trick questions | 3 | 1/1 | 3/3 | 3/3 | 1/1 | 3/3 |
-| **All** | **40** | **27/31** | **11/11** | **40/40** | **36/37** | **40/40** |
+| Trick questions | 3 | 1/1 | 2/3 | 3/3 | 1/1 | 3/3 |
+| **All** | **40** | **25/31** | **9/11** | **40/40** | **36/37** | **40/40** |
 
-"Correct" is scored where a row lists expected facts, and "rules followed" where it lists rules, so the counts differ by column. Also across all rows: an answer was recorded for 40/40, citations were valid for 40/40, the expected article was found and cited for 22/22, 37/40 answers were at reading grade 8 or below (mean 5.7), and the median time to answer was 2.5 seconds (95th percentile 4.3, slowest 13.4, which was a plan lookup).
+"Correct" is scored where a row lists expected facts, and "rules followed" where it lists rules, so the counts differ by column. Also across all rows: an answer was recorded for 40/40, citations were valid for 40/40, the expected article was found and cited for 22/22, every figure in an answer was in its sources for 40/40, 36/40 answers were at reading grade 8 or below (median 5.7), an answer took a median of 3 model calls, and the median time to answer was 4.4 seconds (90th percentile 9.5).
 
 **Reading these numbers**
 
-- **Hand-offs.** All five account requests were handed off and none of the other 35 questions was. The routing rules were written with those five rows in view, so this shows the rules work on them. It is not an independent measure.
-- **How sure these are.** With this few rows the ranges are wide. 27/31 correct is consistent with a true rate anywhere from 71% to 95%, and a perfect 22/22 with anything from 85% up. [SUMMARY.md](eval/results/SUMMARY.md) gives the interval for every figure.
-- **Columns at 100%.** They show the check found no failure. Whether the judge would catch a wrong answer has not been tested with deliberately wrong ones, and the judge has not been checked against hand labels.
+- **Against the first full run.** That run (2026-11-15, commit `8624268`, rules only, tickets written without approval) had 27/31 correct and 11/11 rules followed. This one has 25/31 and 9/11. Both are in [SUMMARY.md](eval/results/SUMMARY.md) with their intervals, which overlap almost entirely: 31 rows cannot tell these two apart.
+- **The eight failed marks, read one by one** with the judge's reason beside each ([ERRORS.md](eval/results/ERRORS.md)). Six look like the judge's mistake. It failed an answer for listing more steps than the expected facts, for "Unlimited Premium" where the fact says "Northline Unlimited Premium", and for a two-sentence refusal it read as a list of the copilot's rules. Two are the answer's: both are call summaries that left a fact out, that the account has Device Protection and that the customer had already typed in their card number. This reading is not a hand label. The judge has to be [checked against a person](#is-the-judge-right), and that is not done.
+- **Hand-offs.** All five account requests were handed off and none of the other 35 questions was. In this run the router made the decision for every message the rules did not hand off, and it was not tuned on these rows. The independent measure is still the [routing set](#routing-measured-on-messages-the-rules-had-never-seen).
+- **How sure these are.** With this few rows the ranges are wide: 25/31 correct is consistent with a true rate anywhere from about 64% to 91%.
+- **Columns at 100%.** They show the check found no failure, on rows that mostly had nothing to fail.
 - **Personal data.** No answer repeated a personal detail from its question or stated one that was not in its sources. One row plants a name, a phone number and Social Security digits in the question to test exactly this. So the 40/40 is one real test and 39 rows with nothing to leak, and the scorer uses the same redactor as the output check, so it cannot catch what that redactor misses.
-- **The four "incorrect" marks.** In two (a phone with no service, calls going to voicemail) the answer contains every expected fact and the judge objected that the article lists more steps: the same judge mistake as in the earlier runs. In one (the account PIN) the judge wanted the wording "support asks for it" where the answer said it is used "to prove who you are when you call support". In one (a call summary) the judge found the summary did not say the customer had already typed in their card number.
 - **The tool miss.** One plan question was answered from the help articles and not from the plan table. The answer was right.
-- **Not the same system as the three runs above.** Those used a retrieve-then-answer chain with prompt v2. The agent's 18/21 on help-article questions is within one row of them.
-- **How the file was written.** The run scored every row and then failed with a sign-in error while reading its traces back, before the report was saved. The report was rebuilt from the same MLflow run with the runner's own functions, and the file says so.
+- **Time.** The median went from 2.5 to 4.4 seconds. The router is one more model call on most answers, and on Free Edition a model call sometimes waits on a rate limit, which is where the slow tail comes from.
+
+## Is the judge right?
+
+Three of the columns above are a model's opinion. A judge that is wrong one time in five moves "correct" by six rows out of 31, which is more than any change to the copilot has moved it. So the judge has to be measured too, in two ways.
+
+- **Against a person.** [eval/judge_sheet.py](eval/judge_sheet.py) writes the judge's verdicts on a saved run as a sheet, one row per verdict, with the question, the answer and what the judge was given. It is built from the traces, so it holds only redacted text. A person marks each one right or wrong, without seeing the judge's verdict if the sheet is made with `--blind`. [eval/judge_agreement.py](eval/judge_agreement.py) then reports agreement, Cohen's kappa with an interval, and every disagreement with the judge's reason.
+- **Against answers known to be wrong.** A judge that says yes to everything agrees with a person most of the time on a set where most answers are right. [eval/judge_controls.py](eval/judge_controls.py) takes 23 saved real answers and breaks each in one known way: a changed figure, a dropped fact, an added claim the sources do not hold, an answer to a different question, a broken rule. The judge should fail every one.
+
+**State.** The tooling is built and tested. The hand labels are not done, so no agreement figure is reported here. Until they are, the "correct" column means "the judge said so", and the reading of the failed rows above is a reading, not a measurement.
+
+```bash
+python -m eval.judge_sheet eval/results/2026-11-16_m9-full-A-ann.json --blind
+python -m eval.judge_controls --list
+python -m eval.judge_agreement eval/labels/<sheet>.csv
+```
 
 ## Routing, measured on messages the rules had never seen
 
@@ -268,6 +288,48 @@ The original 200 calls break no rule, so there was nothing to detect. A generato
 python -m data_gen.synth_breaches
 python -m eval.compliance_eval
 ```
+
+## After the call: the wrap-up
+
+When a call ends, the agent writes it up: how it ended, what it was about, what was said and promised, and who does what next. The copilot drafts that record from the redacted transcript for the agent to check and save ([`wrap_up_call`](src/copilot/tools.py)). The model is given the turns and nothing else: the call's recorded outcome and category are never near the prompt, so they can be used to score it. Nothing is stored until the agent approves the draft.
+
+Two of its fields have a label to score against. On the 200 calls, each drafted once, on 2026-11-16 at commit `a881459`:
+
+| Field | Right | When it says so, it is right | Of the calls that are so, it finds |
+|---|---|---|---|
+| How the call ended | 177 of 200 (83-92%) | | |
+| - resolved | | 108/116 | 108/119 |
+| - handed to another team | | 47/47 | 47/57 |
+| - unresolved | | 22/34 | 22/24 |
+| What the call was about | 197 of 200 (96-99%) | | |
+
+- **It is cautious in one direction.** 11 calls the generator labels resolved were drafted as unresolved, and "unresolved" is the label it is least often right about. An agent who reads the draft corrects that with one click; the opposite error, a problem marked solved, happened less.
+- **6 hand-offs were drafted as resolved.** That is the error that matters: a call that needs another team would be filed as finished if the agent saved the draft unread. It is why the draft is not saved for them.
+- **3 calls got no draft**, because the model's reply was not the JSON it was asked for. The agent sees a fixed message and can ask again. There is no automatic second try yet.
+- **Limits.** The labels are the transcript generator's, not a person's. The 200 calls come from 22 scripts, so they are not independent and the intervals are too narrow. The notes, the promises and the next step are checked for personal data and are not scored for being right.
+
+```bash
+python -m eval.wrapup_eval --limit 5
+```
+
+## When a part fails
+
+A copilot is a chain of things that can each be down: a router model, a model that answers, a search index, a SQL warehouse, a trace store. What happens then was not left to chance. [tests/test_failure_modes.py](tests/test_failure_modes.py) and [tests/test_failure_modes_api.py](tests/test_failure_modes_api.py) break each part in turn, with fakes and no model call, and read the answer, the log and the trace afterwards.
+
+| What fails | What the agent gets |
+|---|---|
+| The router model is slow or unreachable | An answer, routed by the plain rules, with a step that says so |
+| The model that answers times out | A fixed message to try again. The log has the kind of error and the line, and nothing of the question |
+| A lookup fails: the warehouse is stopped, the index is down | An answer that says the lookup failed. The other lookups of the same round still run |
+| The search finds no article | An answer marked as having no article behind it |
+| The model asks for a tool that does not exist | The model is told, and answers. The made-up name is written nowhere else |
+| The model asks for 25 lookups at once, or never stops asking | The first six of a round run, and at most four rounds |
+| The rewrite into plainer words fails | The first draft, with a step that says it was kept |
+| A hand-off ticket cannot be written | The words to transfer the customer by hand |
+| The trace store cannot save a rating | A fixed message. The answer itself is not affected |
+
+- **Writing these tests found three defects**, each first recorded as a test expected to fail: a tool name the model made up went unchecked onto the trace and into the answer, a failed rewrite threw away an answer that was already written, and four endpoints answered an unexpected error with a bare 500 and let its message through to the web server's log. All three are fixed, and the tests now pass as written.
+- **Not handled.** If the model that answers fails, the request fails: there is no second model to fall back to. Tool arguments that are not valid JSON end in the fixed fallback answer. An answer written after a search that found nothing is delivered with a flag and is not blocked.
 
 ## Try it
 
@@ -394,6 +456,26 @@ cd web && npm ci && npm run typecheck && npm run lint && npm run build
 `npm run lint` includes a contrast check of every colour pair in both themes.
 
 Configuration comes from `config/settings.yaml`, overridden by a local `.env` (copy `.env.example`) and by environment variables. Nothing secret is committed.
+
+## Build status
+
+This repo is being built milestone by milestone. Every number here comes from a real run, with its date and git SHA. The full reports are in [eval/results](eval/results): [SUMMARY.md](eval/results/SUMMARY.md) has every rate with its 95% interval, and [ERRORS.md](eval/results/ERRORS.md) lists every row that failed.
+
+| Milestone | What | State |
+|---|---|---|
+| M0 | Scaffold: tooling, config loader, CI | Done |
+| M1 | Data generation and PII redaction, measured locally | Done |
+| M2 | Databricks pipelines: bronze, silver, gold, quality checks | Done |
+| M3 | Retrieval-augmented answers and the first evaluation | Done |
+| M4 | Agent with tools, guardrails, escalation | Done |
+| M5 | App, MCP server | Both run locally against the live workspace. The MCP Docker image builds and starts. The app is deployed on Databricks Apps and answers there (checked 2026-11-15, see [Try it](#try-it)). It began as a Streamlit page and is now a REST API with a React front end |
+| M6 | Results, model and data cards, responsible-AI notes | The cards are written: [model card](docs/MODEL_CARD.md), [data card](docs/DATA_CARD.md), [responsible-AI notes](docs/RESPONSIBLE_AI.md). Not done: the demo video, and a check of the judge against hand labels |
+| M7 | Fix and prove: guard and history fixes, intervals and a CI gate on the evaluation, a public demo that replays real answers | Done |
+| M8 | An evaluation that can fail, and a measured router | Part done: a [held-out routing set](#routing-measured-on-messages-the-rules-had-never-seen) with six routers scored on it, the best one now in the agent, and a [check on every figure](#a-check-on-every-figure-in-an-answer). Not done: the larger evaluation set, the judge checked against hand labels, abstention, tokens per answer |
+| M9 | Live progress, approval before a ticket is written, after-call work | Built: the interface shows each stage of an answer as the copilot starts it, a hand-off is drafted for the agent to approve before anything is written, and the copilot drafts the after-call wrap-up (how the call ended, what it was about, notes, promises, who owns the next step) for the agent to check and save. Not done: a clarifying question for an ambiguous request, and a pipeline step that wraps up all calls in a batch |
+| M10 | Call assist and compliance review | Part done: [every call is checked for five rule breaches](#checking-every-call-for-a-broken-rule), with recall and precision per rule on held-out wording. Not started: live call assist |
+
+The full specification is in [PLAN.md](PLAN.md).
 
 ## How this was built
 

@@ -120,6 +120,9 @@ class Settings(BaseSettings):
     # Behaviour
     reading_grade_target: float = Field(default=8.0, gt=0.0)
     max_tool_iterations: int = Field(default=4, ge=1)
+    # How many tools one reply of the model may run. The rounds are limited above;
+    # without this, one round could still ask for any number of searches.
+    max_tool_calls_per_round: int = Field(default=6, ge=1)
     # How a request is routed before the main model sees it. "rules" uses the plain
     # rules alone, at no cost. "model" keeps the rules for a clear account request,
     # gives everything else to a small model that reads the routing policy, and

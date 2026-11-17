@@ -5,13 +5,19 @@ import { humanize } from "@/lib/format";
  * Each rule of the rule check in plain words. The names are those of
  * `src/copilot/compliance.py`; the sentence that says why a turn was flagged
  * comes from the server with each finding.
+ *
+ * A rule has one name on screen. These are the titles call assist gives the
+ * same rules as reminders in a replay (`_REMINDERS` in `src/copilot/assist.py`),
+ * so a reminder seen there and a finding read here are recognisably one thing.
+ * Only the skipped identity check is worded on its own: that no check came
+ * anywhere in the call can be said of a finished call and never during one.
  */
 const RULE_TITLES: Record<string, string> = {
-  disclosure_before_verification: "Account details given before the identity check",
+  disclosure_before_verification: "Account details before the identity check",
   verification_skipped: "No identity check anywhere in the call",
-  card_read_back: "A full card number read back",
-  unauthorized_promise: "A charge waived or refunded without the billing team",
-  full_ssn_requested: "The full Social Security number asked for",
+  card_read_back: "A card number was read back",
+  unauthorized_promise: "A refund or waiver was promised",
+  full_ssn_requested: "The full Social Security number was asked for",
 };
 
 /** The words for a rule, also for one this list does not have yet. */

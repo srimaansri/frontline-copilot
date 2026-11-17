@@ -10,7 +10,9 @@ from fastapi.testclient import TestClient
 
 import api.main as api_module
 from api.main import Runtime, create_app, start_tracing
+from copilot.assist import AssistArticle, AssistCost, AssistState, CallAssist, NextStep
 from copilot.config import Settings
+from copilot.redaction import Redactor
 from copilot.schemas import (
     CallSummary,
     CallWrapUp,
@@ -19,6 +21,7 @@ from copilot.schemas import (
     EscalationTicket,
     FollowUp,
     HandOffDraft,
+    KBHit,
     SavedWrapUp,
 )
 from copilot.tools import ToolError
@@ -511,13 +514,28 @@ def test_a_calls_list_that_cannot_be_read_does_not_leak_its_reason(
         response = client.get("/api/calls")
 
     assert response.status_code == 502
-    assert response.json() == {
-        "detail": "The calls could not be listed just now. Please try again."
-    }
+    assert response.json() == {"detail": "The calls could not be read just now. Please try again."}
     logged = "\n".join(record.getMessage() + (record.exc_text or "") for record in caplog.records)
     assert "RuntimeError at test_api.py:" in logged
     assert PHONE not in logged
     assert "TABLE_OR_VIEW_NOT_FOUND" not in logged
+
+
+def test_a_calls_list_with_no_insights_table_is_a_fault_of_the_server_not_of_the_caller() -> None:
+    # The list joins gold.call_insights. Before the pipeline has written it, the
+    # warehouse fails the statement, and the SQL runner reports that in these words.
+    client, copilot = client_for()
+    copilot.tools.sql_failure = ToolError("The data lookup did not finish (state FAILED)")
+
+    response = client.get("/api/calls")
+
+    assert response.status_code == 502
+    assert response.json() == {"detail": "The data lookup did not finish (state FAILED)"}
+    assert "gold.call_insights" in copilot.tools.statements[0]
+    # The same fault on a filtered list, on one call's rule check and on a saved wrap-up.
+    assert client.get("/api/calls", params={"finding": "any"}).status_code == 502
+    assert client.get("/api/calls/T0207/findings").status_code == 502
+    assert client.get("/api/calls/T0001/wrapup/saved").status_code == 502
 
 
 # --- the rule check on one call ------------------------------------------------------------------
@@ -910,6 +928,197 @@ def test_a_saved_wrap_up_that_cannot_be_read_does_not_leak_its_reason(
     assert "RuntimeError at test_api.py:" in logged
     assert PHONE not in logged
     assert "warehouse stopped" not in logged
+
+
+# --- call assist ---------------------------------------------------------------------------------
+
+ASSIST_TURNS = [
+    {"speaker": "agent", "text": "Northline Wireless support. How can I help?"},
+    {"speaker": "customer", "text": "There's a late fee on my bill, <PERSON_1> said."},
+    {"speaker": "agent", "text": "Let me look. Your balance due is <CPNI_AMOUNT_1>."},
+]
+FEE_HIT = KBHit(
+    chunk_id="late-payment-fee#0",
+    url="https://help.northline.example/articles/late-payment-fee",
+    title="Late payment fee",
+    text="Late payment fee - What the fee is\n## What the fee is\nThe fee is a $5 charge.",
+    score=0.56,
+)
+STATE = AssistState(
+    transcript_id="T0001",
+    turn=1,
+    turns_total=3,
+    article=AssistArticle(
+        title="Late payment fee", url=FEE_HIT.url, passage="The fee is a $5 charge.", since_turn=1
+    ),
+    next_step=NextStep(text="Tell them the fee is $5.", since_turn=1),
+    changed=["article", "next_step"],
+    cost=AssistCost(searches=1, model_calls=1),
+)
+
+
+class FakeAssist:
+    """Stands in for call assist: one known call, and a note of what was asked."""
+
+    def __init__(self, failure: Exception | None = None) -> None:
+        self.asked: list[tuple[str, int]] = []
+        self.failure = failure
+
+    def state(self, transcript_id: str, turn: int) -> AssistState:
+        self.asked.append((transcript_id, turn))
+        if self.failure is not None:
+            raise self.failure
+        if transcript_id != "T0001":
+            raise ToolError(f"No transcript was found with the id {transcript_id}")
+        if turn > 2:
+            raise ToolError(f"Call T0001 has 3 turns, counted from 0. It has no turn {turn}.")
+        return STATE.model_copy(update={"turn": turn})
+
+
+def assist_client(
+    assist: Any = None, *, tracing: bool = False
+) -> tuple[TestClient, FakeAssist | Any]:
+    assist = assist or FakeAssist()
+    app = create_app(FakeCopilot(CITED), tracing=tracing, static_dir=None, assist=assist)  # type: ignore[arg-type]
+    return TestClient(app), assist
+
+
+def test_call_assist_returns_the_state_at_one_turn_with_the_time_it_took() -> None:
+    client, assist = assist_client()
+
+    response = client.get("/api/calls/t0001/assist", params={"turn": 1})
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body.pop("seconds") >= 0
+    assert body == STATE.model_dump()
+    assert body["article"]["title"] == "Late payment fee"
+    assert body["cost"] == {"searches": 1, "model_calls": 1}
+    # The id reaches call assist in its stored form.
+    assert assist.asked == [("T0001", 1)]
+
+
+@pytest.mark.parametrize("turn", [None, "-1", "1000", "two", "1.5", ""])
+def test_call_assist_refuses_a_turn_that_is_not_a_small_whole_number(turn: str | None) -> None:
+    client, assist = assist_client()
+
+    response = client.get("/api/calls/T0001/assist", params={} if turn is None else {"turn": turn})
+
+    assert response.status_code == 422
+    assert assist.asked == []
+
+
+def test_call_assist_on_a_bad_id_an_unknown_call_or_a_turn_past_the_end() -> None:
+    client, assist = assist_client()
+
+    assert client.get("/api/calls/T12/assist", params={"turn": 0}).status_code == 400
+    # A malformed id never reaches call assist.
+    assert assist.asked == []
+    missing = client.get("/api/calls/T9999/assist", params={"turn": 0})
+    assert missing.status_code == 404
+    assert missing.json() == {"detail": "No transcript was found with the id T9999"}
+    past = client.get("/api/calls/T0001/assist", params={"turn": 7})
+    assert past.status_code == 400
+    assert "has no turn 7" in past.json()["detail"]
+
+
+def test_call_assist_is_traced_with_the_call_the_turn_and_its_prompt_version(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    spans, tags = record_spans(monkeypatch)
+    client, _ = assist_client(tracing=True)
+
+    body = client.get("/api/calls/t0001/assist", params={"turn": 2}).json()
+
+    assert [span.name for span in spans] == ["call_assist"]
+    # A well-formed id and a number: nothing a person typed.
+    assert spans[0].inputs == {"transcript_id": "T0001", "turn": 2}
+    body.pop("seconds")
+    assert spans[0].outputs == body
+    assert tags == [{"source": "web", "view": "call_assist", "assist_prompt_version": "a1"}]
+
+
+def test_call_assist_starts_no_trace_for_a_malformed_id(monkeypatch: pytest.MonkeyPatch) -> None:
+    spans, _ = record_spans(monkeypatch)
+    client, _ = assist_client(tracing=True)
+
+    assert client.get(f"/api/calls/call for {PHONE}/assist", params={"turn": 0}).status_code == 400
+    assert spans == []
+
+
+def test_a_call_assist_failure_is_logged_by_kind_and_place_and_does_not_leak(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    client, _ = assist_client(FakeAssist(RuntimeError(f"index down on a query about {PHONE}")))
+
+    with caplog.at_level("DEBUG"):
+        response = client.get("/api/calls/T0001/assist", params={"turn": 1})
+
+    assert response.status_code == 502
+    assert response.json() == {
+        "detail": "Call assist could not read this turn just now. Please try again."
+    }
+    logged = "\n".join(
+        record.getMessage() + (record.exc_text or "") + str(record.exc_info or "")
+        for record in caplog.records
+    )
+    assert "RuntimeError at test_api.py:" in logged
+    assert PHONE not in logged
+    assert "index down" not in logged
+    assert all(record.exc_info is None for record in caplog.records)
+
+
+class AssistParts:
+    """The copilot's tools as call assist uses them, with a fixed search and a fixed reply."""
+
+    def __init__(self) -> None:
+        self.settings = Settings(_env_file=None)  # type: ignore[call-arg]
+        self.statements: list[str] = []
+        self.prompts: list[Any] = []
+        # The real redactor: the output check needs to know where each detail is.
+        self.redactor = Redactor("en_core_web_sm")
+        self.retriever = types.SimpleNamespace(search=lambda question, top_k=None: [FEE_HIT])
+        self.llm = types.SimpleNamespace(invoke=self.invoke)
+
+    def sql(self, statement: str, parameters: Any) -> list[dict[str, Any]]:
+        self.statements.append(statement)
+        known = parameters["transcript_id"][1] == "T0001"
+        return [{"turns_json": json.dumps(ASSIST_TURNS)}] if known else []
+
+    def invoke(self, messages: Any) -> Any:
+        self.prompts.append(messages)
+        return types.SimpleNamespace(content=f"Tell them the fee is $5. Or ring {PHONE}.")
+
+
+def test_call_assist_through_the_api_reads_the_redacted_table_and_checks_what_it_shows() -> None:
+    parts = AssistParts()
+    client, _ = assist_client(CallAssist(parts))  # type: ignore[arg-type]
+
+    first = client.get("/api/calls/T0001/assist", params={"turn": 1}).json()
+    second = client.get("/api/calls/T0001/assist", params={"turn": 2}).json()
+
+    assert "silver.transcripts_redacted" in parts.statements[0]
+    assert len(parts.statements) == 1
+    assert first["article"]["title"] == "Late payment fee"
+    assert first["article"]["passage"] == "The fee is a $5 charge."
+    # The model's words pass the output check: a number in no source is replaced.
+    assert first["next_step"]["text"] == "Tell them the fee is $5. Or ring <PHONE_NUMBER_1>."
+    assert first["changed"] == ["article", "next_step"]
+    # The next turn is the agent's: no search, no model call, and one reminder from the rules.
+    assert len(parts.prompts) == 1
+    assert second["next_step"] == first["next_step"]
+    assert second["changed"] == ["reminder"]
+    assert [reminder["rule"] for reminder in second["reminders"]] == ["account_before_identity"]
+    assert second["identity_checked_at"] is None
+    assert second["cost"] == {"searches": 1, "model_calls": 1}
+
+
+def test_call_assist_is_built_on_the_copilots_own_tools_when_none_is_given() -> None:
+    copilot = FakeCopilot(CITED)
+    runtime = Runtime(copilot, tracing=False)  # type: ignore[arg-type]
+
+    assert isinstance(runtime.assist, CallAssist)
+    assert runtime.assist is runtime.assist
 
 
 # --- feedback ----------------------------------------------------------------------------------

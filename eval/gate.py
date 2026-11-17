@@ -4,15 +4,19 @@ Usage:
     python -m eval.gate
 
 It makes no model calls, so it runs on every push. It checks the newest saved
-run over the whole evaluation set for two things:
+run over the whole evaluation set, with every judge, for two things:
 
-- **It is about this repository.** It was made with the evaluation set and the
-  prompt version that are in the repository now. A changed question or prompt
-  with no new saved run means the published numbers describe something else.
+- **It is about this repository.** Every run records a fingerprint of what
+  decided the copilot's behaviour: the agent's code, its prompts, its settings,
+  the evaluation set and the scorers (``eval/fingerprint.py``). The gate
+  computes the same fingerprint from the repository and fails if they differ,
+  naming the files that changed. It also fails if the run answered or routed
+  with a model other than the configured one. A change to how the copilot
+  behaves therefore has to arrive together with a fresh evaluation of it.
 - **It meets the thresholds** in PLAN.md section 9.5.
 
-It cannot tell whether other code has changed since the run. The run's commit
-is printed, so a reader can compare.
+What it does not see: a change in a model behind an endpoint, in the search
+index, or in the data. Those are outside the repository.
 """
 
 from __future__ import annotations
@@ -22,7 +26,9 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from copilot.config import load_settings
 from copilot.prompts import PROMPT_VERSION
+from eval.fingerprint import behaviour_fingerprint, changed_files
 from eval.report import RESULTS_DIR, load_results
 
 EVAL_SET = Path("eval/eval_set.jsonl")
@@ -34,6 +40,22 @@ THRESHOLDS: tuple[tuple[str, float], ...] = (
     ("escalation_correct", 0.9),
     ("reading_level_ok", 0.8),
 )
+
+
+def configured_settings() -> dict[str, Any]:
+    """The models and search settings a full run must have used to describe this repository.
+
+    A run can be made with another model or setting from the command line. That is
+    a comparison, and it must not stand in for an evaluation of the configured system.
+    """
+    settings = load_settings()
+    return {
+        "llm_endpoint": settings.llm_endpoint,
+        "router": settings.router,
+        "router_endpoint": settings.router_endpoint if settings.router == "model" else None,
+        "chunk_config": settings.chunk_config,
+        "query_type": settings.query_type,
+    }
 
 
 def sha256(path: Path) -> str:
@@ -61,9 +83,41 @@ def latest_full_run(results_dir: Path = RESULTS_DIR) -> tuple[str, dict[str, Any
     return full[-1] if full else None
 
 
-def problems(report: Mapping[str, Any], *, eval_set_sha256: str, prompt_version: str) -> list[str]:
-    """Why this run does not pass the gate. Empty when it does."""
+def problems(
+    report: Mapping[str, Any],
+    *,
+    eval_set_sha256: str,
+    prompt_version: str,
+    behaviour: Mapping[str, Any],
+    settings: Mapping[str, Any],
+) -> list[str]:
+    """Why this run does not pass the gate. Empty when it does.
+
+    Args:
+        report: The saved run.
+        eval_set_sha256: The hash of the evaluation set in the repository.
+        prompt_version: The prompt version in the repository.
+        behaviour: The fingerprint computed from the repository now.
+        settings: The models and search settings the repository is configured with.
+    """
     found: list[str] = []
+    saved = report.get("behaviour")
+    if not saved:
+        found.append(
+            "the run was saved before runs recorded a fingerprint, so it cannot be shown "
+            "to describe this code; save a new full run (python -m eval.run_eval ... --save)"
+        )
+    elif changed := changed_files(saved.get("files", {}), behaviour["files"]):
+        found.append(
+            "the copilot has changed since this run, so its numbers are stale; changed: "
+            f"{', '.join(changed) or 'unknown'}. Save a new full run"
+        )
+    for name, configured in settings.items():
+        if report.get(name) != configured:
+            found.append(
+                f"the run used {name} = {report.get(name)} and the repository is configured "
+                f"with {configured}; save a new full run"
+            )
     if report.get("git_dirty"):
         found.append("the run was made from a working tree with uncommitted changes")
     if report.get("rows_without_answer"):
@@ -99,7 +153,13 @@ def main() -> None:
         raise SystemExit(1)
     file_name, report = latest
     print(f"gate: {file_name}, commit {report['git_sha'][:7]}, {report['rows']} rows")
-    found = problems(report, eval_set_sha256=sha256(EVAL_SET), prompt_version=PROMPT_VERSION)
+    found = problems(
+        report,
+        eval_set_sha256=sha256(EVAL_SET),
+        prompt_version=PROMPT_VERSION,
+        behaviour=behaviour_fingerprint(),
+        settings=configured_settings(),
+    )
     for problem in found:
         print(f"gate: FAIL: {problem}")
     if found:

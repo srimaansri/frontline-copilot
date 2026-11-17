@@ -1,0 +1,5699 @@
+{
+  "scored_at": "2026-11-16T05:58:15Z",
+  "git_sha": "a881459f87a69928508c0c3db655bcb7152df34c",
+  "wrap_up_prompt_version": "w1",
+  "llm_endpoint": "databricks-gpt-oss-120b",
+  "llm_temperature": 0.1,
+  "truth": "the transcript generator's own labels: resolution and category",
+  "first_contact": true,
+  "calls_are_independent": false,
+  "calls": 200,
+  "no_answer": 3,
+  "disposition": {
+    "accuracy": {
+      "count": 177,
+      "of": 200,
+      "rate": 0.885,
+      "ci95": [
+        0.8333517476611362,
+        0.9221368277817569
+      ]
+    },
+    "by_class": {
+      "resolved": {
+        "recall": {
+          "count": 108,
+          "of": 119,
+          "rate": 0.907563025210084,
+          "ci95": [
+            0.8420348151936627,
+            0.9475999665089527
+          ]
+        },
+        "precision": {
+          "count": 108,
+          "of": 116,
+          "rate": 0.9310344827586207,
+          "ci95": [
+            0.8697918542886229,
+            0.9646429329638837
+          ]
+        }
+      },
+      "escalated": {
+        "recall": {
+          "count": 47,
+          "of": 57,
+          "rate": 0.8245614035087719,
+          "ci95": [
+            0.7063240094940684,
+            0.9018125286640339
+          ]
+        },
+        "precision": {
+          "count": 47,
+          "of": 47,
+          "rate": 1.0,
+          "ci95": [
+            0.9244398288016114,
+            1.0
+          ]
+        }
+      },
+      "unresolved": {
+        "recall": {
+          "count": 22,
+          "of": 24,
+          "rate": 0.9166666666666666,
+          "ci95": [
+            0.741507847985494,
+            0.9768416721570266
+          ]
+        },
+        "precision": {
+          "count": 22,
+          "of": 34,
+          "rate": 0.6470588235294118,
+          "ci95": [
+            0.4791365883001342,
+            0.7851228510470394
+          ]
+        }
+      }
+    },
+    "confusion": {
+      "resolved": {
+        "resolved": 108,
+        "escalated": 0,
+        "unresolved": 11,
+        "no_answer": 0
+      },
+      "escalated": {
+        "resolved": 6,
+        "escalated": 47,
+        "unresolved": 1,
+        "no_answer": 3
+      },
+      "unresolved": {
+        "resolved": 2,
+        "escalated": 0,
+        "unresolved": 22,
+        "no_answer": 0
+      }
+    }
+  },
+  "category": {
+    "accuracy": {
+      "count": 197,
+      "of": 200,
+      "rate": 0.985,
+      "ci95": [
+        0.9568335194437211,
+        0.9948858548155076
+      ]
+    },
+    "by_class": {
+      "billing": {
+        "recall": {
+          "count": 33,
+          "of": 34,
+          "rate": 0.9705882352941176,
+          "ci95": [
+            0.8508409778365519,
+            0.9947892280744034
+          ]
+        },
+        "precision": {
+          "count": 33,
+          "of": 33,
+          "rate": 1.0,
+          "ci95": [
+            0.8957265699643882,
+            1.0
+          ]
+        }
+      },
+      "troubleshooting": {
+        "recall": {
+          "count": 34,
+          "of": 34,
+          "rate": 1.0,
+          "ci95": [
+            0.8984820937803899,
+            1.0
+          ]
+        },
+        "precision": {
+          "count": 34,
+          "of": 34,
+          "rate": 1.0,
+          "ci95": [
+            0.8984820937803899,
+            1.0
+          ]
+        }
+      },
+      "device_setup": {
+        "recall": {
+          "count": 24,
+          "of": 24,
+          "rate": 1.0,
+          "ci95": [
+            0.8620194241710247,
+            1.0
+          ]
+        },
+        "precision": {
+          "count": 24,
+          "of": 24,
+          "rate": 1.0,
+          "ci95": [
+            0.8620194241710247,
+            1.0
+          ]
+        }
+      },
+      "plan_change": {
+        "recall": {
+          "count": 20,
+          "of": 22,
+          "rate": 0.9090909090909091,
+          "ci95": [
+            0.7218461934161421,
+            0.9747051037171622
+          ]
+        },
+        "precision": {
+          "count": 20,
+          "of": 20,
+          "rate": 1.0,
+          "ci95": [
+            0.8388698745050667,
+            1.0
+          ]
+        }
+      },
+      "add_line": {
+        "recall": {
+          "count": 17,
+          "of": 17,
+          "rate": 1.0,
+          "ci95": [
+            0.8156763396284354,
+            1.0
+          ]
+        },
+        "precision": {
+          "count": 17,
+          "of": 17,
+          "rate": 1.0,
+          "ci95": [
+            0.8156763396284354,
+            1.0
+          ]
+        }
+      },
+      "international": {
+        "recall": {
+          "count": 14,
+          "of": 14,
+          "rate": 1.0,
+          "ci95": [
+            0.7846829880728186,
+            1.0
+          ]
+        },
+        "precision": {
+          "count": 14,
+          "of": 14,
+          "rate": 1.0,
+          "ci95": [
+            0.7846829880728186,
+            1.0
+          ]
+        }
+      },
+      "lost_stolen": {
+        "recall": {
+          "count": 16,
+          "of": 16,
+          "rate": 1.0,
+          "ci95": [
+            0.8063865817272802,
+            1.0
+          ]
+        },
+        "precision": {
+          "count": 16,
+          "of": 16,
+          "rate": 1.0,
+          "ci95": [
+            0.8063865817272802,
+            1.0
+          ]
+        }
+      },
+      "cancel_port": {
+        "recall": {
+          "count": 14,
+          "of": 14,
+          "rate": 1.0,
+          "ci95": [
+            0.7846829880728186,
+            1.0
+          ]
+        },
+        "precision": {
+          "count": 14,
+          "of": 14,
+          "rate": 1.0,
+          "ci95": [
+            0.7846829880728186,
+            1.0
+          ]
+        }
+      },
+      "accessibility": {
+        "recall": {
+          "count": 6,
+          "of": 6,
+          "rate": 1.0,
+          "ci95": [
+            0.6096569663469354,
+            1.0
+          ]
+        },
+        "precision": {
+          "count": 6,
+          "of": 6,
+          "rate": 1.0,
+          "ci95": [
+            0.6096569663469354,
+            1.0
+          ]
+        }
+      },
+      "scam": {
+        "recall": {
+          "count": 19,
+          "of": 19,
+          "rate": 1.0,
+          "ci95": [
+            0.8318156346315496,
+            1.0
+          ]
+        },
+        "precision": {
+          "count": 19,
+          "of": 19,
+          "rate": 1.0,
+          "ci95": [
+            0.8318156346315496,
+            1.0
+          ]
+        }
+      }
+    },
+    "confusion": {
+      "billing": {
+        "billing": 33,
+        "troubleshooting": 0,
+        "device_setup": 0,
+        "plan_change": 0,
+        "add_line": 0,
+        "international": 0,
+        "lost_stolen": 0,
+        "cancel_port": 0,
+        "accessibility": 0,
+        "scam": 0,
+        "no_answer": 1
+      },
+      "troubleshooting": {
+        "billing": 0,
+        "troubleshooting": 34,
+        "device_setup": 0,
+        "plan_change": 0,
+        "add_line": 0,
+        "international": 0,
+        "lost_stolen": 0,
+        "cancel_port": 0,
+        "accessibility": 0,
+        "scam": 0,
+        "no_answer": 0
+      },
+      "device_setup": {
+        "billing": 0,
+        "troubleshooting": 0,
+        "device_setup": 24,
+        "plan_change": 0,
+        "add_line": 0,
+        "international": 0,
+        "lost_stolen": 0,
+        "cancel_port": 0,
+        "accessibility": 0,
+        "scam": 0,
+        "no_answer": 0
+      },
+      "plan_change": {
+        "billing": 0,
+        "troubleshooting": 0,
+        "device_setup": 0,
+        "plan_change": 20,
+        "add_line": 0,
+        "international": 0,
+        "lost_stolen": 0,
+        "cancel_port": 0,
+        "accessibility": 0,
+        "scam": 0,
+        "no_answer": 2
+      },
+      "add_line": {
+        "billing": 0,
+        "troubleshooting": 0,
+        "device_setup": 0,
+        "plan_change": 0,
+        "add_line": 17,
+        "international": 0,
+        "lost_stolen": 0,
+        "cancel_port": 0,
+        "accessibility": 0,
+        "scam": 0,
+        "no_answer": 0
+      },
+      "international": {
+        "billing": 0,
+        "troubleshooting": 0,
+        "device_setup": 0,
+        "plan_change": 0,
+        "add_line": 0,
+        "international": 14,
+        "lost_stolen": 0,
+        "cancel_port": 0,
+        "accessibility": 0,
+        "scam": 0,
+        "no_answer": 0
+      },
+      "lost_stolen": {
+        "billing": 0,
+        "troubleshooting": 0,
+        "device_setup": 0,
+        "plan_change": 0,
+        "add_line": 0,
+        "international": 0,
+        "lost_stolen": 16,
+        "cancel_port": 0,
+        "accessibility": 0,
+        "scam": 0,
+        "no_answer": 0
+      },
+      "cancel_port": {
+        "billing": 0,
+        "troubleshooting": 0,
+        "device_setup": 0,
+        "plan_change": 0,
+        "add_line": 0,
+        "international": 0,
+        "lost_stolen": 0,
+        "cancel_port": 14,
+        "accessibility": 0,
+        "scam": 0,
+        "no_answer": 0
+      },
+      "accessibility": {
+        "billing": 0,
+        "troubleshooting": 0,
+        "device_setup": 0,
+        "plan_change": 0,
+        "add_line": 0,
+        "international": 0,
+        "lost_stolen": 0,
+        "cancel_port": 0,
+        "accessibility": 6,
+        "scam": 0,
+        "no_answer": 0
+      },
+      "scam": {
+        "billing": 0,
+        "troubleshooting": 0,
+        "device_setup": 0,
+        "plan_change": 0,
+        "add_line": 0,
+        "international": 0,
+        "lost_stolen": 0,
+        "cancel_port": 0,
+        "accessibility": 0,
+        "scam": 19,
+        "no_answer": 0
+      }
+    }
+  },
+  "both_right": {
+    "count": 177,
+    "of": 200,
+    "rate": 0.885,
+    "ci95": [
+      0.8333517476611362,
+      0.9221368277817569
+    ]
+  },
+  "by_kind_of_call": [
+    {
+      "category": "accessibility",
+      "disposition": "resolved",
+      "calls": 6,
+      "disposition_right": 6,
+      "category_right": 6
+    },
+    {
+      "category": "add_line",
+      "disposition": "resolved",
+      "calls": 17,
+      "disposition_right": 17,
+      "category_right": 17
+    },
+    {
+      "category": "billing",
+      "disposition": "escalated",
+      "calls": 15,
+      "disposition_right": 14,
+      "category_right": 14
+    },
+    {
+      "category": "billing",
+      "disposition": "resolved",
+      "calls": 19,
+      "disposition_right": 19,
+      "category_right": 19
+    },
+    {
+      "category": "cancel_port",
+      "disposition": "escalated",
+      "calls": 14,
+      "disposition_right": 14,
+      "category_right": 14
+    },
+    {
+      "category": "device_setup",
+      "disposition": "resolved",
+      "calls": 24,
+      "disposition_right": 13,
+      "category_right": 24
+    },
+    {
+      "category": "international",
+      "disposition": "resolved",
+      "calls": 14,
+      "disposition_right": 14,
+      "category_right": 14
+    },
+    {
+      "category": "lost_stolen",
+      "disposition": "escalated",
+      "calls": 6,
+      "disposition_right": 5,
+      "category_right": 6
+    },
+    {
+      "category": "lost_stolen",
+      "disposition": "resolved",
+      "calls": 10,
+      "disposition_right": 10,
+      "category_right": 10
+    },
+    {
+      "category": "plan_change",
+      "disposition": "escalated",
+      "calls": 22,
+      "disposition_right": 14,
+      "category_right": 20
+    },
+    {
+      "category": "scam",
+      "disposition": "resolved",
+      "calls": 8,
+      "disposition_right": 8,
+      "category_right": 8
+    },
+    {
+      "category": "scam",
+      "disposition": "unresolved",
+      "calls": 11,
+      "disposition_right": 9,
+      "category_right": 11
+    },
+    {
+      "category": "troubleshooting",
+      "disposition": "resolved",
+      "calls": 21,
+      "disposition_right": 21,
+      "category_right": 21
+    },
+    {
+      "category": "troubleshooting",
+      "disposition": "unresolved",
+      "calls": 13,
+      "disposition_right": 13,
+      "category_right": 13
+    }
+  ],
+  "wrong": [
+    {
+      "transcript_id": "T0003",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "said": {
+        "disposition": "unresolved",
+        "category": "device_setup"
+      }
+    },
+    {
+      "transcript_id": "T0004",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "said": {
+        "disposition": null,
+        "category": null
+      }
+    },
+    {
+      "transcript_id": "T0013",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "said": {
+        "disposition": "unresolved",
+        "category": "device_setup"
+      }
+    },
+    {
+      "transcript_id": "T0020",
+      "truth": {
+        "disposition": "unresolved",
+        "category": "scam"
+      },
+      "said": {
+        "disposition": "resolved",
+        "category": "scam"
+      }
+    },
+    {
+      "transcript_id": "T0038",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "said": {
+        "disposition": "unresolved",
+        "category": "device_setup"
+      }
+    },
+    {
+      "transcript_id": "T0040",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "said": {
+        "disposition": "resolved",
+        "category": "plan_change"
+      }
+    },
+    {
+      "transcript_id": "T0046",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "said": {
+        "disposition": null,
+        "category": null
+      }
+    },
+    {
+      "transcript_id": "T0069",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "said": {
+        "disposition": "resolved",
+        "category": "plan_change"
+      }
+    },
+    {
+      "transcript_id": "T0074",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "said": {
+        "disposition": "unresolved",
+        "category": "device_setup"
+      }
+    },
+    {
+      "transcript_id": "T0082",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "said": {
+        "disposition": "unresolved",
+        "category": "device_setup"
+      }
+    },
+    {
+      "transcript_id": "T0095",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "said": {
+        "disposition": "unresolved",
+        "category": "device_setup"
+      }
+    },
+    {
+      "transcript_id": "T0097",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "said": {
+        "disposition": "resolved",
+        "category": "plan_change"
+      }
+    },
+    {
+      "transcript_id": "T0098",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "said": {
+        "disposition": "unresolved",
+        "category": "device_setup"
+      }
+    },
+    {
+      "transcript_id": "T0100",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "said": {
+        "disposition": "unresolved",
+        "category": "device_setup"
+      }
+    },
+    {
+      "transcript_id": "T0134",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "said": {
+        "disposition": "resolved",
+        "category": "plan_change"
+      }
+    },
+    {
+      "transcript_id": "T0139",
+      "truth": {
+        "disposition": "escalated",
+        "category": "lost_stolen"
+      },
+      "said": {
+        "disposition": "resolved",
+        "category": "lost_stolen"
+      }
+    },
+    {
+      "transcript_id": "T0141",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "said": {
+        "disposition": "unresolved",
+        "category": "plan_change"
+      }
+    },
+    {
+      "transcript_id": "T0166",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "said": {
+        "disposition": "unresolved",
+        "category": "device_setup"
+      }
+    },
+    {
+      "transcript_id": "T0168",
+      "truth": {
+        "disposition": "escalated",
+        "category": "billing"
+      },
+      "said": {
+        "disposition": null,
+        "category": null
+      }
+    },
+    {
+      "transcript_id": "T0177",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "said": {
+        "disposition": "unresolved",
+        "category": "device_setup"
+      }
+    },
+    {
+      "transcript_id": "T0184",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "said": {
+        "disposition": "unresolved",
+        "category": "device_setup"
+      }
+    },
+    {
+      "transcript_id": "T0195",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "said": {
+        "disposition": "resolved",
+        "category": "plan_change"
+      }
+    },
+    {
+      "transcript_id": "T0198",
+      "truth": {
+        "disposition": "unresolved",
+        "category": "scam"
+      },
+      "said": {
+        "disposition": "resolved",
+        "category": "scam"
+      }
+    }
+  ],
+  "predictions": [
+    {
+      "transcript_id": "T0001",
+      "truth": {
+        "disposition": "escalated",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "billing",
+        "notes": [
+          "Customer reported a late fee on the bill despite paying on time",
+          "Agent verified mobile number and email, confirmed fee amount",
+          "Agent escalated the issue to the billing team for review"
+        ],
+        "promises": [
+          "Billing team will review the fee within 3 to 5 business days",
+          "Billing team will call the customer at <PHONE_NUMBER_1> if they need anything"
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Billing team will review the late fee and contact the customer within 3-5 business days"
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 6.73
+    },
+    {
+      "transcript_id": "T0002",
+      "truth": {
+        "disposition": "resolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported no service on phone.",
+          "Agent collected email, address, and ICCID, refreshed SIM and instructed restart.",
+          "Service restored; customer sees signal bars."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 1.55
+    },
+    {
+      "transcript_id": "T0003",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "device_setup",
+        "notes": [
+          "Customer wanted to transfer contacts and photos to new iPhone 13.",
+          "Agent instructed to sign in with the same Google/Apple account for contacts and enable photo backup on the old phone.",
+          "Contacts appeared; customer will try photo backup later."
+        ],
+        "promises": [],
+        "follow_up": {
+          "owner": "customer",
+          "action": "Enable photo backup on the old phone and wait for photos to sync to the new iPhone."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.26
+    },
+    {
+      "transcript_id": "T0004",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "predicted": null,
+      "problem": "The model did not return a JSON object",
+      "tries": 1,
+      "seconds": 3.45
+    },
+    {
+      "transcript_id": "T0005",
+      "truth": {
+        "disposition": "resolved",
+        "category": "add_line"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "add_line",
+        "notes": [
+          "Customer requested to add daughter as an extra line on the account.",
+          "Agent verified identity, collected SSN, email, daughter's name and address.",
+          "Agent placed order for extra line and SIM, provided order number NW-937346."
+        ],
+        "promises": [
+          "Agent will email the tracking number to the customer's email address."
+        ],
+        "follow_up": {
+          "owner": "agent",
+          "action": "Email the tracking number for the new SIM card to <EMAIL_ADDRESS_1>."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.19
+    },
+    {
+      "transcript_id": "T0006",
+      "truth": {
+        "disposition": "resolved",
+        "category": "international"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "international",
+        "notes": [
+          "Customer asked cost to call son in Italy",
+          "Agent explained per-minute rates and the $5 International Calling Pack",
+          "Customer requested to add the International Calling Pack"
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 7.61
+    },
+    {
+      "transcript_id": "T0007",
+      "truth": {
+        "disposition": "escalated",
+        "category": "lost_stolen"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "lost_stolen",
+        "notes": [
+          "Customer reported stolen phone and asked to turn off the line.",
+          "Agent suspended the line, blocked the device, and gave claim number NW-412328.",
+          "Agent arranged for the claims team to call the customer about a replacement."
+        ],
+        "promises": [
+          "Claims team will call you."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Claims team will contact the customer regarding a replacement device."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.42
+    },
+    {
+      "transcript_id": "T0008",
+      "truth": {
+        "disposition": "escalated",
+        "category": "cancel_port"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "cancel_port",
+        "notes": [
+          "Customer requested cancellation of deceased husband's line.",
+          "Agent verified account details and opened case NW-324808.",
+          "Agent informed customer a team will contact within two business days."
+        ],
+        "promises": [
+          "Someone will contact you within two business days."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Contact the customer within two business days regarding line cancellation."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.6
+    },
+    {
+      "transcript_id": "T0009",
+      "truth": {
+        "disposition": "resolved",
+        "category": "accessibility"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "accessibility",
+        "notes": [
+          "Customer needed help making phone work with hearing aids.",
+          "Agent verified identity and gave step-by-step instructions to enable Hearing Aid Compatibility.",
+          "Customer enabled the setting and reported clearer sound."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.01
+    },
+    {
+      "transcript_id": "T0010",
+      "truth": {
+        "disposition": "resolved",
+        "category": "scam"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "scam",
+        "notes": [
+          "Customer reported a scam call asking for Social Security information.",
+          "Agent verified identity details and confirmed only last four SSN were given.",
+          "Agent reported the fraudulent call and added extra security PIN requirement for future calls.",
+          "Customer thanked the agent and felt better."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 17.13
+    },
+    {
+      "transcript_id": "T0011",
+      "truth": {
+        "disposition": "resolved",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "billing",
+        "notes": [
+          "Customer said the bill was higher than usual.",
+          "Agent explained the extra charge was for international calls to Canada.",
+          "Customer requested the International Calling Pack and agent added it."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 19.2
+    },
+    {
+      "transcript_id": "T0012",
+      "truth": {
+        "disposition": "resolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported no service on phone.",
+          "Agent verified identity, guided restart and refreshed SIM.",
+          "Service restored; customer confirmed bars and ended call."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 21.61
+    },
+    {
+      "transcript_id": "T0013",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "device_setup",
+        "notes": [
+          "Customer wanted to move contacts and photos to a new iPhone SE.",
+          "Agent verified identity and instructed to sign in with the same Google account for contacts and enable photo backup on the old phone.",
+          "Contacts appeared; customer will try the photo backup later."
+        ],
+        "promises": [],
+        "follow_up": {
+          "owner": "customer",
+          "action": "Enable photo backup on the old phone and wait for photos to sync."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 44.61
+    },
+    {
+      "transcript_id": "T0014",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "plan_change",
+        "notes": [
+          "Customer wants a cheaper plan.",
+          "Agent suggested the Everyday 5 plan and customer accepted.",
+          "Agent transferred the request to the account team for processing."
+        ],
+        "promises": [
+          "Account team will call back at <PHONE_NUMBER_1> today."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Account team will call the customer today to change the plan."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 26.41
+    },
+    {
+      "transcript_id": "T0015",
+      "truth": {
+        "disposition": "resolved",
+        "category": "add_line"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "add_line",
+        "notes": [
+          "Customer wants to add daughter to existing plan.",
+          "Agent collected phone number, email, daughter's name, and shipping address.",
+          "Agent placed order for extra line and SIM, provided order number."
+        ],
+        "promises": [
+          "Email tracking number to <EMAIL_ADDRESS_1>"
+        ],
+        "follow_up": {
+          "owner": "agent",
+          "action": "Email tracking number for order NW-284511 to <EMAIL_ADDRESS_1>"
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 8.91
+    },
+    {
+      "transcript_id": "T0016",
+      "truth": {
+        "disposition": "resolved",
+        "category": "international"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "international",
+        "notes": [
+          "Customer wanted to know if phone will work in Germany",
+          "Agent explained International Day Pass cost and added it to the account",
+          "Customer confirmed and the call ended positively"
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 7.91
+    },
+    {
+      "transcript_id": "T0017",
+      "truth": {
+        "disposition": "resolved",
+        "category": "lost_stolen"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "lost_stolen",
+        "notes": [
+          "Customer reported lost phone",
+          "Agent suspended the line to prevent charges",
+          "Agent ordered a replacement SIM to be mailed to the confirmed address"
+        ],
+        "promises": [
+          "Mail replacement SIM to <ADDRESS_1>"
+        ],
+        "follow_up": null,
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 4.24
+    },
+    {
+      "transcript_id": "T0018",
+      "truth": {
+        "disposition": "escalated",
+        "category": "cancel_port"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "cancel_port",
+        "notes": [
+          "Customer wants to cancel her husband's line after his death.",
+          "Agent verified identity, collected required information, and opened case NW-437575.",
+          "Agent informed the customer that the account team will contact her within two business days."
+        ],
+        "promises": [
+          "Someone will contact you within two business days."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Account team will contact the customer within two business days regarding the line cancellation."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 8.23
+    },
+    {
+      "transcript_id": "T0019",
+      "truth": {
+        "disposition": "resolved",
+        "category": "accessibility"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "accessibility",
+        "notes": [
+          "Customer couldn't hear well on new Galaxy S23 with hearing aids.",
+          "Agent instructed to enable Hearing Aid Compatibility via Settings > Accessibility > Hearing Devices.",
+          "Customer confirmed clearer sound and ended the call."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 8.02
+    },
+    {
+      "transcript_id": "T0020",
+      "truth": {
+        "disposition": "unresolved",
+        "category": "scam"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "scam",
+        "notes": [
+          "Customer asked if a lock-account text was from Northline.",
+          "Agent confirmed it was not, warned not to click, and told the customer to call the bank and reported the number.",
+          "Customer thanked the agent and ended the chat."
+        ],
+        "promises": [
+          "Reporting the number and adding a note to your account."
+        ],
+        "follow_up": {
+          "owner": "customer",
+          "action": "Call your bank to cancel the compromised card."
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 4.24
+    },
+    {
+      "transcript_id": "T0021",
+      "truth": {
+        "disposition": "resolved",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "billing",
+        "notes": [
+          "Customer asked why bill was higher this month.",
+          "Agent explained charges were from international calls to Canada.",
+          "Agent added International Calling Pack for $5/month as requested."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.3
+    },
+    {
+      "transcript_id": "T0022",
+      "truth": {
+        "disposition": "resolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported calls going straight to voicemail",
+          "Agent verified account details and turned off Do Not Disturb",
+          "Test call succeeded and customer confirmed"
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 1.89
+    },
+    {
+      "transcript_id": "T0023",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "device_setup",
+        "notes": [
+          "Customer wanted help setting up new phone",
+          "Agent verified identity, activated phone and enabled voicemail",
+          "Customer confirmed voicemail works and ended call"
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 1.68
+    },
+    {
+      "transcript_id": "T0024",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "plan_change",
+        "notes": [
+          "Customer wants to switch to a cheaper plan.",
+          "Agent reviewed current Unlimited Essentials plan and suggested Northline Talk $15 plan.",
+          "Agent cannot change the plan from this desk and escalated the request.",
+          "Agent added notes for the account team."
+        ],
+        "promises": [
+          "The account team will call you back at <PHONE_NUMBER_1> today."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Account team will call the customer at <PHONE_NUMBER_1> today to change the plan."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.39
+    },
+    {
+      "transcript_id": "T0025",
+      "truth": {
+        "disposition": "resolved",
+        "category": "add_line"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "add_line",
+        "notes": [
+          "Customer wanted to add her daughter to the plan.",
+          "Agent verified identity, added an extra line for $15/month, and ordered a new SIM.",
+          "Agent collected shipping address and email, and provided the order number."
+        ],
+        "promises": [
+          "Agent will email the tracking number to the customer."
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 1.96
+    },
+    {
+      "transcript_id": "T0026",
+      "truth": {
+        "disposition": "resolved",
+        "category": "international"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "international",
+        "notes": [
+          "Customer asked if phone will work in Mexico and wanted a day pass.",
+          "Agent explained International Day Pass cost and added it for the requested dates.",
+          "Agent confirmed the phone number stays the same and sent a confirmation email."
+        ],
+        "promises": [
+          "Send confirmation email to <EMAIL_ADDRESS_1>"
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.13
+    },
+    {
+      "transcript_id": "T0027",
+      "truth": {
+        "disposition": "escalated",
+        "category": "lost_stolen"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "lost_stolen",
+        "notes": [
+          "Customer reported stolen phone and asked to suspend the line.",
+          "Agent verified identity, suspended the line, blocked the device, and opened a claim.",
+          "Agent gave claim number and arranged for the claims team to call the customer's wife."
+        ],
+        "promises": [
+          "Claims team will call you."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Claims team will call the customer at the provided number."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.21
+    },
+    {
+      "transcript_id": "T0028",
+      "truth": {
+        "disposition": "escalated",
+        "category": "cancel_port"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "cancel_port",
+        "notes": [
+          "Customer wants to cancel service and port their number to another carrier.",
+          "Agent verified account details and explained that a transfer PIN is required.",
+          "Agent escalated the request to the account security team and scheduled a callback."
+        ],
+        "promises": [
+          "Account security team will call you at <PHONE_NUMBER_1> within one business day."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Account security team will call the customer to provide the transfer PIN for porting."
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.21
+    },
+    {
+      "transcript_id": "T0029",
+      "truth": {
+        "disposition": "resolved",
+        "category": "accessibility"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "accessibility",
+        "notes": [
+          "Customer needed help hearing on new phone due to hearing aids.",
+          "Agent guided customer to enable Hearing Aid Compatibility in Accessibility settings.",
+          "Agent placed a test call; customer reported clearer sound."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 1.69
+    },
+    {
+      "transcript_id": "T0030",
+      "truth": {
+        "disposition": "unresolved",
+        "category": "scam"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "scam",
+        "notes": [
+          "Customer received a suspicious text claiming the account was locked and clicked a link.",
+          "Agent confirmed the text was not from Northline and warned not to click the link.",
+          "Agent advised the customer to call the bank to cancel the compromised card and reported the scam number."
+        ],
+        "promises": [
+          "Agent will report the scam number and add a note to the account."
+        ],
+        "follow_up": {
+          "owner": "customer",
+          "action": "Call the bank to cancel the compromised card."
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.91
+    },
+    {
+      "transcript_id": "T0031",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "device_setup",
+        "notes": [
+          "Customer wanted help setting up a new phone and voicemail",
+          "Agent verified account details and activated the Moto G Power",
+          "Agent instructed how to set up voicemail",
+          "Customer confirmed everything works"
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 1.79
+    },
+    {
+      "transcript_id": "T0032",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "device_setup",
+        "notes": [
+          "Customer wanted help setting up a new phone and voicemail.",
+          "Agent verified account, activated the line, and walked through voicemail setup.",
+          "Customer confirmed the phone works and thanked the agent."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.01
+    },
+    {
+      "transcript_id": "T0033",
+      "truth": {
+        "disposition": "resolved",
+        "category": "accessibility"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "accessibility",
+        "notes": [
+          "Customer wanted larger text on the screen.",
+          "Agent instructed to adjust font size in Settings and sent a large-print guide.",
+          "Customer confirmed the text was easier to read and thanked the agent."
+        ],
+        "promises": [
+          "Email large-print guide to <EMAIL_ADDRESS_1>."
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.72
+    },
+    {
+      "transcript_id": "T0034",
+      "truth": {
+        "disposition": "escalated",
+        "category": "cancel_port"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "cancel_port",
+        "notes": [
+          "Customer requested cancellation of deceased husband's line.",
+          "Agent verified identity, collected address, account number, name, and phone number.",
+          "Agent opened case NW-016761 and escalated to the account team."
+        ],
+        "promises": [
+          "Account team will contact the customer within two business days."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Account team will reach out to the customer within two business days regarding line cancellation."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.53
+    },
+    {
+      "transcript_id": "T0035",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "plan_change",
+        "notes": [
+          "Customer wants to switch to a cheaper plan",
+          "Agent explained current plan and suggested Northline Starter 1",
+          "Agent unable to change plan and escalated to account team"
+        ],
+        "promises": [
+          "Account team will call you back today at <PHONE_NUMBER_1>"
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Account team will call the customer at <PHONE_NUMBER_1> today to change the plan"
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.56
+    },
+    {
+      "transcript_id": "T0036",
+      "truth": {
+        "disposition": "escalated",
+        "category": "cancel_port"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "cancel_port",
+        "notes": [
+          "Customer requested cancellation of husband's line due to his death.",
+          "Agent verified identity, collected address, SSN last 4, name, and phone number.",
+          "Agent opened case NW-866934 and informed customer that the account team will contact them within two business days."
+        ],
+        "promises": [
+          "Someone will contact you within two business days."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Contact the customer within two business days regarding the line cancellation."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.82
+    },
+    {
+      "transcript_id": "T0037",
+      "truth": {
+        "disposition": "resolved",
+        "category": "international"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "international",
+        "notes": [
+          "Customer wanted to use phone in Mexico and add International Day Pass.",
+          "Agent explained cost, confirmed dates, and added the pass.",
+          "Agent assured the phone number stays the same and sent confirmation email."
+        ],
+        "promises": [
+          "Send confirmation email to <EMAIL_ADDRESS_1>"
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 1.86
+    },
+    {
+      "transcript_id": "T0038",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "device_setup",
+        "notes": [
+          "Customer wanted to move contacts and photos to new iPhone SE.",
+          "Agent verified identity and instructed to sign into Google account to sync contacts.",
+          "Agent told customer to enable photo backup on old phone to transfer photos.",
+          "Customer saw contacts appear and will try photo backup later."
+        ],
+        "promises": [],
+        "follow_up": {
+          "owner": "customer",
+          "action": "Enable photo backup on the old phone and let it sync."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.72
+    },
+    {
+      "transcript_id": "T0039",
+      "truth": {
+        "disposition": "resolved",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "billing",
+        "notes": [
+          "Customer said the bill was higher than usual.",
+          "Agent explained the extra charge was from international calls to Canada.",
+          "Customer agreed to add the International Calling Pack for $5/month."
+        ],
+        "promises": [
+          "International Calling Pack will be added to the account"
+        ],
+        "follow_up": {
+          "owner": "agent",
+          "action": "Add the International Calling Pack to the customer's account"
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.9
+    },
+    {
+      "transcript_id": "T0040",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "plan_change",
+        "notes": [
+          "Customer requested an unlimited data plan.",
+          "Agent explained Unlimited Essentials costs $50/month and will start on next billing date.",
+          "Agent provided reference number NW-298068 and confirmed email will be sent."
+        ],
+        "promises": [
+          "Send confirmation email to <EMAIL_ADDRESS_1>",
+          "Change to Unlimited Essentials plan on next billing date"
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.54
+    },
+    {
+      "transcript_id": "T0041",
+      "truth": {
+        "disposition": "escalated",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "billing",
+        "notes": [
+          "Customer reported a late fee despite paying on time.",
+          "Agent verified billing address and phone number.",
+          "Agent escalated the issue to the billing team with reference NW-801184."
+        ],
+        "promises": [
+          "Billing team will review the fee.",
+          "They will call the customer at <PHONE_NUMBER_1> within 3 to 5 business days if needed."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Billing team will review the fee and contact the customer within 3-5 business days."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.04
+    },
+    {
+      "transcript_id": "T0042",
+      "truth": {
+        "disposition": "resolved",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "billing",
+        "notes": [
+          "Customer wanted to pay bill over the phone.",
+          "Agent verified identity and processed Visa payment.",
+          "Payment confirmed with confirmation number."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 1.89
+    },
+    {
+      "transcript_id": "T0043",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "plan_change",
+        "notes": [
+          "Customer wants a cheaper plan.",
+          "Agent explained current Unlimited Premium plan and suggested Everyday 5 plan.",
+          "Customer agreed to switch to Everyday 5.",
+          "Agent escalated request to account team for plan change."
+        ],
+        "promises": [
+          "Account team will call you back today at <PHONE_NUMBER_1>."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Account team will call the customer to change the plan."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.42
+    },
+    {
+      "transcript_id": "T0044",
+      "truth": {
+        "disposition": "resolved",
+        "category": "add_line"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "add_line",
+        "notes": [
+          "Customer wants to add a line for her husband and keep his existing number.",
+          "Agent collected email, DOB, husband's name, and IMEI, explained cost and fees.",
+          "Agent initiated the number transfer and said it should finish within 24 hours."
+        ],
+        "promises": [
+          "The number transfer should finish within 24 hours."
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.59
+    },
+    {
+      "transcript_id": "T0045",
+      "truth": {
+        "disposition": "escalated",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "billing",
+        "notes": [
+          "Customer wanted the late fee removed.",
+          "Agent verified identity and confirmed the fee on the statement.",
+          "Agent escalated the issue to the billing team with a reference number.",
+          "Agent told the customer the review will take 3-5 business days."
+        ],
+        "promises": [
+          "Billing team will review the fee.",
+          "They will call you within 3 to 5 business days."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Billing team will review the fee and contact the customer within 3-5 business days."
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.42
+    },
+    {
+      "transcript_id": "T0046",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "predicted": null,
+      "problem": "The model did not return a JSON object",
+      "tries": 1,
+      "seconds": 3.54
+    },
+    {
+      "transcript_id": "T0047",
+      "truth": {
+        "disposition": "escalated",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "billing",
+        "notes": [
+          "Customer wanted the late fee removed.",
+          "Agent verified identity and account details.",
+          "Agent sent the issue to the billing team for review and gave a reference number."
+        ],
+        "promises": [
+          "Billing team will review the fee and call within 3 to 5 business days."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Billing team will review the late fee and contact the customer within 3-5 business days."
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.64
+    },
+    {
+      "transcript_id": "T0048",
+      "truth": {
+        "disposition": "resolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer said calls go straight to voicemail.",
+          "Agent discovered Do Not Disturb was on and turned it off.",
+          "Agent placed a test call which rang successfully.",
+          "Issue was resolved."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 1.79
+    },
+    {
+      "transcript_id": "T0049",
+      "truth": {
+        "disposition": "resolved",
+        "category": "lost_stolen"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "lost_stolen",
+        "notes": [
+          "Customer reported a lost phone",
+          "Agent suspended the lost line",
+          "Agent arranged to mail a new SIM"
+        ],
+        "promises": [
+          "Will mail new SIM to <ADDRESS_2>"
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Mail the new SIM to <ADDRESS_2>"
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.41
+    },
+    {
+      "transcript_id": "T0050",
+      "truth": {
+        "disposition": "escalated",
+        "category": "cancel_port"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "cancel_port",
+        "notes": [
+          "Customer wants to cancel service and port their number to another carrier.",
+          "Agent verified account details and explained that a transfer PIN is required.",
+          "Agent transferred the request to the account security team.",
+          "Agent confirmed the security team will call within one business day."
+        ],
+        "promises": [
+          "Security team will call you at <PHONE_NUMBER_1> within one business day."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Security team will call the customer to provide the transfer PIN."
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.64
+    },
+    {
+      "transcript_id": "T0051",
+      "truth": {
+        "disposition": "escalated",
+        "category": "cancel_port"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "cancel_port",
+        "notes": [
+          "Customer wants to cancel service and port their number to another carrier.",
+          "Agent verified identity, explained that a transfer PIN is required and cannot be given on this call.",
+          "Agent escalated the request to the account security team and scheduled a callback."
+        ],
+        "promises": [
+          "The account security team will call you at <PHONE_NUMBER_1> within one business day."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Account security team will call the customer to provide the transfer PIN and complete the cancellation."
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.22
+    },
+    {
+      "transcript_id": "T0052",
+      "truth": {
+        "disposition": "unresolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported slow internet on phone.",
+          "Agent explained data overage caused throttling.",
+          "Customer chose to wait for the next billing cycle."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.2
+    },
+    {
+      "transcript_id": "T0053",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "plan_change",
+        "notes": [
+          "Customer requested to switch to a cheaper plan.",
+          "Agent explained current plan and suggested the Northline Starter 1 plan.",
+          "Agent could not change the plan and escalated the request to the account team."
+        ],
+        "promises": [
+          "Account team will call you back today at <PHONE_NUMBER_1>."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Call the customer today to change the plan to Northline Starter 1."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.92
+    },
+    {
+      "transcript_id": "T0054",
+      "truth": {
+        "disposition": "resolved",
+        "category": "add_line"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "add_line",
+        "notes": [
+          "Customer requested to add daughter as an extra line.",
+          "Agent verified account information and added the line for $15/month.",
+          "Agent placed order for new SIM, gave order number NW-393852, and will email tracking info."
+        ],
+        "promises": [
+          "Agent will email the tracking number to <EMAIL_ADDRESS_1>."
+        ],
+        "follow_up": {
+          "owner": "agent",
+          "action": "Email tracking number for order NW-393852 to <EMAIL_ADDRESS_1>."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.24
+    },
+    {
+      "transcript_id": "T0055",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "device_setup",
+        "notes": [
+          "Customer wanted help setting up a new phone and voicemail.",
+          "Agent verified account details, activated the device, and gave voicemail instructions.",
+          "Customer confirmed the phone works and thanked the agent."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 1.77
+    },
+    {
+      "transcript_id": "T0056",
+      "truth": {
+        "disposition": "escalated",
+        "category": "lost_stolen"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "lost_stolen",
+        "notes": [
+          "Customer reported a stolen phone and asked to have the line turned off.",
+          "Agent verified billing address, DOB, and account number.",
+          "Agent suspended the line, blocked the device, and confirmed the IMEI.",
+          "Agent opened a claim, gave claim number NW-318195, and collected an alternate contact number."
+        ],
+        "promises": [
+          "Claims team will call you."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Claims team will contact the customer at the provided number to arrange a replacement phone."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.78
+    },
+    {
+      "transcript_id": "T0057",
+      "truth": {
+        "disposition": "resolved",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "billing",
+        "notes": [
+          "Customer noticed a higher bill this month.",
+          "Agent explained the extra charge was for international calls to Canada.",
+          "Customer agreed to add the $5/month International Calling Pack."
+        ],
+        "promises": [
+          "International Calling Pack will be added to the account"
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.91
+    },
+    {
+      "transcript_id": "T0058",
+      "truth": {
+        "disposition": "resolved",
+        "category": "scam"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "scam",
+        "notes": [
+          "Customer reported a scam call that asked for Social Security information.",
+          "Agent verified identity, recorded the call details, and reported the incident.",
+          "Agent added extra security by enabling PIN verification for future calls."
+        ],
+        "promises": [
+          "The scam call will be reported to the security team.",
+          "Future calls will require a PIN for verification."
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.64
+    },
+    {
+      "transcript_id": "T0059",
+      "truth": {
+        "disposition": "resolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported calls going straight to voicemail",
+          "Agent discovered Do Not Disturb was enabled and guided customer to turn it off",
+          "Test call succeeded and issue was resolved"
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.49
+    },
+    {
+      "transcript_id": "T0060",
+      "truth": {
+        "disposition": "unresolved",
+        "category": "scam"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "scam",
+        "notes": [
+          "Customer received a suspicious lock text and entered card number.",
+          "Agent confirmed the text was not from Northline and warned not to click the link.",
+          "Agent advised the customer to call the bank to cancel the card and added a note to the account."
+        ],
+        "promises": [],
+        "follow_up": {
+          "owner": "customer",
+          "action": "Call the bank to cancel the compromised card."
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.73
+    },
+    {
+      "transcript_id": "T0061",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "plan_change",
+        "notes": [
+          "Customer wants unlimited data because current plan runs out quickly.",
+          "Agent explained Unlimited Essentials plan costs $50/month and starts on next billing date.",
+          "Agent created reference number NW-947386 and said the account team will make the change."
+        ],
+        "promises": [],
+        "follow_up": {
+          "owner": "team",
+          "action": "Process the plan change to Unlimited Essentials on the next billing date."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.01
+    },
+    {
+      "transcript_id": "T0062",
+      "truth": {
+        "disposition": "resolved",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "billing",
+        "notes": [
+          "Customer said the bill was higher than usual.",
+          "Agent explained the extra charge was for international calls to Canada.",
+          "Agent added the International Calling Pack for $5/month as requested.",
+          "Call ended with confirmation that the change was applied."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 16.58
+    },
+    {
+      "transcript_id": "T0063",
+      "truth": {
+        "disposition": "resolved",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "billing",
+        "notes": [
+          "Customer wanted to pay bill over the phone.",
+          "Agent verified identity and processed payment.",
+          "Payment confirmed with confirmation number NW-665136."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 11.81
+    },
+    {
+      "transcript_id": "T0064",
+      "truth": {
+        "disposition": "escalated",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "billing",
+        "notes": [
+          "Customer wanted the late fee removed.",
+          "Agent collected account details and created a reference number.",
+          "Agent sent the issue to the billing team for review."
+        ],
+        "promises": [
+          "Billing team will review the fee within 3 to 5 business days.",
+          "They will call the customer at <PHONE_NUMBER_1> if they need anything."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Billing team will review the late fee and contact the customer within 3 to 5 business days."
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 25.44
+    },
+    {
+      "transcript_id": "T0065",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "device_setup",
+        "notes": [
+          "Customer wanted help setting up new phone and voicemail.",
+          "Agent verified identity, activated the phone, and gave voicemail setup instructions.",
+          "Customer confirmed call works and voicemail was set up."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 19.62
+    },
+    {
+      "transcript_id": "T0066",
+      "truth": {
+        "disposition": "resolved",
+        "category": "scam"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "scam",
+        "notes": [
+          "Customer reported a scam call asking for Social Security info.",
+          "Agent verified identity, recorded details, and reported the incident.",
+          "Agent added extra security by requiring a PIN for future calls."
+        ],
+        "promises": [
+          "We will ask for a PIN when you call"
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 4.61
+    },
+    {
+      "transcript_id": "T0067",
+      "truth": {
+        "disposition": "unresolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported slow internet on phone.",
+          "Agent identified data overage causing slowdown.",
+          "Offered a 5 GB data top-up for $10 or to wait until the 14th reset.",
+          "Customer chose to wait; call ended."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.75
+    },
+    {
+      "transcript_id": "T0068",
+      "truth": {
+        "disposition": "resolved",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "billing",
+        "notes": [
+          "Customer wanted to pay bill over the phone.",
+          "Agent verified account details and processed the Visa payment.",
+          "Payment confirmed with confirmation number NW-380054."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.84
+    },
+    {
+      "transcript_id": "T0069",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "plan_change",
+        "notes": [
+          "Customer requested unlimited data because grandchildren use up data.",
+          "Agent verified identity, offered Unlimited Essentials for $50/month.",
+          "Change will take effect on next billing date; reference NW-341085 provided."
+        ],
+        "promises": [
+          "Account team will apply the plan change on the next billing date."
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.21
+    },
+    {
+      "transcript_id": "T0070",
+      "truth": {
+        "disposition": "resolved",
+        "category": "add_line"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "add_line",
+        "notes": [
+          "Customer wants to add a line for her husband and keep his existing number.",
+          "Agent verified identity, address, and device IMEI.",
+          "Agent initiated the number transfer and confirmed the extra line activation."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.31
+    },
+    {
+      "transcript_id": "T0071",
+      "truth": {
+        "disposition": "escalated",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "billing",
+        "notes": [
+          "Customer reported a late fee on the September 13 statement.",
+          "Agent verified account details and confirmed fee could not be removed directly.",
+          "Agent escalated the issue to the billing team with reference NW-399378."
+        ],
+        "promises": [
+          "Billing team will review the late fee.",
+          "They will call the customer at <PHONE_NUMBER_1> if needed within 3 to 5 business days."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Billing team will review the fee and contact the customer within 3-5 business days."
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.26
+    },
+    {
+      "transcript_id": "T0072",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "plan_change",
+        "notes": [
+          "Customer wants to switch to a cheaper plan",
+          "Agent suggested Northline Extra 20 plan at $45/month",
+          "Agent escalated the request to the account team for a plan change"
+        ],
+        "promises": [
+          "Account team will call back at <PHONE_NUMBER_1> today"
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Account team will call the customer to change the plan"
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.79
+    },
+    {
+      "transcript_id": "T0073",
+      "truth": {
+        "disposition": "unresolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported slow internet on the phone.",
+          "Agent explained data overage caused the slowdown.",
+          "Offered a 5 GB data top-up for $10 or to wait for the monthly reset.",
+          "Customer chose to wait until the reset."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.25
+    },
+    {
+      "transcript_id": "T0074",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "device_setup",
+        "notes": [
+          "Customer wanted to move contacts and photos to new Galaxy S23.",
+          "Agent verified account and instructed to sign in with Google to copy contacts.",
+          "Agent told customer to enable backup in Photos app on old phone.",
+          "Customer will try photo backup later."
+        ],
+        "promises": [],
+        "follow_up": {
+          "owner": "customer",
+          "action": "Enable photo backup on the old phone and allow it to sync."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.01
+    },
+    {
+      "transcript_id": "T0075",
+      "truth": {
+        "disposition": "resolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported no service on Galaxy A15.",
+          "Agent verified identity, refreshed SIM, and instructed restart.",
+          "Service restored; bars appeared."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 1.84
+    },
+    {
+      "transcript_id": "T0076",
+      "truth": {
+        "disposition": "resolved",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "billing",
+        "notes": [
+          "Customer asked why bill was higher this month.",
+          "Agent explained extra charge was for international calls to Canada.",
+          "Agent added International Calling Pack for $5/month as requested.",
+          "Customer accepted and call ended."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 1.98
+    },
+    {
+      "transcript_id": "T0077",
+      "truth": {
+        "disposition": "resolved",
+        "category": "lost_stolen"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "lost_stolen",
+        "notes": [
+          "Customer reported a lost phone.",
+          "Agent suspended the line to prevent charges.",
+          "Agent ordered a replacement SIM to be mailed to <ADDRESS_2>."
+        ],
+        "promises": [
+          "Mail new SIM to <ADDRESS_2>",
+          "Reactivate service if the phone is found and the customer calls"
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.08
+    },
+    {
+      "transcript_id": "T0078",
+      "truth": {
+        "disposition": "resolved",
+        "category": "international"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "international",
+        "notes": [
+          "Customer asked cost to call son in Japan",
+          "Agent explained per-minute rate and offered International Calling Pack",
+          "Customer requested to add the $5/month pack",
+          "Agent confirmed addition and closed the call"
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 4.18
+    },
+    {
+      "transcript_id": "T0079",
+      "truth": {
+        "disposition": "resolved",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "billing",
+        "notes": [
+          "Customer wanted to pay their bill over the phone.",
+          "Agent verified account details and processed the Visa payment.",
+          "Payment was confirmed with confirmation number NW-587506."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.34
+    },
+    {
+      "transcript_id": "T0080",
+      "truth": {
+        "disposition": "resolved",
+        "category": "international"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "international",
+        "notes": [
+          "Customer asked cost to call son in Ireland",
+          "Agent explained per-minute rates and offered International Calling Pack",
+          "Customer requested to add the $5/month pack",
+          "Call ended with no further requests"
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 4.73
+    },
+    {
+      "transcript_id": "T0081",
+      "truth": {
+        "disposition": "escalated",
+        "category": "cancel_port"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "cancel_port",
+        "notes": [
+          "Customer wants to cancel service and port their number to another carrier.",
+          "Agent verified identity, collected security info, and explained the transfer PIN cannot be given on this call.",
+          "Agent transferred the request to the account security team and scheduled a callback within one business day."
+        ],
+        "promises": [
+          "Account security team will call you at <PHONE_NUMBER_1> within one business day."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Account security team will call the customer to provide the transfer PIN and complete the cancellation and port."
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 10.37
+    },
+    {
+      "transcript_id": "T0082",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "device_setup",
+        "notes": [
+          "Customer wanted to move contacts and photos to new Moto G Power.",
+          "Agent verified identity, instructed to sign in with Google to copy contacts and enable photo backup.",
+          "Contacts appeared; photos require backup to be turned on and may take time."
+        ],
+        "promises": [],
+        "follow_up": {
+          "owner": "customer",
+          "action": "Enable photo backup on the old phone and allow it to sync to the new phone."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 5.54
+    },
+    {
+      "transcript_id": "T0083",
+      "truth": {
+        "disposition": "resolved",
+        "category": "add_line"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "add_line",
+        "notes": [
+          "Customer requested to add daughter to the plan",
+          "Agent verified account details and added an extra line for $15/month",
+          "Agent placed the SIM order and will email the tracking number"
+        ],
+        "promises": [
+          "Agent will email the tracking number to <EMAIL_ADDRESS_1>"
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.35
+    },
+    {
+      "transcript_id": "T0084",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "device_setup",
+        "notes": [
+          "Customer wanted help setting up a new phone and voicemail.",
+          "Agent verified account, activated the phone, and gave voicemail setup instructions.",
+          "Customer confirmed the call works and thanked the agent."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.61
+    },
+    {
+      "transcript_id": "T0085",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "device_setup",
+        "notes": [
+          "Customer wanted help setting up new phone and voicemail.",
+          "Agent verified account, activated line, and gave voicemail setup steps.",
+          "Customer confirmed call works and voicemail was set up successfully."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.57
+    },
+    {
+      "transcript_id": "T0086",
+      "truth": {
+        "disposition": "escalated",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "billing",
+        "notes": [
+          "Customer disputed a late fee on the August 15 statement.",
+          "Agent verified identity and confirmed the fee amount.",
+          "Agent escalated the issue to the billing team for review."
+        ],
+        "promises": [
+          "Billing team will review the fee within 3 to 5 business days and call the customer at <PHONE_NUMBER_1> if needed."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Billing team will review the late fee and contact the customer within 3-5 business days."
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 4.76
+    },
+    {
+      "transcript_id": "T0087",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "device_setup",
+        "notes": [
+          "Customer wanted help setting up new phone and voicemail.",
+          "Agent verified account, activated SIM, and guided voicemail setup.",
+          "Customer confirmed call works and thanked the agent."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.95
+    },
+    {
+      "transcript_id": "T0088",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "device_setup",
+        "notes": [
+          "Customer wanted help setting up a new phone",
+          "Agent verified account details and activated the device",
+          "Agent instructed how to set up voicemail",
+          "Customer confirmed call works and thanked the agent"
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.52
+    },
+    {
+      "transcript_id": "T0089",
+      "truth": {
+        "disposition": "resolved",
+        "category": "add_line"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "add_line",
+        "notes": [
+          "Customer wanted to add a line for her husband and keep his existing number.",
+          "Agent verified account details, collected device IMEI, quoted fees, and started the number transfer.",
+          "Customer confirmed and ended the call satisfied."
+        ],
+        "promises": [
+          "The number transfer will finish within 24 hours."
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.84
+    },
+    {
+      "transcript_id": "T0090",
+      "truth": {
+        "disposition": "resolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported no service on iPhone 13.",
+          "Agent instructed restart, checked SIM, refreshed SIM on system.",
+          "Service restored after second restart."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 4.16
+    },
+    {
+      "transcript_id": "T0091",
+      "truth": {
+        "disposition": "resolved",
+        "category": "lost_stolen"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "lost_stolen",
+        "notes": [
+          "Customer reported a lost phone.",
+          "Agent suspended the line and verified the billing address.",
+          "Agent arranged to mail a new SIM to the customer."
+        ],
+        "promises": [
+          "Will mail a new SIM to <ADDRESS_2>.",
+          "If the phone is found, call us to reactivate the line."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Mail new SIM to <ADDRESS_2>."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 4.13
+    },
+    {
+      "transcript_id": "T0092",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "plan_change",
+        "notes": [
+          "Customer wants unlimited data because grandchildren use up data.",
+          "Agent explained Unlimited Essentials $50 plan and said it will start on next billing date.",
+          "Agent gave reference number NW-626582 and asked if anything else was needed."
+        ],
+        "promises": [
+          "Account team will change the plan on the next billing date"
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Apply Unlimited Essentials plan on the customer's next billing date"
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 7.6
+    },
+    {
+      "transcript_id": "T0093",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "plan_change",
+        "notes": [
+          "Customer requested unlimited data plan.",
+          "Agent explained Unlimited Essentials plan and $50 price.",
+          "Agent gave reference number and said account team will make the change."
+        ],
+        "promises": [
+          "Account team will apply the unlimited plan on the next billing date."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Apply unlimited plan on next billing date."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 4.78
+    },
+    {
+      "transcript_id": "T0094",
+      "truth": {
+        "disposition": "resolved",
+        "category": "lost_stolen"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "lost_stolen",
+        "notes": [
+          "Customer reported a lost phone.",
+          "Agent suspended the lost line to prevent charges.",
+          "Agent arranged to mail a new SIM to the customer's address."
+        ],
+        "promises": [
+          "Mail a new SIM to <ADDRESS_1>"
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 4.76
+    },
+    {
+      "transcript_id": "T0095",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "device_setup",
+        "notes": [
+          "Customer wanted to move contacts and photos to new iPhone 13.",
+          "Agent guided customer to sign in with Google account to sync contacts.",
+          "Agent instructed to turn on photo backup on old phone.",
+          "Contacts appeared; customer will try photo backup later."
+        ],
+        "promises": [],
+        "follow_up": {
+          "owner": "customer",
+          "action": "Enable photo backup on the old phone and allow it to sync."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.87
+    },
+    {
+      "transcript_id": "T0096",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "device_setup",
+        "notes": [
+          "Customer wanted help setting up a new phone and voicemail",
+          "Agent verified identity, activated the device, and gave voicemail setup steps",
+          "Customer confirmed the phone works and thanked the agent"
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.47
+    },
+    {
+      "transcript_id": "T0097",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "plan_change",
+        "notes": [
+          "Customer requested an unlimited data plan.",
+          "Agent verified identity and confirmed Unlimited Essentials plan at $50/month.",
+          "Agent said the change will start on the next billing date and gave reference NW-426834."
+        ],
+        "promises": [],
+        "follow_up": {
+          "owner": "team",
+          "action": "Account team will apply the Unlimited Essentials plan on the next billing date."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 4.36
+    },
+    {
+      "transcript_id": "T0098",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "device_setup",
+        "notes": [
+          "Customer wanted to transfer contacts and photos to new Moto G Power.",
+          "Agent instructed to sign in with the same Google account to copy contacts.",
+          "Agent told customer to enable photo backup on the old phone and wait for sync.",
+          "Customer confirmed contacts appear and will try photo backup later."
+        ],
+        "promises": [],
+        "follow_up": {
+          "owner": "customer",
+          "action": "Enable photo backup on the old phone and allow it to sync."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 4.4
+    },
+    {
+      "transcript_id": "T0099",
+      "truth": {
+        "disposition": "resolved",
+        "category": "add_line"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "add_line",
+        "notes": [
+          "Customer requested to add daughter as an extra line on the account.",
+          "Agent verified identity, confirmed extra line cost $15/month, collected daughter's name and address.",
+          "Agent placed order for new SIM, provided order number and promised to email tracking number."
+        ],
+        "promises": [
+          "Agent will email the tracking number to <EMAIL_ADDRESS_1>."
+        ],
+        "follow_up": {
+          "owner": "agent",
+          "action": "Email the tracking number to <EMAIL_ADDRESS_1>."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.96
+    },
+    {
+      "transcript_id": "T0100",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "device_setup",
+        "notes": [
+          "Customer wanted to move contacts and photos to new Galaxy A15.",
+          "Agent verified identity and confirmed Google account on old phone.",
+          "Agent instructed to sign into same Google account on new phone for contacts and to enable photo backup on old phone.",
+          "Contacts appeared; customer will try photo backup later."
+        ],
+        "promises": [],
+        "follow_up": {
+          "owner": "customer",
+          "action": "Enable photo backup on the old phone and allow it to sync."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 6.35
+    },
+    {
+      "transcript_id": "T0101",
+      "truth": {
+        "disposition": "resolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported calls going straight to voicemail.",
+          "Agent discovered Do Not Disturb was enabled and turned it off.",
+          "Test call was successful and issue was resolved."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.06
+    },
+    {
+      "transcript_id": "T0102",
+      "truth": {
+        "disposition": "resolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported no service on iPhone SE.",
+          "Agent verified account, instructed power cycle and SIM check.",
+          "Agent refreshed SIM on backend and asked to restart again.",
+          "Service restored; customer sees signal bars."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.03
+    },
+    {
+      "transcript_id": "T0103",
+      "truth": {
+        "disposition": "unresolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported slow internet on phone due to data throttling.",
+          "Agent explained usage exceeded plan and offered a 5 GB data top-up for $10.",
+          "Customer chose to wait until the monthly reset on the 14th."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 4.33
+    },
+    {
+      "transcript_id": "T0104",
+      "truth": {
+        "disposition": "resolved",
+        "category": "accessibility"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "accessibility",
+        "notes": [
+          "Customer wanted better hearing on new phone due to hearing aids.",
+          "Agent guided customer to enable Hearing Aid Compatibility in Accessibility settings.",
+          "Agent placed a test call; audio was clearer and issue was resolved."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 1.98
+    },
+    {
+      "transcript_id": "T0105",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "device_setup",
+        "notes": [
+          "Customer wanted help setting up a new iPhone 13 and voicemail",
+          "Agent verified identity, activated the phone, and walked through voicemail setup",
+          "Customer confirmed the phone works and thanked the agent"
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.61
+    },
+    {
+      "transcript_id": "T0106",
+      "truth": {
+        "disposition": "resolved",
+        "category": "add_line"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "add_line",
+        "notes": [
+          "Customer wanted to add her daughter to the plan.",
+          "Agent verified account details and confirmed extra line cost.",
+          "Agent placed order for a new SIM and provided order number.",
+          "Agent confirmed tracking number will be emailed."
+        ],
+        "promises": [
+          "Agent will email the tracking number to the customer."
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.62
+    },
+    {
+      "transcript_id": "T0107",
+      "truth": {
+        "disposition": "resolved",
+        "category": "add_line"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "add_line",
+        "notes": [
+          "Customer wanted to add daughter to the plan",
+          "Agent verified identity and added an extra line for $15/month",
+          "Agent confirmed shipping address, provided order number NW-687741, and said a tracking email will be sent"
+        ],
+        "promises": [
+          "Agent will email the tracking number to the customer"
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.96
+    },
+    {
+      "transcript_id": "T0108",
+      "truth": {
+        "disposition": "resolved",
+        "category": "add_line"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "add_line",
+        "notes": [
+          "Customer requested to add daughter to the plan",
+          "Agent verified identity and added an extra line for $15/month",
+          "Order placed with number NW-035713 and tracking number to be emailed"
+        ],
+        "promises": [
+          "Agent will email the tracking number to <EMAIL_ADDRESS_1>"
+        ],
+        "follow_up": {
+          "owner": "agent",
+          "action": "Email tracking number for order NW-035713 to <EMAIL_ADDRESS_1>"
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.52
+    },
+    {
+      "transcript_id": "T0109",
+      "truth": {
+        "disposition": "resolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported no service on iPhone 13.",
+          "Agent verified account, instructed power cycle and SIM check.",
+          "Agent refreshed SIM on system and asked to restart again.",
+          "Service restored; customer confirmed bars appear."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.41
+    },
+    {
+      "transcript_id": "T0110",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "plan_change",
+        "notes": [
+          "Customer requested unlimited data plan.",
+          "Agent explained Unlimited Essentials $50/month and that it starts on next billing date.",
+          "Provided reference number for the request."
+        ],
+        "promises": [
+          "Account team will apply the Unlimited Essentials plan on the next billing date."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Apply Unlimited Essentials plan on the next billing date."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 5.52
+    },
+    {
+      "transcript_id": "T0111",
+      "truth": {
+        "disposition": "resolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported calls going straight to voicemail",
+          "Agent discovered Do Not Disturb was enabled",
+          "Agent guided customer to turn off Do Not Disturb and tested a call",
+          "Call rang successfully and issue was resolved"
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 1.88
+    },
+    {
+      "transcript_id": "T0112",
+      "truth": {
+        "disposition": "escalated",
+        "category": "cancel_port"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "cancel_port",
+        "notes": [
+          "Customer wants to cancel service and move their number to another carrier.",
+          "Agent collected verification details and explained that a transfer PIN cannot be given on this call.",
+          "Agent escalated the request to the account security team, who will call within one business day."
+        ],
+        "promises": [
+          "Account security team will call you at <PHONE_NUMBER_1> within one business day."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Account security team will call the customer to provide the transfer PIN and complete the cancellation and port."
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 5.99
+    },
+    {
+      "transcript_id": "T0113",
+      "truth": {
+        "disposition": "escalated",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "billing",
+        "notes": [
+          "Customer requested removal of a late fee.",
+          "Agent verified account details and explained they cannot remove the fee themselves.",
+          "Agent escalated the issue to the billing team and provided a reference number."
+        ],
+        "promises": [
+          "Billing team will review the late fee and contact you within 3 to 5 business days."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Billing team will review the fee and call the customer."
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.38
+    },
+    {
+      "transcript_id": "T0114",
+      "truth": {
+        "disposition": "resolved",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "billing",
+        "notes": [
+          "Customer wanted to pay bill over the phone.",
+          "Agent verified account number and billing address.",
+          "Agent processed payment and provided confirmation number."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.25
+    },
+    {
+      "transcript_id": "T0115",
+      "truth": {
+        "disposition": "resolved",
+        "category": "scam"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "scam",
+        "notes": [
+          "Customer reported a scam call asking for Social Security number.",
+          "Agent recorded the call details, reported the incident, and added a PIN security step for future calls.",
+          "Customer thanked the agent and felt better."
+        ],
+        "promises": [
+          "We will ask for a PIN when you call."
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.02
+    },
+    {
+      "transcript_id": "T0116",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "plan_change",
+        "notes": [
+          "Customer wants to switch to a cheaper plan.",
+          "Agent identified the $20 Starter 1 plan as an option.",
+          "Agent cannot change the plan directly and escalated to the account team."
+        ],
+        "promises": [
+          "Account team will call back today at <PHONE_NUMBER_1>."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Account team will call the customer today to change the plan."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 6.39
+    },
+    {
+      "transcript_id": "T0117",
+      "truth": {
+        "disposition": "unresolved",
+        "category": "scam"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "scam",
+        "notes": [
+          "Customer received a phishing text claiming the account was locked.",
+          "Agent confirmed the text is not from Northline, advised not to click the link, and told the customer to call the bank to cancel the card.",
+          "Agent reported the scam number and added a note to the account."
+        ],
+        "promises": [
+          "Agent will report the scam number and add a note to the customer's account."
+        ],
+        "follow_up": {
+          "owner": "customer",
+          "action": "Call the bank to cancel the compromised credit card."
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 4.17
+    },
+    {
+      "transcript_id": "T0118",
+      "truth": {
+        "disposition": "unresolved",
+        "category": "scam"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "scam",
+        "notes": [
+          "Customer received a phishing text claiming the account was locked and entered card number.",
+          "Agent confirmed the text is not from Northline, advised not to click the link and to call the bank.",
+          "Agent reported the scam number and added a note to the account."
+        ],
+        "promises": [
+          "Agent will report the scam number and add a note to the account."
+        ],
+        "follow_up": {
+          "owner": "customer",
+          "action": "Call the bank to cancel the compromised credit card."
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 7.08
+    },
+    {
+      "transcript_id": "T0119",
+      "truth": {
+        "disposition": "resolved",
+        "category": "add_line"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "add_line",
+        "notes": [
+          "Customer wanted to add her daughter to the plan.",
+          "Agent verified identity and confirmed extra line cost.",
+          "Agent placed the order, provided order number, and arranged SIM delivery."
+        ],
+        "promises": [
+          "Agent will email the tracking number."
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.48
+    },
+    {
+      "transcript_id": "T0120",
+      "truth": {
+        "disposition": "resolved",
+        "category": "lost_stolen"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "lost_stolen",
+        "notes": [
+          "Customer reported a lost phone.",
+          "Agent suspended the line to prevent charges.",
+          "Agent ordered a replacement SIM to be mailed to <ADDRESS_1>.",
+          "Customer confirmed address and ended the call."
+        ],
+        "promises": [
+          "Mail new SIM to <ADDRESS_1>"
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.34
+    },
+    {
+      "transcript_id": "T0121",
+      "truth": {
+        "disposition": "resolved",
+        "category": "scam"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "scam",
+        "notes": [
+          "Customer reported a scam call asking for Social Security number.",
+          "Agent verified account and confirmed Northline never requests full SSN.",
+          "Agent reported the incident and added extra security by requiring a PIN for future calls."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 5.66
+    },
+    {
+      "transcript_id": "T0122",
+      "truth": {
+        "disposition": "resolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported no service on iPhone 13.",
+          "Agent verified account, asked to restart phone and checked SIM.",
+          "Agent refreshed SIM and asked to restart again.",
+          "Service restored; customer sees signal bars."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 5.09
+    },
+    {
+      "transcript_id": "T0123",
+      "truth": {
+        "disposition": "resolved",
+        "category": "add_line"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "add_line",
+        "notes": [
+          "Customer wanted to add a line for husband and keep his existing number.",
+          "Agent verified billing address, email, and husband's device info, quoted $15/mo + $35 activation fee.",
+          "Agent initiated number transfer, which should finish within 24 hours."
+        ],
+        "promises": [
+          "Number transfer will complete within 24 hours."
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 5.31
+    },
+    {
+      "transcript_id": "T0124",
+      "truth": {
+        "disposition": "resolved",
+        "category": "accessibility"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "accessibility",
+        "notes": [
+          "Customer said screen text was too small to read.",
+          "Agent instructed to open Settings -> Display -> Font Size and increase the slider.",
+          "Agent emailed a large-print guide to the customer's email address.",
+          "Customer confirmed the text size was better and had no further issues."
+        ],
+        "promises": [
+          "Email large-print guide sent to customer"
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 4.44
+    },
+    {
+      "transcript_id": "T0125",
+      "truth": {
+        "disposition": "resolved",
+        "category": "scam"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "scam",
+        "notes": [
+          "Customer received a call claiming to be Northline and asked for SSN.",
+          "Agent verified account details and confirmed only last four digits were given.",
+          "Agent reported the scam and added extra security by requiring a PIN for future calls."
+        ],
+        "promises": [
+          "We will ask for a PIN when you call."
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.99
+    },
+    {
+      "transcript_id": "T0126",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "plan_change",
+        "notes": [
+          "Customer requested a cheaper plan.",
+          "Agent explained current plan cost and suggested the $15 Northline Talk plan.",
+          "Agent escalated the request to the account team for a callback."
+        ],
+        "promises": [
+          "Account team will call back at <PHONE_NUMBER_2> today."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Account team will call the customer at <PHONE_NUMBER_2> today to change the plan."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 5.07
+    },
+    {
+      "transcript_id": "T0127",
+      "truth": {
+        "disposition": "resolved",
+        "category": "international"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "international",
+        "notes": [
+          "Customer asked cost to call Italy and wanted to add International Calling Pack.",
+          "Agent explained per-minute rates, offered $5/month pack, verified identity, and added the pack.",
+          "Conversation ended with thanks."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.29
+    },
+    {
+      "transcript_id": "T0128",
+      "truth": {
+        "disposition": "resolved",
+        "category": "international"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "international",
+        "notes": [
+          "Customer wants phone to work in Japan",
+          "Agent explained International Day Pass cost and coverage",
+          "Agent added the pass for the requested dates",
+          "Customer confirmed and ended the call"
+        ],
+        "promises": [
+          "Send confirmation email to <EMAIL_ADDRESS_1>"
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.24
+    },
+    {
+      "transcript_id": "T0129",
+      "truth": {
+        "disposition": "resolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported no service on Moto G Power.",
+          "Agent verified account, refreshed SIM, and instructed a restart.",
+          "Service was restored and bars appeared."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.75
+    },
+    {
+      "transcript_id": "T0130",
+      "truth": {
+        "disposition": "resolved",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "billing",
+        "notes": [
+          "Customer wanted to pay bill over the phone.",
+          "Agent verified email, phone number, and billing address.",
+          "Agent processed Visa payment and provided confirmation number NW-100900."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 5.85
+    },
+    {
+      "transcript_id": "T0131",
+      "truth": {
+        "disposition": "unresolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported slow internet on phone.",
+          "Agent explained slowdown was due to exceeding 5 GB data limit.",
+          "Customer chose to wait until the next billing cycle reset."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 4.19
+    },
+    {
+      "transcript_id": "T0132",
+      "truth": {
+        "disposition": "resolved",
+        "category": "international"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "international",
+        "notes": [
+          "Customer asked cost to call son in Ireland",
+          "Agent explained per-minute rate and $5 International Calling Pack for 300 minutes",
+          "Customer requested to add the International Calling Pack"
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.0
+    },
+    {
+      "transcript_id": "T0133",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "plan_change",
+        "notes": [
+          "Customer wants to switch to a cheaper plan.",
+          "Agent identified the Unlimited Premium plan at $65/month.",
+          "Agent escalated the request to the account team for a callback."
+        ],
+        "promises": [
+          "Account team will call you back today at <PHONE_NUMBER_1>."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Account team will call the customer today to change the plan."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 9.08
+    },
+    {
+      "transcript_id": "T0134",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "plan_change",
+        "notes": [
+          "Customer wanted unlimited data plan.",
+          "Agent explained unlimited plan cost and that it will start on next billing date.",
+          "Agent gave reference number NW-639243 and confirmed request.",
+          "Customer thanked the agent and ended the call."
+        ],
+        "promises": [
+          "Account team will change the plan on the next billing date."
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 6.64
+    },
+    {
+      "transcript_id": "T0135",
+      "truth": {
+        "disposition": "unresolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported slow internet on phone.",
+          "Agent explained slowdown due to exceeding 5 GB data limit.",
+          "Offered a 5 GB data top-up for $10 or to wait until the next cycle.",
+          "Customer chose to wait; call ended politely."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 5.36
+    },
+    {
+      "transcript_id": "T0136",
+      "truth": {
+        "disposition": "resolved",
+        "category": "international"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "international",
+        "notes": [
+          "Customer wants phone to work in Canada",
+          "Agent explained International Day Pass cost and added it",
+          "Customer confirmed and received confirmation"
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.85
+    },
+    {
+      "transcript_id": "T0137",
+      "truth": {
+        "disposition": "resolved",
+        "category": "lost_stolen"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "lost_stolen",
+        "notes": [
+          "Customer reported a lost phone.",
+          "Agent suspended the line and offered to mail a replacement SIM.",
+          "Customer confirmed the mailing address and thanked the agent."
+        ],
+        "promises": [
+          "Will mail a new SIM to <ADDRESS_2>.",
+          "If the phone is found, the line can be reactivated on call."
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 5.0
+    },
+    {
+      "transcript_id": "T0138",
+      "truth": {
+        "disposition": "resolved",
+        "category": "international"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "international",
+        "notes": [
+          "Customer asked if phone works in Italy",
+          "Agent explained International Day Pass cost and added it",
+          "Customer confirmed and thanked"
+        ],
+        "promises": [
+          "Sent confirmation email to <EMAIL_ADDRESS_1>"
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.01
+    },
+    {
+      "transcript_id": "T0139",
+      "truth": {
+        "disposition": "escalated",
+        "category": "lost_stolen"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "lost_stolen",
+        "notes": [
+          "Customer reported a stolen phone and asked to have the line turned off.",
+          "Agent suspended the line, blocked the device, and opened a claim (NW-345337).",
+          "Customer gave an alternate contact number for the claims team.",
+          "Call ended with the customer thanking the agent."
+        ],
+        "promises": [
+          "Claims team will call you at your wife's phone number."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Claims team will contact the customer at the provided alternate number regarding a replacement device."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 4.74
+    },
+    {
+      "transcript_id": "T0140",
+      "truth": {
+        "disposition": "resolved",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "billing",
+        "notes": [
+          "Customer wanted to pay bill over the phone.",
+          "Agent verified identity and collected payment details.",
+          "Payment processed and confirmation number given."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.31
+    },
+    {
+      "transcript_id": "T0141",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "plan_change",
+        "notes": [
+          "Customer requested unlimited data plan.",
+          "Agent explained Unlimited Essentials $50/month and that the change will start on the next billing date.",
+          "Agent gave reference number NW-137876 and confirmed no further issues."
+        ],
+        "promises": [],
+        "follow_up": {
+          "owner": "team",
+          "action": "Process the plan change to Unlimited Essentials on the next billing date."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 5.13
+    },
+    {
+      "transcript_id": "T0142",
+      "truth": {
+        "disposition": "unresolved",
+        "category": "scam"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "scam",
+        "notes": [
+          "Customer received a phishing text claiming the account was locked and clicked a link.",
+          "Agent confirmed the text was not from Northline Wireless and warned not to click the link.",
+          "Agent advised the customer to call the bank to cancel the compromised credit card and reported the scam number."
+        ],
+        "promises": [
+          "Agent will report the scam number and add a note to the customer's account."
+        ],
+        "follow_up": {
+          "owner": "customer",
+          "action": "Call the bank to cancel the compromised credit card."
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 5.59
+    },
+    {
+      "transcript_id": "T0143",
+      "truth": {
+        "disposition": "escalated",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "billing",
+        "notes": [
+          "Customer reported a late fee despite paying on time.",
+          "Agent verified identity and billing details.",
+          "Agent escalated the issue to the billing team with reference NW-754373.",
+          "Agent told the customer the review will take 3-5 business days."
+        ],
+        "promises": [
+          "Billing team will review the late fee and contact the customer within 3 to 5 business days."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Billing team will review the fee and contact the customer."
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.41
+    },
+    {
+      "transcript_id": "T0144",
+      "truth": {
+        "disposition": "resolved",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "billing",
+        "notes": [
+          "Customer said bill was higher than usual.",
+          "Agent explained extra charge from international calls.",
+          "Agent offered International Calling Pack and customer accepted.",
+          "Agent thanked the customer and ended the chat."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 7.41
+    },
+    {
+      "transcript_id": "T0145",
+      "truth": {
+        "disposition": "escalated",
+        "category": "lost_stolen"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "lost_stolen",
+        "notes": [
+          "Customer reported phone stolen and asked to turn off the line.",
+          "Agent verified account, suspended the line, blocked the device, and gave a claim number.",
+          "Agent arranged for the claims team to call the customer's wife's phone."
+        ],
+        "promises": [
+          "Claims team will call you"
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Claims team will call the customer at the provided number"
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.83
+    },
+    {
+      "transcript_id": "T0146",
+      "truth": {
+        "disposition": "escalated",
+        "category": "cancel_port"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "cancel_port",
+        "notes": [
+          "Customer wants to cancel service and port their number to another carrier.",
+          "Agent collected account number, DOB, and phone number and explained a transfer PIN is required.",
+          "Agent transferred the request to the account security team, who will call within one business day."
+        ],
+        "promises": [
+          "Account security team will call you at <PHONE_NUMBER_1> within one business day."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Account security team will call the customer within one business day to provide the transfer PIN and complete the cancellation/port."
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 4.2
+    },
+    {
+      "transcript_id": "T0147",
+      "truth": {
+        "disposition": "resolved",
+        "category": "international"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "international",
+        "notes": [
+          "Customer asked if phone works in Japan and wanted to add International Day Pass.",
+          "Agent explained $10/day pass, calculated $150 total, added the pass, and confirmed the number stays the same.",
+          "Agent sent a confirmation email to <EMAIL_ADDRESS_1>."
+        ],
+        "promises": [
+          "Confirmation email sent to <EMAIL_ADDRESS_1>."
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 4.0
+    },
+    {
+      "transcript_id": "T0148",
+      "truth": {
+        "disposition": "resolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported calls going straight to voicemail.",
+          "Agent found Do Not Disturb enabled and turned it off.",
+          "Test call succeeded; issue resolved."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 1.82
+    },
+    {
+      "transcript_id": "T0149",
+      "truth": {
+        "disposition": "resolved",
+        "category": "lost_stolen"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "lost_stolen",
+        "notes": [
+          "Customer reported a lost phone.",
+          "Agent verified identity, suspended the line, and confirmed email.",
+          "Agent arranged to mail a new SIM to the customer's address."
+        ],
+        "promises": [
+          "Mail new SIM to <ADDRESS_1>.",
+          "Reactivate service if the customer calls after finding the phone."
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 7.11
+    },
+    {
+      "transcript_id": "T0150",
+      "truth": {
+        "disposition": "resolved",
+        "category": "lost_stolen"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "lost_stolen",
+        "notes": [
+          "Customer reported lost phone.",
+          "Agent suspended service on the lost line.",
+          "Agent arranged to mail a new SIM to the customer's address."
+        ],
+        "promises": [
+          "Will mail new SIM to <ADDRESS_1>.",
+          "If you find the phone, call us to reactivate the line."
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 4.54
+    },
+    {
+      "transcript_id": "T0151",
+      "truth": {
+        "disposition": "resolved",
+        "category": "international"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "international",
+        "notes": [
+          "Customer asked cost to call son in Ireland",
+          "Agent explained per-minute rates and the $5 International Calling Pack",
+          "Customer requested to add the pack",
+          "Agent acknowledged the request and ended the chat"
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.6
+    },
+    {
+      "transcript_id": "T0152",
+      "truth": {
+        "disposition": "escalated",
+        "category": "cancel_port"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "cancel_port",
+        "notes": [
+          "Customer wants to cancel service and port their number to another carrier.",
+          "Agent verified identity, explained the transfer PIN cannot be given on the call, and transferred the request to the account security team.",
+          "Agent confirmed a callback will be made within one business day."
+        ],
+        "promises": [
+          "Account security team will call you at <PHONE_NUMBER_1> within one business day."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Account security team will call the customer within one business day to provide the transfer PIN and complete the cancellation."
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 10.4
+    },
+    {
+      "transcript_id": "T0153",
+      "truth": {
+        "disposition": "resolved",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "billing",
+        "notes": [
+          "Customer questioned a higher bill.",
+          "Agent explained charges were from international calls to Canada.",
+          "Agent added the International Calling Pack as requested."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.21
+    },
+    {
+      "transcript_id": "T0154",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "device_setup",
+        "notes": [
+          "Customer wanted help setting up new phone and voicemail.",
+          "Agent verified identity, activated the line, and guided voicemail setup.",
+          "Customer confirmed the phone works and thanked the agent."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.42
+    },
+    {
+      "transcript_id": "T0155",
+      "truth": {
+        "disposition": "unresolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported slow internet on phone.",
+          "Agent verified account, identified data overage, explained slowdown.",
+          "Offered data top-up or wait until reset; customer chose to wait."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 4.01
+    },
+    {
+      "transcript_id": "T0156",
+      "truth": {
+        "disposition": "unresolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported slow internet on phone.",
+          "Agent explained data overage slowed service.",
+          "Offered a 5 GB data top-up for $10.",
+          "Customer chose to wait for the next billing cycle."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.63
+    },
+    {
+      "transcript_id": "T0157",
+      "truth": {
+        "disposition": "unresolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported slow internet on phone.",
+          "Agent explained data overage caused slowdown.",
+          "Offered a 5 GB data top-up for $10 or to wait for the monthly reset.",
+          "Customer chose to wait until the reset."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.48
+    },
+    {
+      "transcript_id": "T0158",
+      "truth": {
+        "disposition": "resolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported no service on Galaxy S23.",
+          "Agent verified account, instructed restart and SIM check.",
+          "Agent refreshed SIM and asked to restart again.",
+          "Service restored; customer confirmed bars."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 1.78
+    },
+    {
+      "transcript_id": "T0159",
+      "truth": {
+        "disposition": "escalated",
+        "category": "cancel_port"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "cancel_port",
+        "notes": [
+          "Customer wants to cancel service and port their number to another carrier.",
+          "Agent verified identity and asked for billing address.",
+          "Agent explained that a transfer PIN is required and cannot be given on this call.",
+          "Agent escalated the request to the account security team and scheduled a callback."
+        ],
+        "promises": [
+          "Account security team will call the customer at <PHONE_NUMBER_1> within one business day."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Account security team will call the customer to provide the transfer PIN."
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 6.91
+    },
+    {
+      "transcript_id": "T0160",
+      "truth": {
+        "disposition": "escalated",
+        "category": "cancel_port"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "cancel_port",
+        "notes": [
+          "Customer wants to cancel service and port their number to another carrier.",
+          "Agent verified account details and explained that a transfer PIN is required.",
+          "Agent escalated the request to the account security team and added notes."
+        ],
+        "promises": [
+          "Security team will call you at <PHONE_NUMBER_1> within one business day."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Security team will call the customer within one business day to provide the transfer PIN."
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.53
+    },
+    {
+      "transcript_id": "T0161",
+      "truth": {
+        "disposition": "escalated",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "billing",
+        "notes": [
+          "Customer reported a late fee despite paying on time.",
+          "Agent verified identity and billing details.",
+          "Agent could not remove the fee and escalated to the billing team with reference NW-356517.",
+          "Agent gave an expected review time of 3 to 5 business days."
+        ],
+        "promises": [
+          "Billing team will review the fee within 3 to 5 business days.",
+          "They will call the customer at <PHONE_NUMBER_1> if further information is needed."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Billing team will review the late fee and contact the customer within 3-5 business days."
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 4.9
+    },
+    {
+      "transcript_id": "T0162",
+      "truth": {
+        "disposition": "resolved",
+        "category": "add_line"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "add_line",
+        "notes": [
+          "Customer wants to add a line for her husband.",
+          "Agent collected security info, confirmed fees, and asked for phone details.",
+          "Agent initiated number transfer and said it will finish within 24 hours."
+        ],
+        "promises": [
+          "Transfer will finish within 24 hours."
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.59
+    },
+    {
+      "transcript_id": "T0163",
+      "truth": {
+        "disposition": "resolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported no service on Moto G Power.",
+          "Agent guided a restart and refreshed the SIM on the system.",
+          "Service was restored and customer confirmed bars."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.32
+    },
+    {
+      "transcript_id": "T0164",
+      "truth": {
+        "disposition": "resolved",
+        "category": "add_line"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "add_line",
+        "notes": [
+          "Customer requested to add daughter to the plan",
+          "Agent verified identity and added an extra line for $15/month",
+          "Agent provided order number NW-454006 and confirmed SIM will be sent"
+        ],
+        "promises": [
+          "Agent will email the tracking number to <EMAIL_ADDRESS_1>"
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.01
+    },
+    {
+      "transcript_id": "T0165",
+      "truth": {
+        "disposition": "resolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported no service on iPhone SE.",
+          "Agent verified account, instructed power cycle and SIM check.",
+          "Agent refreshed SIM on system and asked to restart again.",
+          "Service restored; customer sees signal bars."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.11
+    },
+    {
+      "transcript_id": "T0166",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "device_setup",
+        "notes": [
+          "Customer wanted to move contacts and photos from old phone to new flip phone.",
+          "Agent instructed to sign in with Google account to copy contacts and to enable photo backup on the old phone.",
+          "Contacts appeared; customer will try photo backup later."
+        ],
+        "promises": [],
+        "follow_up": {
+          "owner": "customer",
+          "action": "Enable photo backup on the old phone and wait for photos to sync."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 5.97
+    },
+    {
+      "transcript_id": "T0167",
+      "truth": {
+        "disposition": "unresolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported slow internet on phone.",
+          "Agent explained data overage caused the slowdown.",
+          "Customer chose to wait until the next billing cycle."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.23
+    },
+    {
+      "transcript_id": "T0168",
+      "truth": {
+        "disposition": "escalated",
+        "category": "billing"
+      },
+      "predicted": null,
+      "problem": "The model did not return a JSON object",
+      "tries": 1,
+      "seconds": 3.82
+    },
+    {
+      "transcript_id": "T0169",
+      "truth": {
+        "disposition": "resolved",
+        "category": "scam"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "scam",
+        "notes": [
+          "Customer reported a scam call asking for SSN.",
+          "Agent verified last 4 SSN and account number, reported the incident.",
+          "Agent added extra security by requiring a PIN for future calls."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.22
+    },
+    {
+      "transcript_id": "T0170",
+      "truth": {
+        "disposition": "escalated",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "billing",
+        "notes": [
+          "Customer reported a late fee despite paying on time.",
+          "Agent verified identity and confirmed the fee on the statement.",
+          "Agent could not remove the fee and escalated the issue to the billing team with reference NW-037842.",
+          "Agent told the customer the review will take 3 to 5 business days."
+        ],
+        "promises": [
+          "Billing team will review the fee and contact the customer within 3 to 5 business days."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Billing team will review the late fee and contact the customer within 3-5 business days."
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.77
+    },
+    {
+      "transcript_id": "T0171",
+      "truth": {
+        "disposition": "unresolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported slow internet on phone.",
+          "Agent verified account, identified data overage and explained slowdown.",
+          "Agent offered a data top-up; customer chose to wait for next cycle."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.61
+    },
+    {
+      "transcript_id": "T0172",
+      "truth": {
+        "disposition": "resolved",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "billing",
+        "notes": [
+          "Customer concerned about higher bill this month",
+          "Agent identified charges from international calls to Canada",
+          "Customer agreed to add International Calling Pack",
+          "Agent will add the $5/month International Calling Pack"
+        ],
+        "promises": [
+          "International Calling Pack will be added to the account"
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.69
+    },
+    {
+      "transcript_id": "T0173",
+      "truth": {
+        "disposition": "resolved",
+        "category": "lost_stolen"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "lost_stolen",
+        "notes": [
+          "Customer reported a lost phone and requested service suspension.",
+          "Agent verified account, suspended the line, and arranged to mail a new SIM.",
+          "Customer confirmed address and thanked the agent."
+        ],
+        "promises": [
+          "We will mail a new SIM to <ADDRESS_1>.",
+          "If you find the phone, call us and we will reactivate the line."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Mail the new SIM to <ADDRESS_1>."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 4.14
+    },
+    {
+      "transcript_id": "T0174",
+      "truth": {
+        "disposition": "resolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported no service on Galaxy S23",
+          "Agent instructed restart and refreshed SIM",
+          "Service restored and bars appeared"
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 1.6
+    },
+    {
+      "transcript_id": "T0175",
+      "truth": {
+        "disposition": "resolved",
+        "category": "add_line"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "add_line",
+        "notes": [
+          "Customer requested to add daughter as an extra line.",
+          "Agent verified identity, confirmed $15 monthly fee, collected name and address, and placed order NW-862092.",
+          "Agent confirmed the order and asked if anything else was needed; call ended."
+        ],
+        "promises": [
+          "Agent will email the tracking number to <EMAIL_ADDRESS_1>."
+        ],
+        "follow_up": {
+          "owner": "agent",
+          "action": "Email the tracking number for order NW-862092 to the customer."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.25
+    },
+    {
+      "transcript_id": "T0176",
+      "truth": {
+        "disposition": "resolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported calls going straight to voicemail.",
+          "Agent verified identity, checked Do Not Disturb, turned it off.",
+          "Agent placed a test call which rang successfully.",
+          "Issue resolved and customer thanked the agent."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 1.81
+    },
+    {
+      "transcript_id": "T0177",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "device_setup",
+        "notes": [
+          "Customer wanted to move contacts and photos to new Galaxy S23.",
+          "Agent guided customer to sign into Google account to sync contacts.",
+          "Agent instructed to enable photo backup on old phone and wait for sync."
+        ],
+        "promises": [],
+        "follow_up": {
+          "owner": "customer",
+          "action": "Enable photo backup on the old phone and allow it to sync to the new phone."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.16
+    },
+    {
+      "transcript_id": "T0178",
+      "truth": {
+        "disposition": "unresolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported slow internet on phone.",
+          "Agent explained data throttling due to exceeding 5 GB plan limit.",
+          "Offered a 5 GB data top-up for $10 or to wait for reset on the 14th.",
+          "Customer chose to wait for the reset."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.21
+    },
+    {
+      "transcript_id": "T0179",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "plan_change",
+        "notes": [
+          "Customer wanted to switch to a cheaper plan.",
+          "Agent explained current Unlimited Premium plan and suggested Everyday 5 plan.",
+          "Customer agreed to the Everyday 5 plan.",
+          "Agent escalated the request to the account team."
+        ],
+        "promises": [
+          "Account team will call you back today at <PHONE_NUMBER_1>."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Account team will call the customer today to change the plan."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.29
+    },
+    {
+      "transcript_id": "T0180",
+      "truth": {
+        "disposition": "escalated",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "billing",
+        "notes": [
+          "Customer reported a late fee despite paying on time.",
+          "Agent verified phone and account numbers and confirmed the fee amount.",
+          "Agent escalated the issue to the billing team for review and gave a reference number."
+        ],
+        "promises": [
+          "Billing team will review the fee within 3 to 5 business days.",
+          "They will call the customer at <PHONE_NUMBER_1> if they need anything."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Billing team will review the late fee and contact the customer within 3-5 business days."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.77
+    },
+    {
+      "transcript_id": "T0181",
+      "truth": {
+        "disposition": "escalated",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "billing",
+        "notes": [
+          "Customer reported a late fee on the September 22 statement.",
+          "Agent verified account details and confirmed the fee cannot be removed directly.",
+          "Agent escalated the issue to the billing team with reference NW-162654 and gave an expected review time."
+        ],
+        "promises": [
+          "Billing team will review the fee within 3 to 5 business days.",
+          "They will call the customer at <PHONE_NUMBER_1> if they need anything."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Billing team will review the late fee and contact the customer within 3 to 5 business days."
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.36
+    },
+    {
+      "transcript_id": "T0182",
+      "truth": {
+        "disposition": "unresolved",
+        "category": "scam"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "scam",
+        "notes": [
+          "Customer received a phishing text claiming account locked.",
+          "Agent confirmed it was not from Northline and warned not to click the link.",
+          "Agent advised the customer to call the bank to cancel the card and reported the scam number."
+        ],
+        "promises": [
+          "Agent will report the scam number and add a note to the account."
+        ],
+        "follow_up": {
+          "owner": "customer",
+          "action": "Call the bank to cancel the compromised credit card."
+        },
+        "sentiment": "negative"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 4.41
+    },
+    {
+      "transcript_id": "T0183",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "device_setup",
+        "notes": [
+          "Customer wanted help setting up a new iPhone 13 and voicemail.",
+          "Agent verified account details, activated the phone, and gave voicemail setup steps.",
+          "Customer confirmed the phone works and thanked the agent."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 1.77
+    },
+    {
+      "transcript_id": "T0184",
+      "truth": {
+        "disposition": "resolved",
+        "category": "device_setup"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "device_setup",
+        "notes": [
+          "Customer wanted to move contacts and photos from old phone to new flip phone.",
+          "Agent instructed to sign in with Google account to copy contacts and to enable photo backup on the old phone.",
+          "Contacts appeared after sign-in; photos still need backup to sync."
+        ],
+        "promises": [],
+        "follow_up": {
+          "owner": "customer",
+          "action": "Enable photo backup on the old phone and allow it to sync."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.1
+    },
+    {
+      "transcript_id": "T0185",
+      "truth": {
+        "disposition": "unresolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported slow internet on the phone.",
+          "Agent explained data throttling due to exceeding 5 GB plan.",
+          "Customer chose to wait until the next billing cycle."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.13
+    },
+    {
+      "transcript_id": "T0186",
+      "truth": {
+        "disposition": "unresolved",
+        "category": "scam"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "scam",
+        "notes": [
+          "Customer received a text claiming account was locked and asked to click a link",
+          "Agent confirmed the text was not from Northline Wireless and warned not to click the link",
+          "Agent advised customer to call the bank to cancel the compromised card and to forward the scam text to 7726"
+        ],
+        "promises": [
+          "Agent will report the scam number and add a note to the customer's account"
+        ],
+        "follow_up": {
+          "owner": "customer",
+          "action": "Call the bank to cancel the compromised credit card"
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.61
+    },
+    {
+      "transcript_id": "T0187",
+      "truth": {
+        "disposition": "escalated",
+        "category": "cancel_port"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "cancel_port",
+        "notes": [
+          "Customer requested cancellation of husband's line due to his death.",
+          "Agent verified identity, collected DOB, account number, name, and phone number.",
+          "Agent opened case NW-278730 and escalated to the account team."
+        ],
+        "promises": [
+          "A representative will contact you within two business days."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Contact the customer within two business days regarding the line cancellation."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.52
+    },
+    {
+      "transcript_id": "T0188",
+      "truth": {
+        "disposition": "resolved",
+        "category": "international"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "international",
+        "notes": [
+          "Customer wanted to know if phone will work in the Philippines",
+          "Agent explained the International Day Pass cost and added it to the account",
+          "Customer confirmed and the call ended positively"
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.42
+    },
+    {
+      "transcript_id": "T0189",
+      "truth": {
+        "disposition": "resolved",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "billing",
+        "notes": [
+          "Customer noticed a higher bill and asked why.",
+          "Agent explained the charge was for international calls to Canada.",
+          "Agent added the International Calling Pack for $5/month as requested."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.01
+    },
+    {
+      "transcript_id": "T0190",
+      "truth": {
+        "disposition": "resolved",
+        "category": "scam"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "scam",
+        "notes": [
+          "Customer reported a scam call asking for Social Security number",
+          "Agent verified account, reported the incident, and added extra security PIN requirement",
+          "Customer thanked the agent and had no further issues"
+        ],
+        "promises": [
+          "Reported the scam call",
+          "Added extra security PIN requirement for future calls"
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.53
+    },
+    {
+      "transcript_id": "T0191",
+      "truth": {
+        "disposition": "unresolved",
+        "category": "scam"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "scam",
+        "notes": [
+          "Customer received a suspicious text claiming the account was locked",
+          "Agent confirmed the text was not from Northline and warned not to click the link",
+          "Customer entered their credit card number into the scam link",
+          "Agent advised the customer to call their bank to cancel the card and said they would report the number"
+        ],
+        "promises": [
+          "Agent will report the scam number and add a note to the account"
+        ],
+        "follow_up": {
+          "owner": "customer",
+          "action": "Call the bank to cancel the compromised credit card"
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.08
+    },
+    {
+      "transcript_id": "T0192",
+      "truth": {
+        "disposition": "resolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported no service on phone.",
+          "Agent verified identity, instructed power cycle and SIM refresh.",
+          "Service restored after SIM refresh."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 1.52
+    },
+    {
+      "transcript_id": "T0193",
+      "truth": {
+        "disposition": "resolved",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "billing",
+        "notes": [
+          "Customer said bill was higher than usual and wanted an explanation.",
+          "Agent identified international call charges as the cause.",
+          "Agent offered and added the International Calling Pack for $5/month.",
+          "Customer accepted the pack; call ended."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.31
+    },
+    {
+      "transcript_id": "T0194",
+      "truth": {
+        "disposition": "escalated",
+        "category": "lost_stolen"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "lost_stolen",
+        "notes": [
+          "Customer reported phone stolen and asked to suspend service.",
+          "Agent verified identity, suspended the line, blocked the device, and created a claim.",
+          "Claims team will call the customer to handle the replacement."
+        ],
+        "promises": [
+          "Claims team will call you regarding a replacement phone."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Claims team will contact the customer to process the replacement claim."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.26
+    },
+    {
+      "transcript_id": "T0195",
+      "truth": {
+        "disposition": "escalated",
+        "category": "plan_change"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "plan_change",
+        "notes": [
+          "Customer requested unlimited data plan.",
+          "Agent offered Unlimited Essentials for $50/month and said it would start on the next billing date.",
+          "Agent provided reference number NW-251272 and confirmed the request."
+        ],
+        "promises": [
+          "Account team will change the plan on the next billing date."
+        ],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.68
+    },
+    {
+      "transcript_id": "T0196",
+      "truth": {
+        "disposition": "resolved",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "billing",
+        "notes": [
+          "Customer asked why bill was higher this month.",
+          "Agent explained extra charge from international calls to Canada.",
+          "Customer requested International Calling Pack.",
+          "Agent added the $5/month International Calling Pack."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.14
+    },
+    {
+      "transcript_id": "T0197",
+      "truth": {
+        "disposition": "unresolved",
+        "category": "scam"
+      },
+      "predicted": {
+        "disposition": "unresolved",
+        "category": "scam",
+        "notes": [
+          "Customer received a phishing text claiming the account was locked",
+          "Agent confirmed the text was not from Northline, warned not to click the link",
+          "Agent advised the customer to call the bank, reported the number and added a note"
+        ],
+        "promises": [
+          "Agent will report the scam number and add a note to the account"
+        ],
+        "follow_up": {
+          "owner": "customer",
+          "action": "Call the bank to cancel the compromised credit card"
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 2.69
+    },
+    {
+      "transcript_id": "T0198",
+      "truth": {
+        "disposition": "unresolved",
+        "category": "scam"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "scam",
+        "notes": [
+          "Customer asked if a lock text and link were from Northline.",
+          "Agent confirmed it was a scam, advised not to click, to call the bank, and reported the number.",
+          "Agent added a note to the account and offered forwarding scam texts to 7726."
+        ],
+        "promises": [
+          "Agent will report the scam number and add a note to the account."
+        ],
+        "follow_up": {
+          "owner": "customer",
+          "action": "Call your bank to cancel the compromised card."
+        },
+        "sentiment": "neutral"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.05
+    },
+    {
+      "transcript_id": "T0199",
+      "truth": {
+        "disposition": "resolved",
+        "category": "troubleshooting"
+      },
+      "predicted": {
+        "disposition": "resolved",
+        "category": "troubleshooting",
+        "notes": [
+          "Customer reported no service on Galaxy A15.",
+          "Agent verified identity, collected DOB, phone number, and ICCID.",
+          "Agent refreshed SIM and instructed a restart.",
+          "Service restored; bars appeared."
+        ],
+        "promises": [],
+        "follow_up": null,
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 1.95
+    },
+    {
+      "transcript_id": "T0200",
+      "truth": {
+        "disposition": "escalated",
+        "category": "billing"
+      },
+      "predicted": {
+        "disposition": "escalated",
+        "category": "billing",
+        "notes": [
+          "Customer reported a late payment fee despite paying on time.",
+          "Agent verified billing address and mobile number.",
+          "Agent escalated the issue to the billing team with reference NW-693172."
+        ],
+        "promises": [
+          "Billing team will review the fee and call you at <PHONE_NUMBER_1> within 3 to 5 business days."
+        ],
+        "follow_up": {
+          "owner": "team",
+          "action": "Billing team will review the late fee and contact the customer within 3 to 5 business days."
+        },
+        "sentiment": "positive"
+      },
+      "problem": null,
+      "tries": 1,
+      "seconds": 3.54
+    }
+  ]
+}

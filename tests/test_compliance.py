@@ -16,6 +16,7 @@ from copilot.compliance import (
     RULES,
     Finding,
     check_call,
+    identity_answer_turns,
     verification_turn,
 )
 
@@ -54,6 +55,22 @@ def test_an_answered_identity_question_is_verification() -> None:
     turns = call(*OPENING, "c: My bill is high.", *VERIFIED)
 
     assert verification_turn(turns) == 6
+
+
+def test_every_answered_identity_question_is_listed_and_the_first_is_verification() -> None:
+    turns = call(
+        *OPENING,
+        "c: My bill is high.",
+        *VERIFIED,
+        "a: Thank you. The payment went through.",
+        "a: Which email should I send the receipt to?",
+        "c: <EMAIL_ADDRESS_1>",
+    )
+
+    # The email at the end is asked for in the ordinary course of the call, not to verify.
+    assert identity_answer_turns(turns) == [6, 8]
+    assert identity_answer_turns(turns[:7]) == [6]
+    assert identity_answer_turns(call(*OPENING)) == []
 
 
 @pytest.mark.parametrize(

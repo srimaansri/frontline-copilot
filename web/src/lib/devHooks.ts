@@ -41,6 +41,7 @@ export const DEMO_NAMES = [
   "pending",
   "calls",
   "calls-summary",
+  "calls-assist",
   "calls-findings",
 ] as const;
 
@@ -85,7 +86,9 @@ function demoCall(): string | null {
   if (DEMO === "calls-findings") {
     return FLAGGED_CALL;
   }
-  return DEMO === "calls" || DEMO === "calls-summary" ? ORDINARY_CALL : null;
+  return DEMO === "calls" || DEMO === "calls-summary" || DEMO === "calls-assist"
+    ? ORDINARY_CALL
+    : null;
 }
 
 /** The call the Calls view opens on, if the demo is one of its states. */
@@ -100,6 +103,9 @@ export const DEMO_CALL_FALLBACK: string | null = DEMO === "calls-findings" ? ORD
 
 /** True when the Calls demo should also ask for the summary. */
 export const DEMO_CALL_SUMMARY = DEMO === "calls-summary";
+
+/** True when the Calls demo should open the call in its replay, with the whole call on show. */
+export const DEMO_CALL_ASSIST = DEMO === "calls-assist";
 
 /** True when the Calls demo opens with only the flagged calls listed. */
 export const DEMO_FLAGGED_ONLY = DEMO === "calls-findings";

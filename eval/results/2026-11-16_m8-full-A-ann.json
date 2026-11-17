@@ -1,0 +1,2161 @@
+{
+  "run_at": "2026-11-16T05:36:49Z",
+  "tag": "m8-full",
+  "git_sha": "a881459f87a69928508c0c3db655bcb7152df34c",
+  "git_dirty": false,
+  "chunk_config": "A",
+  "chunking": {
+    "chunk_size_tokens": 800,
+    "overlap_tokens": 100
+  },
+  "query_type": "ann",
+  "top_k": 5,
+  "prompt_version": "v3",
+  "llm_endpoint": "databricks-gpt-oss-120b",
+  "router": "model",
+  "router_endpoint": "databricks-llama-4-maverick",
+  "judge_endpoint": "databricks-meta-llama-3-3-70b-instruct",
+  "judges": "all",
+  "embedding_endpoint": "databricks-gte-large-en",
+  "category": "all",
+  "escalations_recorded": false,
+  "rows": 40,
+  "rows_scored": 40,
+  "rows_without_answer": [],
+  "rows_reviewed": 40,
+  "eval_set": "eval/eval_set.jsonl",
+  "eval_set_sha256": "7252dfef11123f28f5bc34f740f4dee9b0c4012327feb4c749edb24faf6b6891",
+  "sample": null,
+  "behaviour": {
+    "sha256": "c2ff156221f23e02b1ab1ea61795cf49dc7e078077a2df1f96a2fc3c6d57c74c",
+    "files": {
+      "config/settings.yaml": "a205a0d82bde613d84cc476dfffb739190a1aa52b9d5d4ea0a4625bf69c3f4f4",
+      "eval/eval_set.jsonl": "7252dfef11123f28f5bc34f740f4dee9b0c4012327feb4c749edb24faf6b6891",
+      "eval/scorers.py": "8d3091358b77b558d7f25c6235f41323eef95d39904b9cf96daf2841f04d7c0b",
+      "src/copilot/__init__.py": "4540fd5acbf114c70588c305062dcb3843fab767946571ea2d2029201dd1212d",
+      "src/copilot/agent.py": "0a282af17d54a7662fd03195f08b987b733ec60ccafcbc2e475431c74e718953",
+      "src/copilot/chunking.py": "95973c3e5969bbde2e750ca5e9bff14cfd882d05cc8ca856354c5426c01d8d65",
+      "src/copilot/claims.py": "9662011ae6c34e80cc34341970e1517d371d1438587c7a174aa744995f8ffeac",
+      "src/copilot/compliance.py": "de77ec9f38af1d0dc0f5cfead312e854ab31757f6c4ed4f4f7a4fa5dc7646791",
+      "src/copilot/config.py": "492d7d76037654316de0bb421b0880bcb67ee134a9be86088b34fcca9a174f40",
+      "src/copilot/guardrails.py": "ff68f1657fc9ab04908ea71938b021f072d3bb754d83e2825c1ce210d7423e04",
+      "src/copilot/llm.py": "28591fd74bcebd810176d4fb00c8a902c41888fbbe17d1e4821c8c8a3056224d",
+      "src/copilot/luhn.py": "05a81221fe1dd72ea7a03e32b3f44c4722c2bcea9fbaa4c9e7fe055f2f7fe43e",
+      "src/copilot/prompts.py": "72aaa176aeadb4b937d1e0cfc23bcf7c7f035f21555c8aded838feb4e9be735c",
+      "src/copilot/readability.py": "e68ce0093f632f20563df3f21e8eac77e8e75087edfae35d6981a5299f119cde",
+      "src/copilot/redaction.py": "9ac1fcdf0382047975dc93661f8d5eebe5368568305535f8933f5198a5ab7b81",
+      "src/copilot/retriever.py": "623107f263626b909038c54191daef02ea8f769995e9a9735b17d4fd437b8bc8",
+      "src/copilot/router.py": "4340c6014d4ef8b3ea6a685521e0e926c9a74e7dc3ac36da8b0d8109230e9e24",
+      "src/copilot/schemas.py": "8be3bc85af857f17ac24274c2b8103af6fe409504610a51e9cc14022fbe27e89",
+      "src/copilot/span_metrics.py": "c5fbeea3334e880a9d2a606c0f89f5a376ab9baeeb9861bcc88faeabee260128",
+      "src/copilot/steps.py": "d6c3fc6c1730c9e2cdde7485dd12ab3e72eea2901e51e8ecb46d332481883c9c",
+      "src/copilot/text.py": "69e8c88baed986a86c7365746253691d703178020c3260cdd46eaa46d2243ddb",
+      "src/copilot/tools.py": "ce94f7e4dd268caa2410a2f78875594d793e6befd62c81dfced443b3f73e7063",
+      "src/copilot/transcripts.py": "2fc28b611a675da6cf8a63001d9b3ff8469108615bb1888218e93f973817e5f0"
+    }
+  },
+  "mlflow_run_id": "10739430148b47c7897bbccb0f8ea1e5",
+  "versions": {
+    "mlflow": "3.18.0",
+    "ragas": "0.4.4",
+    "databricks-sdk": "0.166.0"
+  },
+  "metrics": {
+    "ContextPrecision": {
+      "kind": "numeric",
+      "scored": 20,
+      "mean": 0.9043749999448767,
+      "median": 0.9999999999,
+      "p90": 0.999999999975,
+      "p95": 0.999999999975
+    },
+    "answer_recorded": {
+      "kind": "pass_fail",
+      "passed": 40,
+      "scored": 40,
+      "rate": 1.0,
+      "ci95": [
+        0.9123754607496077,
+        1.0
+      ]
+    },
+    "citation_valid": {
+      "kind": "pass_fail",
+      "passed": 40,
+      "scored": 40,
+      "rate": 1.0,
+      "ci95": [
+        0.9123754607496077,
+        1.0
+      ]
+    },
+    "correctness": {
+      "kind": "pass_fail",
+      "passed": 25,
+      "scored": 31,
+      "rate": 0.8064516129032258,
+      "ci95": [
+        0.6371939644454013,
+        0.9081311641365236
+      ]
+    },
+    "escalation_correct": {
+      "kind": "pass_fail",
+      "passed": 40,
+      "scored": 40,
+      "rate": 1.0,
+      "ci95": [
+        0.9123754607496077,
+        1.0
+      ]
+    },
+    "expectations_guidelines": {
+      "kind": "pass_fail",
+      "passed": 10,
+      "scored": 11,
+      "rate": 0.9090909090909091,
+      "ci95": [
+        0.6226353745137962,
+        0.9837682477371741
+      ]
+    },
+    "expected_source_cited": {
+      "kind": "pass_fail",
+      "passed": 22,
+      "scored": 22,
+      "rate": 1.0,
+      "ci95": [
+        0.8513404742740388,
+        1.0
+      ]
+    },
+    "expected_source_reciprocal_rank": {
+      "kind": "numeric",
+      "scored": 22,
+      "mean": 0.9772727272727273,
+      "median": 1.0,
+      "p90": 1.0,
+      "p95": 1.0
+    },
+    "expected_source_retrieved": {
+      "kind": "pass_fail",
+      "passed": 22,
+      "scored": 22,
+      "rate": 1.0,
+      "ci95": [
+        0.8513404742740388,
+        1.0
+      ]
+    },
+    "figures_supported": {
+      "kind": "pass_fail",
+      "passed": 40,
+      "scored": 40,
+      "rate": 1.0,
+      "ci95": [
+        0.9123754607496077,
+        1.0
+      ]
+    },
+    "latency_ms": {
+      "kind": "numeric",
+      "scored": 40,
+      "mean": 11659.8,
+      "median": 4160.0,
+      "p90": 33796.0,
+      "p95": 47923.0
+    },
+    "model_calls": {
+      "kind": "numeric",
+      "scored": 40,
+      "mean": 2.6,
+      "median": 3.0,
+      "p90": 3.0,
+      "p95": 3.0
+    },
+    "no_pii_leak": {
+      "kind": "pass_fail",
+      "passed": 40,
+      "scored": 40,
+      "rate": 1.0,
+      "ci95": [
+        0.9123754607496077,
+        1.0
+      ]
+    },
+    "output_tokens": {
+      "kind": "numeric",
+      "scored": 35,
+      "mean": 262.0,
+      "median": 279.0,
+      "p90": 369.0,
+      "p95": 409.0
+    },
+    "reading_grade": {
+      "kind": "numeric",
+      "scored": 40,
+      "mean": 5.51,
+      "median": 5.115,
+      "p90": 8.05,
+      "p95": 9.14
+    },
+    "reading_level_ok": {
+      "kind": "pass_fail",
+      "passed": 36,
+      "scored": 40,
+      "rate": 0.9,
+      "ci95": [
+        0.7694792561952611,
+        0.9604211124044252
+      ]
+    },
+    "relevance_to_query": {
+      "kind": "pass_fail",
+      "passed": 31,
+      "scored": 31,
+      "rate": 1.0,
+      "ci95": [
+        0.889740999265246,
+        1.0
+      ]
+    },
+    "retrieval_groundedness": {
+      "kind": "pass_fail",
+      "passed": 21,
+      "scored": 22,
+      "rate": 0.9545454545454546,
+      "ci95": [
+        0.7820151050048196,
+        0.9919307806988522
+      ]
+    },
+    "retrieval_relevance": {
+      "kind": "pass_fail",
+      "passed": 13,
+      "scored": 22,
+      "rate": 0.5909090909090909,
+      "ci95": [
+        0.38734477382893806,
+        0.7674444033117963
+      ]
+    },
+    "retrieval_relevance/precision": {
+      "kind": "numeric",
+      "scored": 22,
+      "mean": 0.5090909090909091,
+      "median": 0.4,
+      "p90": 0.8,
+      "p95": 0.8
+    },
+    "retrieval_sufficiency": {
+      "kind": "pass_fail",
+      "passed": 22,
+      "scored": 22,
+      "rate": 1.0,
+      "ci95": [
+        0.8513404742740388,
+        1.0
+      ]
+    },
+    "safety": {
+      "kind": "pass_fail",
+      "passed": 40,
+      "scored": 40,
+      "rate": 1.0,
+      "ci95": [
+        0.9123754607496077,
+        1.0
+      ]
+    },
+    "tool_choice": {
+      "kind": "pass_fail",
+      "passed": 36,
+      "scored": 37,
+      "rate": 0.972972972972973,
+      "ci95": [
+        0.8617562156243666,
+        0.9952131489450924
+      ]
+    },
+    "total_tokens": {
+      "kind": "numeric",
+      "scored": 35,
+      "mean": 4228.914285714286,
+      "median": 4782.0,
+      "p90": 5123.0,
+      "p95": 5589.0
+    }
+  },
+  "metrics_by_category": {
+    "adversarial": {
+      "ContextPrecision": {
+        "kind": "numeric",
+        "scored": 1,
+        "mean": 0.9999999999,
+        "median": 0.9999999999,
+        "p90": 0.9999999999,
+        "p95": 0.9999999999
+      },
+      "answer_recorded": {
+        "kind": "pass_fail",
+        "passed": 3,
+        "scored": 3,
+        "rate": 1.0,
+        "ci95": [
+          0.43849391955098227,
+          1.0
+        ]
+      },
+      "citation_valid": {
+        "kind": "pass_fail",
+        "passed": 3,
+        "scored": 3,
+        "rate": 1.0,
+        "ci95": [
+          0.43849391955098227,
+          1.0
+        ]
+      },
+      "correctness": {
+        "kind": "pass_fail",
+        "passed": 1,
+        "scored": 1,
+        "rate": 1.0,
+        "ci95": [
+          0.20654329147389294,
+          1.0
+        ]
+      },
+      "escalation_correct": {
+        "kind": "pass_fail",
+        "passed": 3,
+        "scored": 3,
+        "rate": 1.0,
+        "ci95": [
+          0.43849391955098227,
+          1.0
+        ]
+      },
+      "expectations_guidelines": {
+        "kind": "pass_fail",
+        "passed": 3,
+        "scored": 3,
+        "rate": 1.0,
+        "ci95": [
+          0.43849391955098227,
+          1.0
+        ]
+      },
+      "expected_source_cited": {
+        "kind": "pass_fail",
+        "passed": 1,
+        "scored": 1,
+        "rate": 1.0,
+        "ci95": [
+          0.20654329147389294,
+          1.0
+        ]
+      },
+      "expected_source_reciprocal_rank": {
+        "kind": "numeric",
+        "scored": 1,
+        "mean": 1.0,
+        "median": 1.0,
+        "p90": 1.0,
+        "p95": 1.0
+      },
+      "expected_source_retrieved": {
+        "kind": "pass_fail",
+        "passed": 1,
+        "scored": 1,
+        "rate": 1.0,
+        "ci95": [
+          0.20654329147389294,
+          1.0
+        ]
+      },
+      "figures_supported": {
+        "kind": "pass_fail",
+        "passed": 3,
+        "scored": 3,
+        "rate": 1.0,
+        "ci95": [
+          0.43849391955098227,
+          1.0
+        ]
+      },
+      "latency_ms": {
+        "kind": "numeric",
+        "scored": 3,
+        "mean": 2467.6666666666665,
+        "median": 2384.0,
+        "p90": 3947.0,
+        "p95": 3947.0
+      },
+      "model_calls": {
+        "kind": "numeric",
+        "scored": 3,
+        "mean": 2.0,
+        "median": 2.0,
+        "p90": 3.0,
+        "p95": 3.0
+      },
+      "no_pii_leak": {
+        "kind": "pass_fail",
+        "passed": 3,
+        "scored": 3,
+        "rate": 1.0,
+        "ci95": [
+          0.43849391955098227,
+          1.0
+        ]
+      },
+      "output_tokens": {
+        "kind": "numeric",
+        "scored": 3,
+        "mean": 142.0,
+        "median": 105.0,
+        "p90": 308.0,
+        "p95": 308.0
+      },
+      "reading_grade": {
+        "kind": "numeric",
+        "scored": 3,
+        "mean": 4.89,
+        "median": 5.22,
+        "p90": 5.8,
+        "p95": 5.8
+      },
+      "reading_level_ok": {
+        "kind": "pass_fail",
+        "passed": 3,
+        "scored": 3,
+        "rate": 1.0,
+        "ci95": [
+          0.43849391955098227,
+          1.0
+        ]
+      },
+      "relevance_to_query": {
+        "kind": "pass_fail",
+        "passed": 1,
+        "scored": 1,
+        "rate": 1.0,
+        "ci95": [
+          0.20654329147389294,
+          1.0
+        ]
+      },
+      "retrieval_groundedness": {
+        "kind": "pass_fail",
+        "passed": 1,
+        "scored": 1,
+        "rate": 1.0,
+        "ci95": [
+          0.20654329147389294,
+          1.0
+        ]
+      },
+      "retrieval_relevance": {
+        "kind": "pass_fail",
+        "passed": 0,
+        "scored": 1,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.7934567085261071
+        ]
+      },
+      "retrieval_relevance/precision": {
+        "kind": "numeric",
+        "scored": 1,
+        "mean": 0.4,
+        "median": 0.4,
+        "p90": 0.4,
+        "p95": 0.4
+      },
+      "retrieval_sufficiency": {
+        "kind": "pass_fail",
+        "passed": 1,
+        "scored": 1,
+        "rate": 1.0,
+        "ci95": [
+          0.20654329147389294,
+          1.0
+        ]
+      },
+      "safety": {
+        "kind": "pass_fail",
+        "passed": 3,
+        "scored": 3,
+        "rate": 1.0,
+        "ci95": [
+          0.43849391955098227,
+          1.0
+        ]
+      },
+      "tool_choice": {
+        "kind": "pass_fail",
+        "passed": 1,
+        "scored": 1,
+        "rate": 1.0,
+        "ci95": [
+          0.20654329147389294,
+          1.0
+        ]
+      },
+      "total_tokens": {
+        "kind": "numeric",
+        "scored": 3,
+        "mean": 2283.3333333333335,
+        "median": 1568.0,
+        "p90": 4743.0,
+        "p95": 4743.0
+      }
+    },
+    "call_summary": {
+      "answer_recorded": {
+        "kind": "pass_fail",
+        "passed": 4,
+        "scored": 4,
+        "rate": 1.0,
+        "ci95": [
+          0.5100999795960008,
+          1.0
+        ]
+      },
+      "citation_valid": {
+        "kind": "pass_fail",
+        "passed": 4,
+        "scored": 4,
+        "rate": 1.0,
+        "ci95": [
+          0.5100999795960008,
+          1.0
+        ]
+      },
+      "correctness": {
+        "kind": "pass_fail",
+        "passed": 1,
+        "scored": 3,
+        "rate": 0.3333333333333333,
+        "ci95": [
+          0.0614903152761605,
+          0.7923450448735121
+        ]
+      },
+      "escalation_correct": {
+        "kind": "pass_fail",
+        "passed": 4,
+        "scored": 4,
+        "rate": 1.0,
+        "ci95": [
+          0.5100999795960008,
+          1.0
+        ]
+      },
+      "expectations_guidelines": {
+        "kind": "pass_fail",
+        "passed": 0,
+        "scored": 1,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.7934567085261071
+        ]
+      },
+      "figures_supported": {
+        "kind": "pass_fail",
+        "passed": 4,
+        "scored": 4,
+        "rate": 1.0,
+        "ci95": [
+          0.5100999795960008,
+          1.0
+        ]
+      },
+      "latency_ms": {
+        "kind": "numeric",
+        "scored": 4,
+        "mean": 8047.75,
+        "median": 9347.0,
+        "p90": 10552.0,
+        "p95": 10552.0
+      },
+      "model_calls": {
+        "kind": "numeric",
+        "scored": 4,
+        "mean": 3.0,
+        "median": 3.0,
+        "p90": 3.0,
+        "p95": 3.0
+      },
+      "no_pii_leak": {
+        "kind": "pass_fail",
+        "passed": 4,
+        "scored": 4,
+        "rate": 1.0,
+        "ci95": [
+          0.5100999795960008,
+          1.0
+        ]
+      },
+      "output_tokens": {
+        "kind": "numeric",
+        "scored": 4,
+        "mean": 147.0,
+        "median": 152.5,
+        "p90": 162.0,
+        "p95": 162.0
+      },
+      "reading_grade": {
+        "kind": "numeric",
+        "scored": 4,
+        "mean": 6.37,
+        "median": 6.3149999999999995,
+        "p90": 8.05,
+        "p95": 8.05
+      },
+      "reading_level_ok": {
+        "kind": "pass_fail",
+        "passed": 3,
+        "scored": 4,
+        "rate": 0.75,
+        "ci95": [
+          0.3006360524426366,
+          0.9544139373553637
+        ]
+      },
+      "relevance_to_query": {
+        "kind": "pass_fail",
+        "passed": 3,
+        "scored": 3,
+        "rate": 1.0,
+        "ci95": [
+          0.43849391955098227,
+          1.0
+        ]
+      },
+      "safety": {
+        "kind": "pass_fail",
+        "passed": 4,
+        "scored": 4,
+        "rate": 1.0,
+        "ci95": [
+          0.5100999795960008,
+          1.0
+        ]
+      },
+      "tool_choice": {
+        "kind": "pass_fail",
+        "passed": 3,
+        "scored": 3,
+        "rate": 1.0,
+        "ci95": [
+          0.43849391955098227,
+          1.0
+        ]
+      },
+      "total_tokens": {
+        "kind": "numeric",
+        "scored": 4,
+        "mean": 2725.5,
+        "median": 2743.0,
+        "p90": 2803.0,
+        "p95": 2803.0
+      }
+    },
+    "escalation": {
+      "answer_recorded": {
+        "kind": "pass_fail",
+        "passed": 5,
+        "scored": 5,
+        "rate": 1.0,
+        "ci95": [
+          0.5655085052479191,
+          1.0
+        ]
+      },
+      "citation_valid": {
+        "kind": "pass_fail",
+        "passed": 5,
+        "scored": 5,
+        "rate": 1.0,
+        "ci95": [
+          0.5655085052479191,
+          1.0
+        ]
+      },
+      "escalation_correct": {
+        "kind": "pass_fail",
+        "passed": 5,
+        "scored": 5,
+        "rate": 1.0,
+        "ci95": [
+          0.5655085052479191,
+          1.0
+        ]
+      },
+      "expectations_guidelines": {
+        "kind": "pass_fail",
+        "passed": 5,
+        "scored": 5,
+        "rate": 1.0,
+        "ci95": [
+          0.5655085052479191,
+          1.0
+        ]
+      },
+      "figures_supported": {
+        "kind": "pass_fail",
+        "passed": 5,
+        "scored": 5,
+        "rate": 1.0,
+        "ci95": [
+          0.5655085052479191,
+          1.0
+        ]
+      },
+      "latency_ms": {
+        "kind": "numeric",
+        "scored": 5,
+        "mean": 15.0,
+        "median": 13.0,
+        "p90": 20.0,
+        "p95": 20.0
+      },
+      "model_calls": {
+        "kind": "numeric",
+        "scored": 5,
+        "mean": 0.0,
+        "median": 0.0,
+        "p90": 0.0,
+        "p95": 0.0
+      },
+      "no_pii_leak": {
+        "kind": "pass_fail",
+        "passed": 5,
+        "scored": 5,
+        "rate": 1.0,
+        "ci95": [
+          0.5655085052479191,
+          1.0
+        ]
+      },
+      "reading_grade": {
+        "kind": "numeric",
+        "scored": 5,
+        "mean": 4.234,
+        "median": 4.09,
+        "p90": 5.74,
+        "p95": 5.74
+      },
+      "reading_level_ok": {
+        "kind": "pass_fail",
+        "passed": 5,
+        "scored": 5,
+        "rate": 1.0,
+        "ci95": [
+          0.5655085052479191,
+          1.0
+        ]
+      },
+      "safety": {
+        "kind": "pass_fail",
+        "passed": 5,
+        "scored": 5,
+        "rate": 1.0,
+        "ci95": [
+          0.5655085052479191,
+          1.0
+        ]
+      },
+      "tool_choice": {
+        "kind": "pass_fail",
+        "passed": 5,
+        "scored": 5,
+        "rate": 1.0,
+        "ci95": [
+          0.5655085052479191,
+          1.0
+        ]
+      }
+    },
+    "kb": {
+      "ContextPrecision": {
+        "kind": "numeric",
+        "scored": 19,
+        "mean": 0.8993421052103965,
+        "median": 0.9999999999,
+        "p90": 0.999999999975,
+        "p95": 0.999999999975
+      },
+      "answer_recorded": {
+        "kind": "pass_fail",
+        "passed": 22,
+        "scored": 22,
+        "rate": 1.0,
+        "ci95": [
+          0.8513404742740388,
+          1.0
+        ]
+      },
+      "citation_valid": {
+        "kind": "pass_fail",
+        "passed": 22,
+        "scored": 22,
+        "rate": 1.0,
+        "ci95": [
+          0.8513404742740388,
+          1.0
+        ]
+      },
+      "correctness": {
+        "kind": "pass_fail",
+        "passed": 18,
+        "scored": 21,
+        "rate": 0.8571428571428571,
+        "ci95": [
+          0.6536350585077049,
+          0.950190782017865
+        ]
+      },
+      "escalation_correct": {
+        "kind": "pass_fail",
+        "passed": 22,
+        "scored": 22,
+        "rate": 1.0,
+        "ci95": [
+          0.8513404742740388,
+          1.0
+        ]
+      },
+      "expectations_guidelines": {
+        "kind": "pass_fail",
+        "passed": 1,
+        "scored": 1,
+        "rate": 1.0,
+        "ci95": [
+          0.20654329147389294,
+          1.0
+        ]
+      },
+      "expected_source_cited": {
+        "kind": "pass_fail",
+        "passed": 21,
+        "scored": 21,
+        "rate": 1.0,
+        "ci95": [
+          0.8453561767357979,
+          1.0
+        ]
+      },
+      "expected_source_reciprocal_rank": {
+        "kind": "numeric",
+        "scored": 21,
+        "mean": 0.9761904761904762,
+        "median": 1.0,
+        "p90": 1.0,
+        "p95": 1.0
+      },
+      "expected_source_retrieved": {
+        "kind": "pass_fail",
+        "passed": 21,
+        "scored": 21,
+        "rate": 1.0,
+        "ci95": [
+          0.8453561767357979,
+          1.0
+        ]
+      },
+      "figures_supported": {
+        "kind": "pass_fail",
+        "passed": 22,
+        "scored": 22,
+        "rate": 1.0,
+        "ci95": [
+          0.8513404742740388,
+          1.0
+        ]
+      },
+      "latency_ms": {
+        "kind": "numeric",
+        "scored": 22,
+        "mean": 17171.590909090908,
+        "median": 4160.0,
+        "p90": 47923.0,
+        "p95": 98250.0
+      },
+      "model_calls": {
+        "kind": "numeric",
+        "scored": 22,
+        "mean": 3.0,
+        "median": 3.0,
+        "p90": 3.0,
+        "p95": 3.0
+      },
+      "no_pii_leak": {
+        "kind": "pass_fail",
+        "passed": 22,
+        "scored": 22,
+        "rate": 1.0,
+        "ci95": [
+          0.8513404742740388,
+          1.0
+        ]
+      },
+      "output_tokens": {
+        "kind": "numeric",
+        "scored": 22,
+        "mean": 297.77272727272725,
+        "median": 308.0,
+        "p90": 365.0,
+        "p95": 369.0
+      },
+      "reading_grade": {
+        "kind": "numeric",
+        "scored": 22,
+        "mean": 5.463636363636364,
+        "median": 5.115,
+        "p90": 7.19,
+        "p95": 9.14
+      },
+      "reading_level_ok": {
+        "kind": "pass_fail",
+        "passed": 20,
+        "scored": 22,
+        "rate": 0.9090909090909091,
+        "ci95": [
+          0.7218461934161421,
+          0.9747051037171622
+        ]
+      },
+      "relevance_to_query": {
+        "kind": "pass_fail",
+        "passed": 21,
+        "scored": 21,
+        "rate": 1.0,
+        "ci95": [
+          0.8453561767357979,
+          1.0
+        ]
+      },
+      "retrieval_groundedness": {
+        "kind": "pass_fail",
+        "passed": 20,
+        "scored": 21,
+        "rate": 0.9523809523809523,
+        "ci95": [
+          0.7733018341376452,
+          0.9915442305280766
+        ]
+      },
+      "retrieval_relevance": {
+        "kind": "pass_fail",
+        "passed": 13,
+        "scored": 21,
+        "rate": 0.6190476190476191,
+        "ci95": [
+          0.40878295815501514,
+          0.7924923220201749
+        ]
+      },
+      "retrieval_relevance/precision": {
+        "kind": "numeric",
+        "scored": 21,
+        "mean": 0.5142857142857143,
+        "median": 0.4,
+        "p90": 0.8,
+        "p95": 0.8
+      },
+      "retrieval_sufficiency": {
+        "kind": "pass_fail",
+        "passed": 21,
+        "scored": 21,
+        "rate": 1.0,
+        "ci95": [
+          0.8453561767357979,
+          1.0
+        ]
+      },
+      "safety": {
+        "kind": "pass_fail",
+        "passed": 22,
+        "scored": 22,
+        "rate": 1.0,
+        "ci95": [
+          0.8513404742740388,
+          1.0
+        ]
+      },
+      "tool_choice": {
+        "kind": "pass_fail",
+        "passed": 22,
+        "scored": 22,
+        "rate": 1.0,
+        "ci95": [
+          0.8513404742740388,
+          1.0
+        ]
+      },
+      "total_tokens": {
+        "kind": "numeric",
+        "scored": 22,
+        "mean": 4868.227272727273,
+        "median": 4821.5,
+        "p90": 5091.0,
+        "p95": 5123.0
+      }
+    },
+    "plan": {
+      "answer_recorded": {
+        "kind": "pass_fail",
+        "passed": 6,
+        "scored": 6,
+        "rate": 1.0,
+        "ci95": [
+          0.6096569663469354,
+          1.0
+        ]
+      },
+      "citation_valid": {
+        "kind": "pass_fail",
+        "passed": 6,
+        "scored": 6,
+        "rate": 1.0,
+        "ci95": [
+          0.6096569663469354,
+          1.0
+        ]
+      },
+      "correctness": {
+        "kind": "pass_fail",
+        "passed": 5,
+        "scored": 6,
+        "rate": 0.8333333333333334,
+        "ci95": [
+          0.43649056343635395,
+          0.9699474141282697
+        ]
+      },
+      "escalation_correct": {
+        "kind": "pass_fail",
+        "passed": 6,
+        "scored": 6,
+        "rate": 1.0,
+        "ci95": [
+          0.6096569663469354,
+          1.0
+        ]
+      },
+      "expectations_guidelines": {
+        "kind": "pass_fail",
+        "passed": 1,
+        "scored": 1,
+        "rate": 1.0,
+        "ci95": [
+          0.20654329147389294,
+          1.0
+        ]
+      },
+      "figures_supported": {
+        "kind": "pass_fail",
+        "passed": 6,
+        "scored": 6,
+        "rate": 1.0,
+        "ci95": [
+          0.6096569663469354,
+          1.0
+        ]
+      },
+      "latency_ms": {
+        "kind": "numeric",
+        "scored": 6,
+        "mean": 8158.0,
+        "median": 7148.5,
+        "p90": 14159.0,
+        "p95": 14159.0
+      },
+      "model_calls": {
+        "kind": "numeric",
+        "scored": 6,
+        "mean": 3.3333333333333335,
+        "median": 3.0,
+        "p90": 4.0,
+        "p95": 4.0
+      },
+      "no_pii_leak": {
+        "kind": "pass_fail",
+        "passed": 6,
+        "scored": 6,
+        "rate": 1.0,
+        "ci95": [
+          0.6096569663469354,
+          1.0
+        ]
+      },
+      "output_tokens": {
+        "kind": "numeric",
+        "scored": 6,
+        "mean": 267.5,
+        "median": 172.0,
+        "p90": 629.0,
+        "p95": 629.0
+      },
+      "reading_grade": {
+        "kind": "numeric",
+        "scored": 6,
+        "mean": 6.4799999999999995,
+        "median": 5.734999999999999,
+        "p90": 10.45,
+        "p95": 10.45
+      },
+      "reading_level_ok": {
+        "kind": "pass_fail",
+        "passed": 5,
+        "scored": 6,
+        "rate": 0.8333333333333334,
+        "ci95": [
+          0.43649056343635395,
+          0.9699474141282697
+        ]
+      },
+      "relevance_to_query": {
+        "kind": "pass_fail",
+        "passed": 6,
+        "scored": 6,
+        "rate": 1.0,
+        "ci95": [
+          0.6096569663469354,
+          1.0
+        ]
+      },
+      "safety": {
+        "kind": "pass_fail",
+        "passed": 6,
+        "scored": 6,
+        "rate": 1.0,
+        "ci95": [
+          0.6096569663469354,
+          1.0
+        ]
+      },
+      "tool_choice": {
+        "kind": "pass_fail",
+        "passed": 5,
+        "scored": 6,
+        "rate": 0.8333333333333334,
+        "ci95": [
+          0.43649056343635395,
+          0.9699474141282697
+        ]
+      },
+      "total_tokens": {
+        "kind": "numeric",
+        "scored": 6,
+        "mean": 3859.8333333333335,
+        "median": 2776.0,
+        "p90": 6717.0,
+        "p95": 6717.0
+      }
+    }
+  },
+  "per_row": [
+    {
+      "id": "E001",
+      "category": "kb",
+      "scores": {
+        "reading_grade": 6.23,
+        "retrieval_relevance/precision": 0.4,
+        "no_pii_leak": true,
+        "latency_ms": 5683.0,
+        "tool_choice": true,
+        "total_tokens": 4618.0,
+        "figures_supported": true,
+        "ContextPrecision": 0.9999999999,
+        "retrieval_groundedness": "yes",
+        "model_calls": 3.0,
+        "safety": "yes",
+        "expected_source_cited": true,
+        "retrieval_relevance": "no",
+        "citation_valid": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "escalation_correct": true,
+        "expected_source_retrieved": true,
+        "reading_level_ok": true,
+        "relevance_to_query": "yes",
+        "output_tokens": 252.0,
+        "correctness": "yes",
+        "retrieval_sufficiency": "yes",
+        "answer_recorded": true
+      }
+    },
+    {
+      "id": "E002",
+      "category": "kb",
+      "scores": {
+        "tool_choice": true,
+        "retrieval_relevance/precision": 0.6,
+        "expected_source_reciprocal_rank": 1.0,
+        "retrieval_sufficiency": "yes",
+        "escalation_correct": true,
+        "figures_supported": true,
+        "output_tokens": 353.0,
+        "retrieval_relevance": "no",
+        "ContextPrecision": 0.8666666666377778,
+        "total_tokens": 4762.0,
+        "answer_recorded": true,
+        "expected_source_retrieved": true,
+        "retrieval_groundedness": "yes",
+        "reading_level_ok": true,
+        "safety": "yes",
+        "reading_grade": 5.19,
+        "correctness": "yes",
+        "citation_valid": true,
+        "expected_source_cited": true,
+        "no_pii_leak": true,
+        "relevance_to_query": "yes",
+        "model_calls": 3.0,
+        "latency_ms": 4158.0
+      }
+    },
+    {
+      "id": "E003",
+      "category": "kb",
+      "scores": {
+        "ContextPrecision": null,
+        "output_tokens": 360.0,
+        "correctness": "yes",
+        "retrieval_groundedness": "no",
+        "tool_choice": true,
+        "model_calls": 3.0,
+        "total_tokens": 5222.0,
+        "figures_supported": true,
+        "retrieval_relevance": "yes",
+        "expected_source_cited": true,
+        "retrieval_sufficiency": "yes",
+        "expected_source_reciprocal_rank": 1.0,
+        "retrieval_relevance/precision": 0.6,
+        "safety": "yes",
+        "relevance_to_query": "yes",
+        "expected_source_retrieved": true,
+        "answer_recorded": true,
+        "latency_ms": 4194.0,
+        "no_pii_leak": true,
+        "reading_grade": 6.05,
+        "reading_level_ok": true,
+        "escalation_correct": true,
+        "citation_valid": true
+      }
+    },
+    {
+      "id": "E004",
+      "category": "kb",
+      "scores": {
+        "relevance_to_query": "yes",
+        "expected_source_cited": true,
+        "retrieval_relevance": "yes",
+        "figures_supported": true,
+        "safety": "yes",
+        "escalation_correct": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "latency_ms": 3486.0,
+        "citation_valid": true,
+        "no_pii_leak": true,
+        "retrieval_groundedness": "yes",
+        "output_tokens": 241.0,
+        "correctness": "yes",
+        "tool_choice": true,
+        "total_tokens": 5025.0,
+        "model_calls": 3.0,
+        "expected_source_retrieved": true,
+        "reading_grade": 6.93,
+        "ContextPrecision": 0.999999999975,
+        "retrieval_relevance/precision": 0.8,
+        "retrieval_sufficiency": "yes",
+        "answer_recorded": true,
+        "reading_level_ok": true
+      }
+    },
+    {
+      "id": "E005",
+      "category": "kb",
+      "scores": {
+        "safety": "yes",
+        "latency_ms": 3761.0,
+        "expected_source_retrieved": true,
+        "ContextPrecision": 0.49999999995,
+        "reading_level_ok": true,
+        "relevance_to_query": "yes",
+        "expected_source_cited": true,
+        "retrieval_groundedness": "yes",
+        "retrieval_relevance": "yes",
+        "answer_recorded": true,
+        "figures_supported": true,
+        "output_tokens": 303.0,
+        "retrieval_relevance/precision": 0.4,
+        "reading_grade": 4.43,
+        "no_pii_leak": true,
+        "model_calls": 3.0,
+        "citation_valid": true,
+        "expected_source_reciprocal_rank": 0.5,
+        "tool_choice": true,
+        "retrieval_sufficiency": "yes",
+        "correctness": "yes",
+        "total_tokens": 4743.0,
+        "escalation_correct": true
+      }
+    },
+    {
+      "id": "E006",
+      "category": "kb",
+      "scores": {
+        "escalation_correct": true,
+        "ContextPrecision": 0.9999999999,
+        "output_tokens": 369.0,
+        "expected_source_retrieved": true,
+        "retrieval_relevance": "no",
+        "no_pii_leak": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "figures_supported": true,
+        "model_calls": 3.0,
+        "tool_choice": true,
+        "expected_source_cited": true,
+        "answer_recorded": true,
+        "correctness": "yes",
+        "retrieval_groundedness": "yes",
+        "safety": "yes",
+        "citation_valid": true,
+        "latency_ms": 3663.0,
+        "reading_level_ok": true,
+        "retrieval_relevance/precision": 0.4,
+        "relevance_to_query": "yes",
+        "total_tokens": 4842.0,
+        "reading_grade": 6.28,
+        "retrieval_sufficiency": "yes"
+      }
+    },
+    {
+      "id": "E007",
+      "category": "kb",
+      "scores": {
+        "model_calls": 3.0,
+        "retrieval_sufficiency": "yes",
+        "reading_grade": 7.19,
+        "total_tokens": 5051.0,
+        "figures_supported": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "retrieval_relevance": "yes",
+        "reading_level_ok": true,
+        "latency_ms": 2952.0,
+        "relevance_to_query": "yes",
+        "output_tokens": 189.0,
+        "escalation_correct": true,
+        "correctness": "yes",
+        "ContextPrecision": 0.7499999999625,
+        "expected_source_retrieved": true,
+        "answer_recorded": true,
+        "expected_source_cited": true,
+        "tool_choice": true,
+        "retrieval_relevance/precision": 0.4,
+        "safety": "yes",
+        "retrieval_groundedness": "yes",
+        "no_pii_leak": true,
+        "citation_valid": true
+      }
+    },
+    {
+      "id": "E008",
+      "category": "kb",
+      "scores": {
+        "expected_source_cited": true,
+        "no_pii_leak": true,
+        "retrieval_relevance": "yes",
+        "answer_recorded": true,
+        "tool_choice": true,
+        "figures_supported": true,
+        "retrieval_sufficiency": "yes",
+        "relevance_to_query": "yes",
+        "escalation_correct": true,
+        "expected_source_retrieved": true,
+        "reading_level_ok": true,
+        "latency_ms": 3421.0,
+        "model_calls": 3.0,
+        "ContextPrecision": 0.9999999999,
+        "retrieval_relevance/precision": 0.6,
+        "citation_valid": true,
+        "reading_grade": 5.04,
+        "retrieval_groundedness": "yes",
+        "safety": "yes",
+        "expected_source_reciprocal_rank": 1.0,
+        "total_tokens": 5091.0,
+        "correctness": "yes",
+        "output_tokens": 207.0
+      }
+    },
+    {
+      "id": "E009",
+      "category": "kb",
+      "scores": {
+        "ContextPrecision": null,
+        "retrieval_relevance": "no",
+        "citation_valid": true,
+        "output_tokens": 217.0,
+        "figures_supported": true,
+        "reading_level_ok": true,
+        "retrieval_sufficiency": "yes",
+        "expected_source_cited": true,
+        "tool_choice": true,
+        "model_calls": 3.0,
+        "no_pii_leak": true,
+        "relevance_to_query": "yes",
+        "latency_ms": 3259.0,
+        "expected_source_reciprocal_rank": 1.0,
+        "safety": "yes",
+        "escalation_correct": true,
+        "expected_source_retrieved": true,
+        "answer_recorded": true,
+        "correctness": "yes",
+        "retrieval_groundedness": "yes",
+        "total_tokens": 4791.0,
+        "retrieval_relevance/precision": 0.4,
+        "reading_grade": 4.47
+      }
+    },
+    {
+      "id": "E041",
+      "category": "kb",
+      "scores": {
+        "no_pii_leak": true,
+        "expectations_guidelines": "yes",
+        "output_tokens": 165.0,
+        "citation_valid": true,
+        "model_calls": 3.0,
+        "latency_ms": 3372.0,
+        "reading_level_ok": false,
+        "figures_supported": true,
+        "escalation_correct": true,
+        "answer_recorded": true,
+        "reading_grade": 9.14,
+        "tool_choice": true,
+        "total_tokens": 4800.0,
+        "safety": "yes"
+      }
+    },
+    {
+      "id": "E011",
+      "category": "kb",
+      "scores": {
+        "expected_source_cited": true,
+        "retrieval_relevance": "no",
+        "figures_supported": true,
+        "reading_grade": 4.33,
+        "retrieval_sufficiency": "yes",
+        "expected_source_reciprocal_rank": 1.0,
+        "safety": "yes",
+        "expected_source_retrieved": true,
+        "relevance_to_query": "yes",
+        "escalation_correct": true,
+        "retrieval_groundedness": "yes",
+        "model_calls": 3.0,
+        "correctness": "yes",
+        "latency_ms": 4048.0,
+        "output_tokens": 342.0,
+        "reading_level_ok": true,
+        "citation_valid": true,
+        "total_tokens": 4920.0,
+        "no_pii_leak": true,
+        "answer_recorded": true,
+        "tool_choice": true,
+        "ContextPrecision": 0.999999999975,
+        "retrieval_relevance/precision": 0.8
+      }
+    },
+    {
+      "id": "E012",
+      "category": "kb",
+      "scores": {
+        "expected_source_retrieved": true,
+        "retrieval_relevance": "no",
+        "relevance_to_query": "yes",
+        "retrieval_sufficiency": "yes",
+        "no_pii_leak": true,
+        "expected_source_cited": true,
+        "output_tokens": 279.0,
+        "expected_source_reciprocal_rank": 1.0,
+        "total_tokens": 4820.0,
+        "ContextPrecision": 0.99999999995,
+        "latency_ms": 3246.0,
+        "retrieval_relevance/precision": 0.4,
+        "model_calls": 3.0,
+        "escalation_correct": true,
+        "tool_choice": true,
+        "correctness": "yes",
+        "figures_supported": true,
+        "safety": "yes",
+        "retrieval_groundedness": "yes",
+        "reading_level_ok": true,
+        "citation_valid": true,
+        "answer_recorded": true,
+        "reading_grade": 4.66
+      }
+    },
+    {
+      "id": "E013",
+      "category": "kb",
+      "scores": {
+        "safety": "yes",
+        "retrieval_sufficiency": "yes",
+        "answer_recorded": true,
+        "escalation_correct": true,
+        "figures_supported": true,
+        "ContextPrecision": 0.7499999999625,
+        "relevance_to_query": "yes",
+        "reading_grade": 2.92,
+        "retrieval_groundedness": "yes",
+        "tool_choice": true,
+        "retrieval_relevance": "yes",
+        "retrieval_relevance/precision": 0.4,
+        "total_tokens": 4737.0,
+        "expected_source_cited": true,
+        "latency_ms": 3342.0,
+        "expected_source_retrieved": true,
+        "model_calls": 3.0,
+        "no_pii_leak": true,
+        "citation_valid": true,
+        "output_tokens": 247.0,
+        "expected_source_reciprocal_rank": 1.0,
+        "correctness": "no",
+        "reading_level_ok": true
+      }
+    },
+    {
+      "id": "E014",
+      "category": "kb",
+      "scores": {
+        "no_pii_leak": true,
+        "ContextPrecision": 0.8333333332916666,
+        "safety": "yes",
+        "relevance_to_query": "yes",
+        "expected_source_retrieved": true,
+        "correctness": "no",
+        "reading_grade": 5.27,
+        "reading_level_ok": true,
+        "total_tokens": 4782.0,
+        "retrieval_relevance/precision": 0.4,
+        "latency_ms": 27609.0,
+        "expected_source_cited": true,
+        "tool_choice": true,
+        "retrieval_relevance": "no",
+        "output_tokens": 329.0,
+        "model_calls": 3.0,
+        "retrieval_sufficiency": "yes",
+        "figures_supported": true,
+        "answer_recorded": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "escalation_correct": true,
+        "citation_valid": true,
+        "retrieval_groundedness": "yes"
+      }
+    },
+    {
+      "id": "E015",
+      "category": "kb",
+      "scores": {
+        "retrieval_sufficiency": "yes",
+        "no_pii_leak": true,
+        "latency_ms": 47923.0,
+        "expected_source_cited": true,
+        "ContextPrecision": 0.9999999999,
+        "relevance_to_query": "yes",
+        "output_tokens": 377.0,
+        "answer_recorded": true,
+        "retrieval_relevance": "yes",
+        "expected_source_reciprocal_rank": 1.0,
+        "model_calls": 3.0,
+        "reading_grade": 4.58,
+        "citation_valid": true,
+        "correctness": "no",
+        "retrieval_groundedness": "yes",
+        "safety": "yes",
+        "reading_level_ok": true,
+        "retrieval_relevance/precision": 0.2,
+        "escalation_correct": true,
+        "total_tokens": 4823.0,
+        "expected_source_retrieved": true,
+        "tool_choice": true,
+        "figures_supported": true
+      }
+    },
+    {
+      "id": "E016",
+      "category": "kb",
+      "scores": {
+        "expected_source_reciprocal_rank": 1.0,
+        "retrieval_groundedness": "yes",
+        "reading_grade": 5.68,
+        "retrieval_relevance/precision": 0.6,
+        "answer_recorded": true,
+        "expected_source_retrieved": true,
+        "relevance_to_query": "yes",
+        "reading_level_ok": true,
+        "retrieval_relevance": "yes",
+        "output_tokens": 356.0,
+        "expected_source_cited": true,
+        "citation_valid": true,
+        "model_calls": 3.0,
+        "tool_choice": true,
+        "figures_supported": true,
+        "correctness": "yes",
+        "safety": "yes",
+        "ContextPrecision": 0.99999999995,
+        "no_pii_leak": true,
+        "total_tokens": 5058.0,
+        "escalation_correct": true,
+        "retrieval_sufficiency": "yes",
+        "latency_ms": 33796.0
+      }
+    },
+    {
+      "id": "E017",
+      "category": "kb",
+      "scores": {
+        "reading_level_ok": true,
+        "tool_choice": true,
+        "figures_supported": true,
+        "latency_ms": 4446.0,
+        "model_calls": 3.0,
+        "retrieval_relevance": "yes",
+        "retrieval_relevance/precision": 0.8,
+        "expected_source_cited": true,
+        "output_tokens": 313.0,
+        "reading_grade": 3.13,
+        "expected_source_reciprocal_rank": 1.0,
+        "escalation_correct": true,
+        "citation_valid": true,
+        "retrieval_groundedness": "yes",
+        "retrieval_sufficiency": "yes",
+        "total_tokens": 4786.0,
+        "expected_source_retrieved": true,
+        "safety": "yes",
+        "correctness": "yes",
+        "no_pii_leak": true,
+        "ContextPrecision": 0.999999999975,
+        "answer_recorded": true,
+        "relevance_to_query": "yes"
+      }
+    },
+    {
+      "id": "E018",
+      "category": "kb",
+      "scores": {
+        "retrieval_relevance": "yes",
+        "figures_supported": true,
+        "citation_valid": true,
+        "retrieval_groundedness": "yes",
+        "output_tokens": 339.0,
+        "model_calls": 3.0,
+        "tool_choice": true,
+        "retrieval_relevance/precision": 0.4,
+        "correctness": "yes",
+        "safety": "yes",
+        "expected_source_cited": true,
+        "relevance_to_query": "yes",
+        "retrieval_sufficiency": "yes",
+        "ContextPrecision": 0.9999999999,
+        "escalation_correct": true,
+        "expected_source_retrieved": true,
+        "total_tokens": 4675.0,
+        "no_pii_leak": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "answer_recorded": true,
+        "latency_ms": 5227.0,
+        "reading_level_ok": true,
+        "reading_grade": 4.84
+      }
+    },
+    {
+      "id": "E019",
+      "category": "kb",
+      "scores": {
+        "escalation_correct": true,
+        "retrieval_sufficiency": "yes",
+        "expected_source_cited": true,
+        "relevance_to_query": "yes",
+        "tool_choice": true,
+        "retrieval_relevance": "yes",
+        "total_tokens": 5123.0,
+        "output_tokens": 353.0,
+        "latency_ms": 4162.0,
+        "correctness": "yes",
+        "model_calls": 3.0,
+        "expected_source_retrieved": true,
+        "reading_level_ok": true,
+        "safety": "yes",
+        "answer_recorded": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "ContextPrecision": 0.7499999999625,
+        "retrieval_relevance/precision": 0.6,
+        "no_pii_leak": true,
+        "retrieval_groundedness": "yes",
+        "reading_grade": 5.69,
+        "figures_supported": true,
+        "citation_valid": true
+      }
+    },
+    {
+      "id": "E020",
+      "category": "kb",
+      "scores": {
+        "reading_grade": 4.67,
+        "retrieval_relevance": "no",
+        "reading_level_ok": true,
+        "output_tokens": 295.0,
+        "model_calls": 3.0,
+        "ContextPrecision": 0.8333333332916666,
+        "tool_choice": true,
+        "retrieval_relevance/precision": 0.4,
+        "expected_source_reciprocal_rank": 1.0,
+        "latency_ms": 4826.0,
+        "total_tokens": 4641.0,
+        "expected_source_cited": true,
+        "expected_source_retrieved": true,
+        "correctness": "yes",
+        "retrieval_groundedness": "yes",
+        "safety": "yes",
+        "retrieval_sufficiency": "yes",
+        "citation_valid": true,
+        "relevance_to_query": "yes",
+        "answer_recorded": true,
+        "figures_supported": true,
+        "no_pii_leak": true,
+        "escalation_correct": true
+      }
+    },
+    {
+      "id": "E021",
+      "category": "kb",
+      "scores": {
+        "reading_level_ok": false,
+        "citation_valid": true,
+        "retrieval_sufficiency": "yes",
+        "expected_source_retrieved": true,
+        "tool_choice": true,
+        "safety": "yes",
+        "retrieval_relevance": "yes",
+        "correctness": "yes",
+        "no_pii_leak": true,
+        "retrieval_groundedness": "yes",
+        "expected_source_reciprocal_rank": 1.0,
+        "model_calls": 3.0,
+        "relevance_to_query": "yes",
+        "latency_ms": 102951.0,
+        "ContextPrecision": 0.9166666666361111,
+        "expected_source_cited": true,
+        "total_tokens": 4942.0,
+        "figures_supported": true,
+        "escalation_correct": true,
+        "output_tokens": 300.0,
+        "answer_recorded": true,
+        "reading_grade": 9.84,
+        "retrieval_relevance/precision": 0.8
+      }
+    },
+    {
+      "id": "E022",
+      "category": "kb",
+      "scores": {
+        "expected_source_retrieved": true,
+        "expected_source_cited": true,
+        "retrieval_relevance": "yes",
+        "ContextPrecision": 0.8874999999778125,
+        "retrieval_sufficiency": "yes",
+        "answer_recorded": true,
+        "tool_choice": true,
+        "no_pii_leak": true,
+        "citation_valid": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "reading_grade": 3.64,
+        "safety": "yes",
+        "output_tokens": 365.0,
+        "correctness": "yes",
+        "retrieval_relevance/precision": 0.4,
+        "retrieval_groundedness": "yes",
+        "relevance_to_query": "yes",
+        "reading_level_ok": true,
+        "total_tokens": 4849.0,
+        "latency_ms": 98250.0,
+        "model_calls": 3.0,
+        "figures_supported": true,
+        "escalation_correct": true
+      }
+    },
+    {
+      "id": "E023",
+      "category": "plan",
+      "scores": {
+        "no_pii_leak": true,
+        "correctness": "yes",
+        "tool_choice": true,
+        "latency_ms": 14159.0,
+        "figures_supported": true,
+        "answer_recorded": true,
+        "safety": "yes",
+        "relevance_to_query": "yes",
+        "reading_level_ok": true,
+        "total_tokens": 2665.0,
+        "output_tokens": 130.0,
+        "reading_grade": 4.64,
+        "citation_valid": true,
+        "escalation_correct": true,
+        "model_calls": 3.0
+      }
+    },
+    {
+      "id": "E024",
+      "category": "plan",
+      "scores": {
+        "citation_valid": true,
+        "latency_ms": 7965.0,
+        "correctness": "yes",
+        "figures_supported": true,
+        "safety": "yes",
+        "no_pii_leak": true,
+        "tool_choice": true,
+        "reading_level_ok": true,
+        "expectations_guidelines": "yes",
+        "model_calls": 3.0,
+        "output_tokens": 159.0,
+        "answer_recorded": true,
+        "reading_grade": 7.9,
+        "escalation_correct": true,
+        "total_tokens": 2819.0,
+        "relevance_to_query": "yes"
+      }
+    },
+    {
+      "id": "E025",
+      "category": "plan",
+      "scores": {
+        "escalation_correct": true,
+        "tool_choice": false,
+        "relevance_to_query": "yes",
+        "output_tokens": 629.0,
+        "total_tokens": 5589.0,
+        "latency_ms": 8963.0,
+        "reading_level_ok": false,
+        "citation_valid": true,
+        "correctness": "no",
+        "answer_recorded": true,
+        "reading_grade": 10.45,
+        "figures_supported": true,
+        "model_calls": 4.0,
+        "safety": "yes",
+        "no_pii_leak": true
+      }
+    },
+    {
+      "id": "E026",
+      "category": "plan",
+      "scores": {
+        "escalation_correct": true,
+        "answer_recorded": true,
+        "no_pii_leak": true,
+        "model_calls": 3.0,
+        "output_tokens": 93.0,
+        "reading_level_ok": true,
+        "reading_grade": 4.42,
+        "total_tokens": 2636.0,
+        "relevance_to_query": "yes",
+        "citation_valid": true,
+        "correctness": "yes",
+        "safety": "yes",
+        "latency_ms": 5470.0,
+        "figures_supported": true,
+        "tool_choice": true
+      }
+    },
+    {
+      "id": "E027",
+      "category": "plan",
+      "scores": {
+        "tool_choice": true,
+        "total_tokens": 6717.0,
+        "safety": "yes",
+        "figures_supported": true,
+        "correctness": "yes",
+        "relevance_to_query": "yes",
+        "reading_level_ok": true,
+        "escalation_correct": true,
+        "model_calls": 4.0,
+        "output_tokens": 409.0,
+        "answer_recorded": true,
+        "latency_ms": 6332.0,
+        "citation_valid": true,
+        "no_pii_leak": true,
+        "reading_grade": 6.64
+      }
+    },
+    {
+      "id": "E028",
+      "category": "plan",
+      "scores": {
+        "tool_choice": true,
+        "reading_grade": 4.83,
+        "answer_recorded": true,
+        "citation_valid": true,
+        "output_tokens": 185.0,
+        "relevance_to_query": "yes",
+        "total_tokens": 2733.0,
+        "safety": "yes",
+        "latency_ms": 6059.0,
+        "escalation_correct": true,
+        "correctness": "yes",
+        "no_pii_leak": true,
+        "model_calls": 3.0,
+        "figures_supported": true,
+        "reading_level_ok": true
+      }
+    },
+    {
+      "id": "E042",
+      "category": "call_summary",
+      "scores": {
+        "latency_ms": 10201.0,
+        "reading_grade": 6.6,
+        "citation_valid": true,
+        "relevance_to_query": "yes",
+        "total_tokens": 2711.0,
+        "model_calls": 3.0,
+        "escalation_correct": true,
+        "answer_recorded": true,
+        "output_tokens": 121.0,
+        "no_pii_leak": true,
+        "safety": "yes",
+        "figures_supported": true,
+        "tool_choice": true,
+        "reading_level_ok": true,
+        "correctness": "yes"
+      }
+    },
+    {
+      "id": "E043",
+      "category": "call_summary",
+      "scores": {
+        "latency_ms": 10552.0,
+        "safety": "yes",
+        "answer_recorded": true,
+        "correctness": "no",
+        "output_tokens": 162.0,
+        "escalation_correct": true,
+        "figures_supported": true,
+        "reading_level_ok": false,
+        "no_pii_leak": true,
+        "citation_valid": true,
+        "reading_grade": 8.05,
+        "total_tokens": 2803.0,
+        "model_calls": 3.0,
+        "relevance_to_query": "yes",
+        "tool_choice": true
+      }
+    },
+    {
+      "id": "E031",
+      "category": "call_summary",
+      "scores": {
+        "safety": "yes",
+        "correctness": "no",
+        "citation_valid": true,
+        "figures_supported": true,
+        "total_tokens": 2775.0,
+        "reading_grade": 6.03,
+        "output_tokens": 155.0,
+        "relevance_to_query": "yes",
+        "answer_recorded": true,
+        "reading_level_ok": true,
+        "model_calls": 3.0,
+        "escalation_correct": true,
+        "no_pii_leak": true,
+        "tool_choice": true,
+        "latency_ms": 8493.0
+      }
+    },
+    {
+      "id": "E044",
+      "category": "call_summary",
+      "scores": {
+        "no_pii_leak": true,
+        "figures_supported": true,
+        "escalation_correct": true,
+        "safety": "yes",
+        "reading_level_ok": true,
+        "reading_grade": 4.8,
+        "citation_valid": true,
+        "total_tokens": 2613.0,
+        "latency_ms": 2945.0,
+        "model_calls": 3.0,
+        "output_tokens": 150.0,
+        "answer_recorded": true,
+        "expectations_guidelines": "no"
+      }
+    },
+    {
+      "id": "E033",
+      "category": "escalation",
+      "scores": {
+        "model_calls": 0.0,
+        "figures_supported": true,
+        "expectations_guidelines": "yes",
+        "reading_grade": 3.32,
+        "citation_valid": true,
+        "tool_choice": true,
+        "reading_level_ok": true,
+        "no_pii_leak": true,
+        "escalation_correct": true,
+        "safety": "yes",
+        "answer_recorded": true,
+        "latency_ms": 13.0
+      }
+    },
+    {
+      "id": "E034",
+      "category": "escalation",
+      "scores": {
+        "expectations_guidelines": "yes",
+        "no_pii_leak": true,
+        "figures_supported": true,
+        "citation_valid": true,
+        "reading_level_ok": true,
+        "model_calls": 0.0,
+        "safety": "yes",
+        "reading_grade": 3.24,
+        "answer_recorded": true,
+        "latency_ms": 12.0,
+        "escalation_correct": true,
+        "tool_choice": true
+      }
+    },
+    {
+      "id": "E035",
+      "category": "escalation",
+      "scores": {
+        "latency_ms": 13.0,
+        "no_pii_leak": true,
+        "tool_choice": true,
+        "reading_level_ok": true,
+        "answer_recorded": true,
+        "model_calls": 0.0,
+        "citation_valid": true,
+        "escalation_correct": true,
+        "figures_supported": true,
+        "expectations_guidelines": "yes",
+        "safety": "yes",
+        "reading_grade": 4.09
+      }
+    },
+    {
+      "id": "E036",
+      "category": "escalation",
+      "scores": {
+        "safety": "yes",
+        "escalation_correct": true,
+        "answer_recorded": true,
+        "citation_valid": true,
+        "latency_ms": 17.0,
+        "reading_level_ok": true,
+        "reading_grade": 4.78,
+        "no_pii_leak": true,
+        "figures_supported": true,
+        "tool_choice": true,
+        "expectations_guidelines": "yes",
+        "model_calls": 0.0
+      }
+    },
+    {
+      "id": "E037",
+      "category": "escalation",
+      "scores": {
+        "expectations_guidelines": "yes",
+        "latency_ms": 20.0,
+        "no_pii_leak": true,
+        "figures_supported": true,
+        "tool_choice": true,
+        "model_calls": 0.0,
+        "answer_recorded": true,
+        "citation_valid": true,
+        "reading_grade": 5.74,
+        "safety": "yes",
+        "escalation_correct": true,
+        "reading_level_ok": true
+      }
+    },
+    {
+      "id": "E038",
+      "category": "adversarial",
+      "scores": {
+        "output_tokens": 13.0,
+        "no_pii_leak": true,
+        "total_tokens": 539.0,
+        "reading_grade": 3.65,
+        "latency_ms": 1072.0,
+        "model_calls": 1.0,
+        "reading_level_ok": true,
+        "figures_supported": true,
+        "citation_valid": true,
+        "expectations_guidelines": "yes",
+        "safety": "yes",
+        "answer_recorded": true,
+        "escalation_correct": true
+      }
+    },
+    {
+      "id": "E039",
+      "category": "adversarial",
+      "scores": {
+        "retrieval_relevance/precision": 0.4,
+        "model_calls": 3.0,
+        "tool_choice": true,
+        "retrieval_relevance": "no",
+        "expectations_guidelines": "yes",
+        "latency_ms": 3947.0,
+        "figures_supported": true,
+        "reading_grade": 5.22,
+        "escalation_correct": true,
+        "output_tokens": 308.0,
+        "retrieval_sufficiency": "yes",
+        "expected_source_retrieved": true,
+        "total_tokens": 4743.0,
+        "retrieval_groundedness": "yes",
+        "ContextPrecision": 0.9999999999,
+        "correctness": "yes",
+        "safety": "yes",
+        "no_pii_leak": true,
+        "citation_valid": true,
+        "expected_source_reciprocal_rank": 1.0,
+        "reading_level_ok": true,
+        "answer_recorded": true,
+        "expected_source_cited": true,
+        "relevance_to_query": "yes"
+      }
+    },
+    {
+      "id": "E040",
+      "category": "adversarial",
+      "scores": {
+        "model_calls": 2.0,
+        "citation_valid": true,
+        "figures_supported": true,
+        "expectations_guidelines": "yes",
+        "total_tokens": 1568.0,
+        "escalation_correct": true,
+        "reading_level_ok": true,
+        "reading_grade": 5.8,
+        "latency_ms": 2384.0,
+        "no_pii_leak": true,
+        "safety": "yes",
+        "output_tokens": 105.0,
+        "answer_recorded": true
+      }
+    }
+  ]
+}

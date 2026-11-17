@@ -26,20 +26,38 @@ function Loading() {
   );
 }
 
-interface TurnsProps {
+export interface TurnsProps {
   transcript: CallTranscript;
-  findings: readonly RuleFinding[];
-  turnIdPrefix: string | undefined;
+  /**
+   * A replay: only the turns up to this one are on show, counted from 0. Each
+   * turn carries its number, so it can be matched to the assist panel, and the
+   * list is announced as a log, because turns are added to it.
+   */
+  upTo?: number;
+  /**
+   * What the rule check found. Each turn a finding points at is marked. A replay
+   * is given none: there call assist raises its own reminders as the call reaches
+   * them, and a mark from the finished call would give them away.
+   */
+  findings?: readonly RuleFinding[];
+  /** Gives every turn a DOM id (`turnElementId`), so a finding can go to its turn. */
+  turnIdPrefix?: string;
 }
 
-function Turns({ transcript, findings, turnIdPrefix }: TurnsProps) {
-  const { turns } = transcript;
-  if (turns.length === 0) {
+/** The turns of a call, in spoken order: all of them, or the ones a replay has reached. */
+export function Turns({ transcript, upTo, findings = NO_FINDINGS, turnIdPrefix }: TurnsProps) {
+  const replay = upTo !== undefined;
+  const turns = replay ? transcript.turns.slice(0, upTo + 1) : transcript.turns;
+  if (transcript.turns.length === 0) {
     return <p className="text-ink-2">This call has no turns.</p>;
   }
   const flagged = findingsByTurn(findings);
   return (
-    <ol className="flex animate-fade flex-col">
+    <ol
+      role={replay ? "log" : undefined}
+      aria-label={replay ? "The call so far" : undefined}
+      className="flex animate-fade flex-col"
+    >
       {turns.map((turn, index) => {
         const agent = turn.speaker === "agent";
         const startsRun = turns[index - 1]?.speaker !== turn.speaker;
@@ -55,10 +73,17 @@ function Turns({ transcript, findings, turnIdPrefix }: TurnsProps) {
               "flex max-w-[min(88%,var(--container-md))] scroll-mt-6 flex-col gap-2 rounded-box",
               agent ? "items-start self-start" : "items-end self-end",
               startsRun ? "mt-4 first:mt-0" : "mt-2",
+              // In a replay a turn arrives once, when the call reaches it.
+              replay && "animate-rise",
             )}
           >
-            <span className={cn("cue", !startsRun && "sr-only")}>
-              {SPEAKER_LABELS[turn.speaker]}
+            <span className={cn("cue", !startsRun && !replay && "sr-only")}>
+              <span className={cn(!startsRun && "sr-only")}>{SPEAKER_LABELS[turn.speaker]}</span>
+              {replay && (
+                <span className="font-mono font-normal text-ink-3">
+                  <span className="sr-only">, turn</span> {index + 1}
+                </span>
+              )}
             </span>
             {/* People's words keep soft-square corners. Only the copilot gets the cut corner. */}
             <p

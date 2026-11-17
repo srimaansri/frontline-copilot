@@ -1,5 +1,9 @@
 import type { ReactNode } from "react";
 
+import type { AssistState } from "@/api/types";
+import { PlayIcon } from "@/components/icons/glyphs";
+import { Button } from "@/components/ui/button";
+import { AssistPanel } from "@/features/calls/AssistPanel";
 import {
   CallList,
   CallRow,
@@ -10,13 +14,18 @@ import {
 } from "@/features/calls/CallList";
 import { CallHeader, NothingSelected } from "@/features/calls/CallsView";
 import { FindingsPanel } from "@/features/calls/FindingsPanel";
+import { ReplayControls } from "@/features/calls/ReplayControls";
 import { SummaryPanel } from "@/features/calls/SummaryPanel";
-import { TranscriptPanel } from "@/features/calls/TranscriptPanel";
+import { TranscriptPanel, Turns } from "@/features/calls/TranscriptPanel";
 import type { WrapUpState } from "@/features/calls/useWrapUps";
 import { formFrom } from "@/features/calls/wrapUpForm";
 import { WrapUpPanel } from "@/features/calls/WrapUpPanel";
 
 import {
+  ASSIST_A_TURN_LATER,
+  ASSIST_AT_THE_ISSUE,
+  ASSIST_IS_RECORDED,
+  ASSIST_NOTHING_YET,
   CALL_COUNTS,
   CALL_ROWS,
   ERROR_MESSAGE,
@@ -552,6 +561,207 @@ export function WrapUpSection() {
       </Row>
       <Row label="the draft could not be made" on="sunken" className="max-w-100">
         <WrapUpSpecimen state={{ status: "error", message: ERROR_MESSAGE }} />
+      </Row>
+    </GallerySection>
+  );
+}
+
+function ControlsSpecimen({ turn, playing = false }: { turn: number; playing?: boolean }) {
+  return (
+    <div className="max-w-3xl border border-line">
+      <ReplayControls
+        turn={turn}
+        total={TRANSCRIPT.turns.length}
+        playing={playing}
+        onPlay={noop}
+        onPause={noop}
+        onNext={noop}
+        onRestart={noop}
+      />
+    </div>
+  );
+}
+
+/** The switch in the call header, as the Calls view draws it: ink while the replay is on. */
+function ReplaySwitch({ on }: { on: boolean }) {
+  return (
+    <Button variant={on ? "on" : "outline"} size="sm" aria-pressed={on}>
+      <PlayIcon size={16} />
+      Replay with assist
+    </Button>
+  );
+}
+
+export function ReplaySection() {
+  return (
+    <GallerySection
+      id="replay"
+      title="Replay"
+      note="A call played back one turn at a time. Play is the one cobalt fill; the place in the call is a readout, not a bar. In a replay every turn carries its number, so it can be matched to the assist panel."
+    >
+      <Row label="stopped at the first turn">
+        <ControlsSpecimen turn={0} />
+      </Row>
+      <Row label="playing">
+        <ControlsSpecimen turn={5} playing />
+      </Row>
+      <Row label="paused part way">
+        <ControlsSpecimen turn={5} />
+      </Row>
+      <Row label="at the last turn">
+        <ControlsSpecimen turn={TRANSCRIPT.turns.length - 1} />
+      </Row>
+      <Row label="1 hover · 2 pressed · 3 focus">
+        <Force state="hover" nth={0}>
+          <Force state="pressed" nth={1}>
+            <Force state="focus" nth={2}>
+              <ControlsSpecimen turn={5} />
+            </Force>
+          </Force>
+        </Force>
+      </Row>
+      <Row label="the call so far, six turns in">
+        <div className="max-w-3xl">
+          <Turns transcript={TRANSCRIPT} upTo={5} />
+        </div>
+      </Row>
+      <Row label="call header: the replay is off">
+        <div className="max-w-3xl">
+          <CallHeader call={FIRST_CALL} action={<ReplaySwitch on={false} />} />
+        </div>
+      </Row>
+      <Row label="call header: the replay is on">
+        <div className="max-w-3xl">
+          <CallHeader call={FIRST_CALL} compact action={<ReplaySwitch on />} />
+        </div>
+      </Row>
+    </GallerySection>
+  );
+}
+
+interface AssistSpecimenProps {
+  state: AssistState | null;
+  pending?: boolean;
+  problem?: string | null;
+  retry?: boolean;
+  /** The turn on show, when it is ahead of the newest state there is. */
+  turn?: number;
+}
+
+function AssistSpecimen({ state, pending = false, problem = null, retry = false, turn }: AssistSpecimenProps) {
+  return (
+    <AssistPanel
+      state={state}
+      turn={turn ?? state?.turn ?? 0}
+      total={TRANSCRIPT.turns.length}
+      pending={pending}
+      problem={problem}
+      onRetry={retry ? noop : undefined}
+    />
+  );
+}
+
+/** A state of the specimen call with whatever one row changes. */
+function assistWith(changes: Partial<AssistState>): AssistState {
+  return { ...ASSIST_A_TURN_LATER, ...changes };
+}
+
+export function AssistSection() {
+  const source = ASSIST_IS_RECORDED
+    ? "The article and the next step are the live copilot's, from the recording."
+    : "The article and the next step shown were written for the gallery: the recording has no call assist yet.";
+  const later = ASSIST_A_TURN_LATER.turn;
+  return (
+    <GallerySection
+      id="assist"
+      title="Call assist"
+      note={`What the copilot keeps beside a replayed call without being asked: the identity check, reminders from the rules, a hint to hand off, a next step and the help article it was written from. Each part says at which turn it came up, and carries the notice shape at the turn it is new. The signal bars in the head are the one thing that says "working". ${source} The reminders, the hint and the problems in the rows below are written for the gallery.`}
+    >
+      <Row label="reading the first turn" on="sunken" className="max-w-110">
+        <AssistSpecimen state={null} pending />
+      </Row>
+      <Row label="nothing to show yet" on="sunken" className="max-w-110">
+        <AssistSpecimen state={ASSIST_NOTHING_YET} />
+      </Row>
+      <Row label="an article and a next step, new at this turn" on="sunken" className="max-w-110">
+        <AssistSpecimen state={ASSIST_AT_THE_ISSUE} />
+      </Row>
+      <Row label="one turn later: nothing is new" on="sunken" className="max-w-110">
+        <AssistSpecimen state={ASSIST_A_TURN_LATER} />
+      </Row>
+      <Row label="reading the next turn" on="sunken" className="max-w-110">
+        <AssistSpecimen state={ASSIST_AT_THE_ISSUE} turn={ASSIST_AT_THE_ISSUE.turn + 1} pending />
+      </Row>
+      <Row label="the identity check, new at this turn" on="sunken" className="max-w-110">
+        <AssistSpecimen state={assistWith({ identity_checked_at: later, changed: ["identity"] })} />
+      </Row>
+      <Row label="two reminders from the rules, one new" on="sunken" className="max-w-110">
+        <AssistSpecimen
+          state={assistWith({
+            changed: ["reminder"],
+            reminders: [
+              {
+                rule: "account_before_identity",
+                title: "Account details before the identity check",
+                detail:
+                  "Something from the account was said or changed before the customer answered an identity question.",
+                turn: later - 2,
+              },
+              {
+                rule: "card_read_back",
+                title: "A card number was read back",
+                detail:
+                  "A full payment card number was said aloud. The last four digits are enough to confirm a card.",
+                turn: later,
+              },
+            ],
+          })}
+        />
+      </Row>
+      <Row label="a hint to hand off, new at this turn" on="sunken" className="max-w-110">
+        <AssistSpecimen
+          state={assistWith({
+            identity_checked_at: later - 1,
+            changed: ["hand_off"],
+            hand_off: { category: "billing", team: "the billing team", turn: later },
+          })}
+        />
+      </Row>
+      <Row label="a figure that is in no source" on="sunken" className="max-w-110">
+        <AssistSpecimen
+          state={assistWith({
+            next_step: {
+              text: "You can ask for a one-time waiver of the $7 late fee.",
+              since_turn: ASSIST_AT_THE_ISSUE.turn,
+              unsupported: ["money"],
+            },
+          })}
+        />
+      </Row>
+      <Row label="an article the model found nothing to say about" on="sunken" className="max-w-110">
+        <AssistSpecimen state={assistWith({ next_step: null, step_problem: null })} />
+      </Row>
+      <Row label="a next step that was withheld" on="sunken" className="max-w-110">
+        <AssistSpecimen
+          state={assistWith({
+            next_step: null,
+            step_problem: "Cue wrote a next step that broke a rule, so it is not shown.",
+          })}
+        />
+      </Row>
+      <Row label="a turn could not be read" on="sunken" className="max-w-110">
+        <AssistSpecimen
+          state={ASSIST_AT_THE_ISSUE}
+          turn={ASSIST_AT_THE_ISSUE.turn + 1}
+          problem="Call assist could not read this turn just now. Please try again."
+          retry
+        />
+      </Row>
+      <Row label="the demo has no recording for this call" on="sunken" className="max-w-110">
+        <AssistSpecimen
+          state={null}
+          problem="The demo has no recorded call assist for call T0003. It has one for these calls: T0001, T0002."
+        />
       </Row>
     </GallerySection>
   );

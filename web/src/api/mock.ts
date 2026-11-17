@@ -14,11 +14,13 @@
 import { DEMO } from "@/lib/devHooks";
 
 import { ApiError } from "./client";
+import { buildMatcher } from "./closest";
 import recorded from "./recorded.json";
 import type {
   Api,
   AskRequest,
   AskResponse,
+  AssistState,
   CallFindings,
   CallListItem,
   CallSummary,
@@ -48,6 +50,11 @@ interface Recording {
    * `findings` either.
    */
   findings?: Record<string, CallFindings>;
+  /**
+   * What call assist showed at each turn of each recorded call, first turn first.
+   * Absent from recordings made before the recorder followed calls with assist.
+   */
+  assist?: Record<string, AssistState[]>;
 }
 
 // The file is JSON, so its literal types are wider than the API's unions.
@@ -74,9 +81,8 @@ const STAGES = new Map<string, StageEvent[]>(
   RECORDING.answers.map((item) => [questionKey(item.question), item.stages ?? []]),
 );
 
-/** Recorded questions offered when there is no recording for what was typed, if they exist. */
+/** Recorded questions offered when nothing recorded is close to what was typed, if they exist. */
 const SUGGESTED: readonly string[] = [
-  "hello",
   "what can you do?",
   "Can you show me the rules for international roaming?",
   "This customer forgot their voicemail PIN. How do they reset it?",
@@ -85,24 +91,94 @@ const SUGGESTED: readonly string[] = [
 ];
 
 /**
- * What the demo says to a question it has no recording for. It is not an answer
- * from the copilot and does not pretend to be: it has no tools, no sources and
- * one step that says nothing was run.
+ * Ranks the recorded questions for one that was typed. The answer and the titles
+ * of its sources count too, at half weight: "does her plan cover a trip abroad"
+ * shares no word with a question about roaming, and several with its answer.
  */
-function noRecording(question: string): AskResponse {
-  const offered = [
+const rankRecordings = buildMatcher(
+  RECORDING.answers.map((item) => ({
+    question: item.question,
+    context: [item.response.answer, ...item.response.citations.map((cited) => cited.title)].join(
+      " ",
+    ),
+  })),
+);
+
+/**
+ * A recording this close is shown as the answer to a similar question. The bar is high
+ * on purpose. Word overlap put "how do I pay my bill" next to a question about a first
+ * bill being high: at a lower bar the page showed a right answer to the wrong question.
+ * Below the bar the closest questions are offered to click, and nothing is shown.
+ */
+const SHOW_AT = 0.8;
+/** A recording at least this close is offered as a question to try. */
+const OFFER_AT = 0.2;
+const MOST_OFFERED = 5;
+
+/** What the demo does with a question it has no recording of as typed. */
+function closestRecording(question: string): {
+  shown: string | null;
+  offered: string[];
+} {
+  const ranked = rankRecordings(question);
+  const best = ranked[0];
+  // Two recordings that are equally close are two different questions the typed one
+  // could mean ("cancel his line" and "what is the process to cancel"). Picking one
+  // would be a guess, so both are offered and neither is shown.
+  const tied = best !== undefined && ranked[1]?.score === best.score;
+  const shown = best !== undefined && best.score >= SHOW_AT && !tied ? best.question : null;
+  const close = ranked
+    .filter((match) => match.score >= OFFER_AT && match.question !== shown)
+    .map((match) => match.question);
+  const usual = [
     ...META.examples.map((example) => example.question),
     ...SUGGESTED.filter((suggestion) => ANSWERS.has(questionKey(suggestion))),
   ];
+  const offered = [...new Set([...close, ...usual])].filter((item) => item !== shown);
+  return { shown, offered: offered.slice(0, MOST_OFFERED) };
+}
+
+/**
+ * The recorded answer to the closest question, marked as such. The answer, its
+ * sources and its steps are the copilot's own, for the question named in the note.
+ * The first step and the note are the demo's, and say so.
+ */
+function similarRecording(question: string, shown: string, offered: string[]): AskResponse {
+  const recorded = ANSWERS.get(questionKey(shown));
+  if (recorded === undefined) {
+    return noRecording(question, offered);
+  }
   return {
-    answer: [
-      "This demo replays answers recorded from the live copilot, and there is no recording " +
-        "for that question. The live copilot would search the help articles for it.",
-      "",
-      `Some of the ${ANSWERS.size} questions that have a recording:`,
-      "",
-      ...offered.map((item) => `- ${item}`),
-    ].join("\n"),
+    ...recorded,
+    question_as_processed: question,
+    demo: { shown_for: shown, suggestions: offered },
+    steps: [
+      {
+        stage: "input_check",
+        title: "A recording of a similar question",
+        detail:
+          "The demo page cannot run the copilot, so it picked the closest recorded question. " +
+          "Every step below is from that recording.",
+        status: "notice",
+        tool: null,
+        reference: null,
+      },
+      ...recorded.steps,
+    ],
+  };
+}
+
+/**
+ * What the demo says when nothing recorded is close. It is not an answer from the
+ * copilot and does not pretend to be: it has no tools, no sources and one step
+ * that says nothing was run.
+ */
+function noRecording(question: string, offered: string[]): AskResponse {
+  return {
+    answer:
+      "This page is a recording of the live copilot, and none of its " +
+      `${ANSWERS.size} recorded questions is close to that one. The live copilot would ` +
+      "search the help articles and the plan catalogue for it.",
     question_as_processed: question,
     citations: [],
     tools_used: [],
@@ -110,6 +186,7 @@ function noRecording(question: string): AskResponse {
     guardrail_flags: [],
     seconds: 0,
     trace_id: null,
+    demo: { shown_for: null, suggestions: offered },
     steps: [
       {
         stage: "input_check",
@@ -123,12 +200,28 @@ function noRecording(question: string): AskResponse {
   };
 }
 
+/** The recorded question whose stages are replayed for a typed one, if there is one. */
+function replayedQuestion(question: string): string | null {
+  if (ANSWERS.has(questionKey(question))) {
+    return question;
+  }
+  return closestRecording(question).shown;
+}
+
 /**
- * The recorded response to a question, or the note that there is none. The demo
- * API returns it after a delay; the component gallery uses it directly.
+ * The recorded response to a question; failing that, the recorded response to the
+ * closest question, marked as such; failing that, a note that there is none. The
+ * demo API returns it after a delay; the component gallery uses it directly.
  */
 export function mockAnswer(question: string): AskResponse {
-  return ANSWERS.get(questionKey(question)) ?? noRecording(question);
+  const exact = ANSWERS.get(questionKey(question));
+  if (exact !== undefined) {
+    return exact;
+  }
+  const { shown, offered } = closestRecording(question);
+  return shown === null
+    ? noRecording(question, offered)
+    : similarRecording(question, shown, offered);
 }
 
 /** The recordings themselves, for the component gallery. */
@@ -140,6 +233,8 @@ export const mockTranscripts: Record<string, CallTranscript> = RECORDING.transcr
 export const mockWrapUps: Record<string, CallWrapUp> = RECORDING.wrapups ?? {};
 /** Empty until a recording is made with a version of the recorder that runs the rule check. */
 export const mockFindings: Record<string, CallFindings> = RECORDING.findings ?? {};
+/** Empty until a recording is made with a version of the recorder that follows calls with assist. */
+export const mockAssist: Record<string, AssistState[]> = RECORDING.assist ?? {};
 
 // --- The demo API ---------------------------------------------------------------------------
 
@@ -229,7 +324,8 @@ export const mockApi: Api = {
     // the wait was shortened, the times shrink with it.
     const pace = answer.seconds > 0 ? total / answer.seconds : 1;
     let elapsed = 0;
-    for (const stage of STAGES.get(questionKey(question)) ?? []) {
+    const replayed = replayedQuestion(question);
+    for (const stage of replayed === null ? [] : (STAGES.get(questionKey(replayed)) ?? [])) {
       const at = Math.min(stage.at * pace, total);
       await wait((at - elapsed) * 1000, signal);
       elapsed = at;
@@ -313,6 +409,34 @@ export const mockApi: Api = {
     await wait(200, signal);
     // The demo saves nothing, so no call in it has a saved wrap-up to read back.
     return null;
+  },
+
+  async assistCall(transcriptId, turn, signal) {
+    const id = normalizeId(transcriptId);
+    const states = mockAssist[id];
+    if (!states) {
+      await wait(400, signal);
+      // No state is made up here: a call the live copilot did not follow has none.
+      const recordedIds = Object.keys(mockAssist);
+      throw new ApiError(
+        recordedIds.length === 0
+          ? "The demo has no recorded call assist yet. In the live app, Cue follows the call " +
+              "as it is replayed."
+          : `The demo has no recorded call assist for call ${id}. It has one for these calls: ${recordedIds.join(", ")}.`,
+        404,
+      );
+    }
+    const state = states[turn];
+    if (!state) {
+      await wait(400, signal);
+      throw new ApiError(
+        `Call ${id} has ${String(states.length)} turns. It has no turn ${String(turn)}.`,
+        400,
+      );
+    }
+    // The wait is the time the live copilot took over this turn, up to the longest wait.
+    await wait(Math.min(state.seconds, LONGEST_WAIT_SECONDS) * 1000, signal);
+    return state;
   },
 
   async openHandOff(_request, signal) {
