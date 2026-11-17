@@ -1452,7 +1452,8 @@ def test_the_report_reads_what_the_copilot_itself_writes(store: str) -> None:
         assert read.calls_without_counts == answer.usage.calls_without_counts
         assert by_name[name].config is not None
         assert by_name[name].config["router"] == "model"
-    assert asked["made_up_tool"].guardrail_flags == ["tool_error:delete_account"]
+    # The copilot itself now replaces a made-up tool name with a fixed word.
+    assert asked["made_up_tool"].guardrail_flags == ["tool_error:unknown_tool"]
     assert by_name["made_up_tool"].answer is not None
     assert by_name["made_up_tool"].answer.flags == (f"tool_error:{UNLISTED_TOOL}",)
 
