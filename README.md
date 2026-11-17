@@ -161,7 +161,20 @@ Three of the columns above are a model's opinion. A judge that is wrong one time
 - **Against a person.** [eval/judge_sheet.py](eval/judge_sheet.py) writes the judge's verdicts on a saved run as a sheet, one row per verdict, with the question, the answer and what the judge was given. It is built from the traces, so it holds only redacted text. A person marks each one right or wrong, without seeing the judge's verdict if the sheet is made with `--blind`. [eval/judge_agreement.py](eval/judge_agreement.py) then reports agreement, Cohen's kappa with an interval, and every disagreement with the judge's reason.
 - **Against answers known to be wrong.** A judge that says yes to everything agrees with a person most of the time on a set where most answers are right. [eval/judge_controls.py](eval/judge_controls.py) takes 23 saved real answers and breaks each in one known way: a changed figure, a dropped fact, an added claim the sources do not hold, an answer to a different question, a broken rule. The judge should fail every one.
 
-**State.** The tooling is built and tested. The hand labels are not done, so no agreement figure is reported here. Until they are, the "correct" column means "the judge said so", and the reading of the failed rows above is a reading, not a measurement.
+**The wrong answers, scored on 2026-11-17 at commit `446f317`.** 23 wrong answers gave 28 verdicts, because some are wrong for two judges at once.
+
+| Judge | Wrong answers it failed |
+|---|---|
+| Correct against the expected facts | 13 of 13 |
+| Follows the row's rules | 5 of 5 |
+| Grounded in the retrieved text | 5 of 10 |
+
+- **The groundedness judge does not notice an added sentence.** It passed all 5 of the answers put to it that had one unsupported claim added, such as "It also takes $5 off your bill every month." Its reasons show why: it checks the sentences that answer the question against the source and stops. So "grounded" in the tables above means the answer's main claims are in the source. It does not mean nothing was added.
+- **It did catch every changed figure, dropped fact and answer to another question** that was put to it, and the unchanged answers passed 27 of 28 times, so it is not simply saying no.
+- **This is why the check on figures is code and not a judge.** An added price or number is exactly what the [check on every figure](#a-check-on-every-figure-in-an-answer) is for. An added claim with no figure in it has nothing behind it yet.
+- **Limits.** The wrong answers are hand-made and plain. They show whether the judge can fail an obvious error, not how often it misses a subtle one, and 28 verdicts give wide intervals: [the result file](eval/results) has them.
+
+**The hand labels are not done**, so no agreement figure is reported here. Until they are, the "correct" column means "the judge said so", and the reading of the failed rows above is a reading, not a measurement.
 
 ```bash
 python -m eval.judge_sheet eval/results/2026-11-16_m9-full-A-ann.json --blind
