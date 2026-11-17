@@ -23,6 +23,7 @@ Every figure below comes from a saved run with its date and commit, and each lin
 | [Keeps personal data out](#redaction-results-so-far) of the model, the logs and the traces | 39 personal values in phrasings the redactor had never seen | 30 found on first contact, 36 after fixing what that showed |
 | [Reviews every call](#checking-every-call-for-a-broken-rule) for five rule breaches | 200 held-out calls with seeded breaches, and the 200 clean ones | 46 of 46 for the two rules that rest on redaction; 21 of 27, 15 of 20, 14 of 20 for the three that rest on wording; 0 of 200 clean calls flagged |
 | [Answers from help articles and the plan catalogue](#the-agent-all-40-questions), with its sources | 40 reviewed questions, scored by code and by an LLM judge | 25 of 31 judged correct, 21 of 22 grounded, 22 of 22 cite the right article |
+| [Follows a call as it plays](#call-assist-following-a-call-as-it-plays) and keeps the matching article beside it | 200 recorded calls from 22 scripts, replayed turn by turn | A right article at the turn the issue is stated in 156 of 200 calls; 14 of the 22 scripts right in every call, 2 wrong in every call |
 | Drafts a hand-off or an after-call wrap-up and waits | The deployed app | Nothing is written until the agent approves it |
 | Shows what it is doing while it works | The deployed app, through Databricks' proxy | Each stage reaches the page within 0.1 second of starting |
 
@@ -289,6 +290,37 @@ python -m data_gen.synth_breaches
 python -m eval.compliance_eval
 ```
 
+## Call assist: following a call as it plays
+
+An agent on a call has no hands free to type a question. Call assist follows the call and keeps three things beside it without being asked: the help article that matches what the customer is talking about, a next step to say, and a reminder when a rule is about to be broken ([src/copilot/assist.py](src/copilot/assist.py)). It is built as a replay: a stored, redacted call plays turn by turn, and the panel shows what it would have shown at each turn. The public demo replays four calls this way, under "Calls", then "Replay with assist".
+
+- **The search runs on the customer's own words**, their last two turns, with no model call. The first version searched the last three turns of both speakers, and the agent's greeting, which names the company, brought up an article about contacting support in every call.
+- **The model is called only when the article on show changes.** It writes one next step from that article. The step is checked for personal data like any answer, and it is withheld if it would itself break a rule, such as promising a refund.
+- **Reminders are the compliance rules**, run on the turns so far.
+
+All 200 calls were replayed on 2026-11-17 at commit `357568f`, and each was scored at the turn where the customer first states their issue:
+
+| Measured | Result |
+|---|---|
+| A right article is on show at that turn | 156 of 200 (72-83%) |
+| The single best article is on show at that turn | 150 of 200 (69-80%) |
+| Nothing is on show at that turn | 6 of 200 (1-6%) |
+| A right article by the end of the call | 157 of 200 (72-84%) |
+| A reminder raised on a call that breaks no rule | 0 of 200 (0-2%) |
+| Model calls to follow a whole call | Median 2; one or two in 181 of 200 calls |
+| Searches to follow a whole call | Median 6, for a call of 18 turns |
+
+- **It is right at once or not at all.** Where a right article came up, it was there at the turn the issue was stated in all but one call. Where it was not, it almost never arrived later: 43 calls never showed one.
+- **The misses are whole scripts, not scattered calls.** The 200 calls come from 22 scripts. 14 of them were right in every call, and 2 were wrong in every call. The article shown in its place was most often `back-up-your-phone` (20 calls) and `your-first-bill` (11). So the intervals in the table are too narrow: this is closer to 22 trials than to 200.
+- **The next step is counted, not scored.** Of 322 changes of article the model wrote a step for 254 and declined 68, which leaves an article on show with no step. 7 steps held a figure that is in no source, and those are flagged, not blocked. Nobody has checked whether the steps are good advice.
+- **The hint to hand off is weak.** It appeared in 30 of the 57 calls that ended in a hand-off, and in 23 of the 119 that did not need one.
+- **Not held out.** The list of right articles for each script was written by the builder of the feature and has not been reviewed. The two thresholds came from 14 hand-written lines, and the query rule was changed after a trial on calls T0001 to T0005. Without those five: 151 of 195 (71-83%).
+- **Not live.** There is no audio, no speech recognition and no redaction as a call happens. A real call would need all three before this panel.
+
+```bash
+python -m eval.assist_eval --limit 5
+```
+
 ## After the call: the wrap-up
 
 When a call ends, the agent writes it up: how it ended, what it was about, what was said and promised, and who does what next. The copilot drafts that record from the redacted transcript for the agent to check and save ([`wrap_up_call`](src/copilot/tools.py)). The model is given the turns and nothing else: the call's recorded outcome and category are never near the prompt, so they can be used to score it. Nothing is stored until the agent approves the draft.
@@ -473,7 +505,7 @@ This repo is being built milestone by milestone. Every number here comes from a 
 | M7 | Fix and prove: guard and history fixes, intervals and a CI gate on the evaluation, a public demo that replays real answers | Done |
 | M8 | An evaluation that can fail, and a measured router | Built: a [held-out routing set](#routing-measured-on-messages-the-rules-had-never-seen) with six routers scored on it and the best one in the agent, a [check on every figure](#a-check-on-every-figure-in-an-answer), model calls and tokens counted per answer, a larger evaluation set of 260 rows (not reviewed yet), a CI gate that fails when the code an evaluation measured has changed, and the tooling to check the judge. Not done: the judge's hand labels, abstention |
 | M9 | Live progress, approval before a ticket is written, after-call work | Built: the interface shows each stage of an answer as the copilot starts it, a hand-off is drafted for the agent to approve before anything is written, and the copilot drafts the [after-call wrap-up](#after-the-call-the-wrap-up) for the agent to check and save, measured on 200 calls. Not done: a clarifying question |
-| M10 | Call assist and compliance review | Built: [every call is checked for five rule breaches](#checking-every-call-for-a-broken-rule), with recall and precision per rule on held-out wording; call assist by replay, which keeps an article, a next step and reminders beside a recorded call as it plays; [tests of what happens when a part fails](#when-a-part-fails); a monitoring report from traces and ratings. Not done: the call assist measurement, the compliance findings in the interface, and a fix for traces from the deployed app arriving without their spans |
+| M10 | Call assist and compliance review | Built: [every call is checked for five rule breaches](#checking-every-call-for-a-broken-rule), with recall and precision per rule on held-out wording; [call assist by replay](#call-assist-following-a-call-as-it-plays), which keeps an article, a next step and reminders beside a recorded call as it plays, measured on 200 calls; [tests of what happens when a part fails](#when-a-part-fails); a monitoring report from traces and ratings. The rule check is also wired into a pipeline step and the Calls view, where the pipeline has not been run with the breach calls yet. Not done: a fix for traces from the deployed app arriving without their spans |
 
 The full specification is in [PLAN.md](PLAN.md).
 
