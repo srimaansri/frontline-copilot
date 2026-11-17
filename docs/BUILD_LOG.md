@@ -874,3 +874,46 @@ They also found defects, each confirmed by running the code before it was change
 - In a three-control trial (4 judge calls, not saved) the groundedness judge passed an answer with "It also takes $5 off your bill every month." added to it: its reason covered only the sentences that answer the question. One answer is an observation, not a rate. The full controls run follows.
 - Call assist: the table of right articles per script in `eval/assist_eval.py` was written by the agent that built the feature and nobody has reviewed it. The two thresholds came from 14 hand-written lines and five calls, and the query rule was changed after a first trial on calls T0001 to T0005, so those five are reported apart.
 - Call assist replays stored, redacted calls. There is no audio, no speech recognition and no live redaction.
+
+## 2026-11-16 — A full run at the fixed code, a gate that fails on a stale one, and what monitoring found
+
+**Tool:** Claude Code. The measurements ran in a second worktree, one after another, each committing its own result file so that every saved number names a real commit.
+
+**What was done**
+
+- **Two full runs of the 40 questions, hours apart.** `m8-full` at commit `a881459` (second router prompt, hand-offs drafted for approval): 25/31 judged correct, 10/11 rules followed. Then the failure-mode fixes changed five files an answer depends on, so `m9-full` was run at commit `05bbad9`: 25/31 correct, 9/11 rules followed, 36/37 right tool, 21/22 grounded, 40/40 for hand-off decisions, personal data and figures in their sources, 36/40 at reading grade 8 or below, median 4.4 seconds and 3 model calls an answer. Both files are kept.
+- **The CI gate now fails on a stale evaluation** (commit `12457f0`). It computes the fingerprint of the answer path from the repository and compares it file by file with the one the newest full run recorded, and it fails if that run answered or routed with another model than the configured one. `m9-full` is the first run it accepts.
+- **The failed rows of `m9-full` were read with the judge's reasons** (exported by `eval/judge_sheet.py`) and noted in `eval/results/inspected.json`, which `ERRORS.md` shows beside each row. Six of the eight failed marks look like the judge's mistake and two are the answer's: both call summaries left out a fact.
+- **The wrap-up measured on the 200 calls** at commit `a881459`: how the call ended 177/200, what it was about 197/200, no draft for 3. Six hand-offs were drafted as resolved.
+- **The public demo was recorded again** at commit `455d7fd`: 101 answers with their stages, four calls with their summaries, wrap-ups and call-assist states. About 45 of the questions are new: what a visitor types, loosely worded, including ones the help articles do not cover.
+- **The demo no longer answers an ordinary question with "no recording" and a list of unrelated ones.** The page ranks its recordings by word overlap and offers the closest to click. It shows another question's answer only for a near paraphrase, with a note above it naming the question the answer belongs to.
+- **A monitoring report** (`python -m eval.monitoring_report`, built by an agent in its own worktree): volume by day and source, where requests went, every flag by frequency, latency by stage, model calls and tokens, failures by span and kind of error, ratings. It prints no text from a trace, only counts, names, durations and ids, and a test plants a marker in every text field of a trace to prove it. Below 20 rows it gives counts with an interval and no percentage.
+- **The README now leads with the problem and a table of measured results**, built from the result files, and the model card was rewritten the same way.
+
+**Decisions**
+
+- **Read the judge's "incorrect" marks before believing them, and do not report the reading as a measurement.** The judge failed an answer for listing more steps than the expected facts, and a two-sentence refusal for being a list of rules. The README says which marks look wrong and that the judge's hand labels are still owed.
+- **A recorded answer to a different question is shown only at a high bar.** At a lower one the page put "how do I pay my bill" next to a question about a high first bill: a right answer to the wrong question. Two recordings that tie are both offered and neither is shown.
+- **The public page stays a replay for now.** A live copilot needs a container host and a credential for the workspace outside Databricks. Vercel and Cloudflare Workers do not fit this backend; the Python dependencies as installed are over the size Vercel allows.
+
+**Found by the monitoring report's first real run (7 days, read-only)**
+
+- **Every trace written by the deployed app has no span data, 6 of 6.** The trace record exists and says spans were built, and downloading them returns "not found". Traces from a local server download. So for real use of the deployed app the route, the flags, the stage times and the tokens are invisible. The cause, from the app's log after the deploy of commit `5ede80a`: the app's container cannot open a connection to Databricks' storage host, where MLflow uploads a trace's spans, so every upload fails after its retries and only the trace's summary record arrives. Nothing in the app's code or grants is wrong, and nothing in this workspace's settings can open that route. Two things would help and neither is done: writing the route, the flags and the model work onto the summary record as tags, which do arrive, and storing traces in Unity Catalog tables, if Free Edition allows it.
+- `mlflow.search_traces(include_spans=True)` drops such a trace with only a warning, so an evaluation could lose a row without notice. None was lost in the saved runs: each reports 40 rows read.
+- Opening a hand-off took a median of 7.8 seconds on a local server, with no model call inside. The span has no child, so the trace cannot say where the time went.
+- Two ratings on one answer both stand; the report counts the latest.
+
+**Deployed and checked through the app's address** (commit `5ede80a`, 205 seconds): the travel question from a visitor's screenshot was answered in 5.3 seconds from the plan table and two articles, with its count of 4 model calls and 7,041 tokens in the reply; a balance lookup came back as a drafted hand-off in 0.7 seconds; call assist for call T0002 returned an article and a next step in 2.5 seconds at the issue turn and 0.1 seconds at a later one.
+
+**What went wrong on the way**
+
+- **The machine slept for 17 hours in the middle of the measurements.** The full run had finished and committed before it did. The later steps were restarted.
+- **Stopping a background run did not stop it.** On Windows the stop ended the tool's handle and left the shell and its Python children running, so for two minutes two chains ran in the same worktree: one refused to record because the other's progress file made the tree dirty, and the step that commits results committed that progress file under the wrong message, twice. Both commits were on the scratch branch only and were dropped before anything was merged. A run is now stopped by its process ids, and checked.
+- **The first try at the stricter chain lost a step** because `git add` with one missing path adds nothing.
+
+**For the owner to review**
+
+- The readings in `eval/results/inspected.json` for `m9-full` are not hand labels.
+- In the new recording "What's her current balance?" is handed off, which is right, with the fixed sentence about refunds and credits, which is the wrong sentence for a lookup. The fix is in the agent, so it waits for the next change that needs a full evaluation anyway.
+- The whole-copilot routing score (129 of 133) was measured with the first router prompt and has not been rerun with the second.
+- The wrap-up has no second try when the model's reply is not the JSON it was asked for (3 of 200).
